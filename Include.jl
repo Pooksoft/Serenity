@@ -22,3 +22,6 @@ using PooksoftBase
 using PooksoftAlphaVantageDataStore
 using PooksoftAssetModelingKit
 using PooksoftOptionsKit
+
+# notify the user
+@info "Starting the Serenity server: http://localhost:8080"

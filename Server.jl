@@ -27,6 +27,9 @@ function authenticate(request::HTTP.Request)
     response_json_dictionary = Dict{String,Any}()
     response_code = 200
 
+    # default is *NOT* authenticated -
+    response_json_dictionary["user_authenticated_status"] = 0
+
     # check - do we have data from the body?
     body_string = String(request.body)
     if (isempty(body_string) == false)
@@ -34,25 +37,31 @@ function authenticate(request::HTTP.Request)
         # build the payload dictionary -
         payload_dictionary = JSON.parse(body_string)
 
-        # grab the password -
-        username = payload_dictionary["payload"]["username"]
-        password = payload_dictionary["payload"]["password"]
-        if (password == "1234")
+        # grab the user information -
+        username = payload_dictionary["user_email_address"]
+        password = payload_dictionary["user_api_key"]
+
+        # build a PSAuthenticationUserModel
+        user_authentication_model = PSAuthenticationUserModel(username,password)
+        authentication_result = authenticate_user_api_call(SERENITY_DB_CONNECTION, user_authentication_model)
+        if (isa(authentication_result.value, Exception) == true)
+            # what?
+        end
+        authentication_status = authentication_result.value
+
+        # status = true?
+        if (authentication_status == true)
 
             # create a UUID -
-            uuid_username = string(UUIDs.uuid4())
+            user_session_token = string(UUIDs.uuid4())
 
             # setup the response -
-            response_json_dictionary["usertoken"] = uuid_username
-            response_json_dictionary["authenticated_status"] = 1
+            response_json_dictionary["user_session_token"] = user_session_token
+            response_json_dictionary["user_authenticated_status"] = 1
 
             # cache the uuid -
-            SERENITY_SESSION[username] = uuid_username
-        else
-            response_json_dictionary["authenticated_status"] = 0
-        end
-    else
-        response_json_dictionary["authenticated_status"] = 0
+            SERENITY_SESSION[username] = user_session_token
+        end        
     end
 
     # grab the payload -
@@ -63,14 +72,11 @@ function authenticate(request::HTTP.Request)
     return response
 end
 
-function expiration(request::HTTP.Request)
+function compute_contract_set_expiration(request::HTTP.Request)
 
     # initialize -
     response_json_dictionary = Dict{String,Any}()
     response_code = 200
-
-    # setup -
-    response_json_dictionary["authenticated_status"] = 0
 
     # check - do we have data from the body?
     body_string = String(request.body)
@@ -79,23 +85,19 @@ function expiration(request::HTTP.Request)
         # build the payload dictionary -
         payload_dictionary = JSON.parse(body_string)
 
-        # grab the username, and token - 
-        # we need to check  this against the cached usertoken -
-        username = payload_dictionary["user"]["username"]
-        usertoken = payload_dictionary["user"]["usertoken"]
-        
-        # ok, do we have this username key?
-        if (haskey(SERENITY_SESSION,username) == true)
+        # call -
+        compute_result = compute_contract_set_expiration(payload_dictionary)
+        if (isa(compute_result.value, Exception) == true)
             
-            # check: r we cached?
-            cached_user_token = SERENITY_SESSION[username]
-            if (usertoken == cached_user_token)
-                response_json_dictionary["authenticated_status"] = 1
+            # what error?
+            # ...
 
-                # ok: so we good to go re authentication -
-                # ...
+        end
+        pla = compute_result.value
 
-            end
+        # get the size of the output -
+        (number_of_timesteps,number_of_cols) = size(pla)
+        for timestep_index = 1:number_of_timesteps
         end
     end
 
@@ -108,7 +110,7 @@ function expiration(request::HTTP.Request)
 end
 
 # Register routes, and start the server -
-HTTP.@register(SERENITY_ROUTER, "POST", "/pooksoft/serenity/api/v1/expiration", expiration)
+HTTP.@register(SERENITY_ROUTER, "POST", "/pooksoft/serenity/api/v1/expiration", compute_contract_set_expiration)
 HTTP.@register(SERENITY_ROUTER, "POST", "/pooksoft/serenity/api/v1/authenticate", authenticate)
 HTTP.@register(SERENITY_ROUTER,"GET","/pooksoft/serenity/api/v1/echo", echo)
 HTTP.serve(SERENITY_ROUTER, Sockets.localhost, 8000)

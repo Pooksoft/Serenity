@@ -26,7 +26,8 @@ using PooksoftOptionsKit
 # include my codes -
 include("$(_PATH_TO_SRC)/Types.jl")
 include("$(_PATH_TO_SRC)/Database.jl")
+include("$(_PATH_TO_SRC)/Compute.jl")
 
 
 # notify the user
-@info "Starting the Serenity server: http://localhost:8080"
+@info "Starting the Serenity server: http://localhost:8000"

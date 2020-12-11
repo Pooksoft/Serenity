@@ -1,0 +1,24 @@
+{
+    "contract_set_parameters":[
+        {
+            "type":"put",
+            "ticker_symbol":"IWM",
+            "sense":"sell",
+            "strike_price":150.0,
+            "premium_value":5.90,
+            "number_of_contracts":1,
+            "contract_multiplier":1.0,
+            "expiration":"2020-12-18"
+        },
+        {
+            "type":"call",
+            "ticker_symbol":"IWM",
+            "sense":"sell",
+            "strike_price":159.0,
+            "premium_value":5.99,
+            "number_of_contracts":1,
+            "contract_multiplier":1.0,
+            "expiration":"2020-12-18"
+        }
+    ]
+}

@@ -24,6 +24,7 @@ using PooksoftAssetModelingKit
 using PooksoftOptionsKit
 
 # include my codes -
+include("$(_PATH_TO_SRC)/Types.jl")
 include("$(_PATH_TO_SRC)/Database.jl")
 
 

@@ -5,6 +5,11 @@ include("Include.jl")
 const SERENITY_ROUTER = HTTP.Router()
 const SERENITY_SESSION = Dict{String,Any}()
 
+# setup paths -
+const path_to_server = "/Users/jeffreyvarner/Desktop/julia_work/Serenity" 
+const path_to_database_file = "$(path_to_server)/database/Serenity.db"
+const SERENITY_DB_CONNECTION = SQLite.DB(path_to_database_file)
+
 # Routes -
 """
     echo()

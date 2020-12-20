@@ -26,5 +26,13 @@ raw_response = HTTP.request("POST","http://localhost:8000/pooksoft/serenity/api/
     ["Content-Type"=>"application/json"], 
     JSON.json(json_body))
 
+# get dictionary back from call -
 dd = JSON.parse(String(raw_response.body))
 
+# pull out the compute_result_array -
+compute_result_array = dd["compute_result_array"]
+price_array = compute_result_array[1]
+profit_array = compute_result_array[2]
+plot(price_array, profit_array, lw=2)
+xlabel!("Share Price (USD/share)",fontsize=14)
+ylabel!("Profit/Loss (USD/share)",fontsize=14)

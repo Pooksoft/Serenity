@@ -5,9 +5,9 @@ function compute_contract_set_expiration(dictionary::Dict{String,Any})::Pooksoft
     simulation_price_dictionary = dictionary["simulated_price_range"]
 
     # setup asset price array -
-    price_start = parse(Float64, simulation_price_dictionary["price_start"])
-    price_stop = parse(Float64, simulation_price_dictionary["price_stop"])
-    price_length = parse(Int64,simulation_price_dictionary["length"])
+    price_start = simulation_price_dictionary["start_price"]
+    price_stop = simulation_price_dictionary["stop_price"]
+    price_length = simulation_price_dictionary["length"]
 	price_array = range(price_start,stop=price_stop,length=price_length) |> collect
 
     # load the contract set -

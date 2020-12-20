@@ -94,11 +94,9 @@ function compute_contract_set_expiration(request::HTTP.Request)
 
         end
         pla = compute_result.value
-
-        # get the size of the output -
-        (number_of_timesteps,number_of_cols) = size(pla)
-        for timestep_index = 1:number_of_timesteps
-        end
+        
+        # encode -
+        response_json_dictionary["compute_result_array"] = pla
     end
 
     # grab the payload -

@@ -27,3 +27,11 @@ function compute_contract_set_expiration(dictionary::Dict{String,Any})::Pooksoft
     # return -
     return PSResult(pla)
 end
+
+function compute_contract_price_binary_model(dictionary::Dict{String,Any})::PooksoftBase.PSResult
+
+    # initialize -
+    
+
+
+end

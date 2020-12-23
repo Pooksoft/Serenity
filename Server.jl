@@ -27,42 +27,106 @@ function authenticate(request::HTTP.Request)
     response_json_dictionary = Dict{String,Any}()
     response_code = 200
 
-    # default is *NOT* authenticated -
-    response_json_dictionary["user_authenticated_status"] = 0
-
-    # check - do we have data from the body?
+    # get body of the message -
     body_string = String(request.body)
-    if (isempty(body_string) == false)
+    if (isempty(body_string) == true)
+        
+        # ok, so we are missing the body of the message, send back 
+        # the appropriate response code, stack overflow says 422?
+        response_code = 422
 
-        # build the payload dictionary -
-        payload_dictionary = JSON.parse(body_string)
+        # encode -
+        buffer = JSON.json(response_json_dictionary)
+        response = HTTP.Response(response_code, buffer)
 
-        # grab the user information -
-        username = payload_dictionary["user_email_address"]
-        password = payload_dictionary["user_api_key"]
-
-        # build a PSAuthenticationUserModel
-        user_authentication_model = PSAuthenticationUserModel(username,password)
-        authentication_result = authenticate_user_api_call(SERENITY_DB_CONNECTION, user_authentication_model)
-        if (isa(authentication_result.value, Exception) == true)
-            # what?
-        end
-        authentication_status = authentication_result.value
-
-        # status = true?
-        if (authentication_status == true)
-
-            # create a UUID -
-            user_session_token = string(UUIDs.uuid4())
-
-            # setup the response -
-            response_json_dictionary["user_session_token"] = user_session_token
-            response_json_dictionary["user_authenticated_status"] = 1
-
-            # cache the uuid -
-            SERENITY_SESSION[username] = user_session_token
-        end        
+        # return -
+        return response
     end
+
+    # ok, so if I get here, then I *have* a body, and its beautiful, so amazing ...
+    # build the request_body_dictionary -
+    request_body_dictionary = JSON.parse(body_string)    
+
+    # check: do we have the user_api_key and the user_email_address?
+    if (haskey(request_body_dictionary,"user_api_key") == false)
+        # ok, so we are missing the user_api_key, send back 
+        # the appropriate response code, stack overflow says 422?
+        response_code = 422
+
+        # encode -
+        buffer = JSON.json(response_json_dictionary)
+        response = HTTP.Response(response_code, buffer)
+
+        # return -
+        return response
+    end
+
+    if (haskey(request_body_dictionary,"user_email_address") == false)
+        # ok, so we are missing the user_api_key, send back 
+        # the appropriate response code, stack overflow says 422?
+        response_code = 422
+
+        # encode -
+        buffer = JSON.json(response_json_dictionary)
+        response = HTTP.Response(response_code, buffer)
+
+        # return -
+        return response
+    end
+
+    # ok, so have both the api_key and the user_email address -
+    user_email_address = request_body_dictionary["user_email_address"]
+    user_api_key = request_body_dictionary["user_api_key"]
+
+    # build a PSAuthenticationUserModel
+    user_authentication_model = PSAuthenticationUserModel(user_email_address,user_api_key)
+    authentication_result = authenticate_user_api_call(SERENITY_DB_CONNECTION, user_authentication_model)
+    if (isa(authentication_result.value, Exception) == true)
+        
+        # something happend - like the server crashed. 
+        # diff than wrong info was passed in the body = we check this below
+        # pass back a 501 response code -
+        response_code = 501
+
+        # should be provide some error information here?
+        # ...
+
+        # encode -
+        buffer = JSON.json(response_json_dictionary)
+        response = HTTP.Response(response_code, buffer)
+
+        # return -
+        return response
+    end
+
+    # check: do we pass the wrong information or some such thing?
+    authentication_status = authentication_result.value
+    if (authentication_status == false)
+        
+        # pass back a 101 response code - unathorized
+        response_code = 401
+
+        # should be provide some error information here?
+        # ...
+
+        # encode -
+        buffer = JSON.json(response_json_dictionary)
+        response = HTTP.Response(response_code, buffer)
+
+        # return -
+        return response
+    end
+
+    # ok, so finally - we have an authenticated user.
+    # create a UUID -
+    user_session_token = string(UUIDs.uuid4())
+
+    # setup the response -
+    response_json_dictionary["user_session_token"] = user_session_token
+    response_json_dictionary["user_authenticated_status"] = 1
+
+    # cache the uuid -
+    SERENITY_SESSION[user_api_key] = user_session_token
 
     # grab the payload -
     buffer = JSON.json(response_json_dictionary)
@@ -72,7 +136,92 @@ function authenticate(request::HTTP.Request)
     return response
 end
 
-function compute_contract_set_expiration(request::HTTP.Request)
+function compute_contract_set_price_binary_model(request::HTTP.Request)
+
+    # initialize -
+    response_json_dictionary = Dict{String,Any}()
+    response_code = 200
+
+    # get body of the message -
+    body_string = String(request.body)
+    if (isempty(body_string) == true)
+        
+        # ok, so we are missing the body of the message, send back 
+        # the appropriate response code, stack overflow says 422?
+        response_code = 422
+
+        # encode -
+        buffer = JSON.json(response_json_dictionary)
+        response = HTTP.Response(response_code, buffer)
+
+        # return -
+        return response
+    end
+
+    # ok, so if I get here, then I *have* a body, and its beautiful, so amazing ...
+    # build the request_body_dictionary -
+    request_body_dictionary = JSON.parse(body_string)    
+
+    # check: do we have the user_api_key and the user_session_token?
+    if (haskey(request_body_dictionary,"user_api_key") == false)
+        # ok, so we are missing the user_api_key, send back 
+        # the appropriate response code, stack overflow says 422?
+        response_code = 422
+
+        # encode -
+        buffer = JSON.json(response_json_dictionary)
+        response = HTTP.Response(response_code, buffer)
+
+        # return -
+        return response
+    end
+
+    # check: do we have the user_session_token?
+    if (haskey(request_body_dictionary,"user_session_token") == false)
+        
+        # ok, so we are missing the user_session_token, send back 
+        # the appropriate response code, stack overflow says 422?
+        response_code = 422
+
+        # encode -
+        buffer = JSON.json(response_json_dictionary)
+        response = HTTP.Response(response_code, buffer)
+
+        # return -
+        return response
+    end
+
+    # check: does the SERENITY_SESSION have an entry for this user_api_key?
+    if (haskey(SERENITY_SESSION,"user_api_key") == false)
+        
+        # ok, so we are missing the user_api_key in the SERENITY_SESSION, send back 
+        # the appropriate response code, stack overflow says 422?
+        response_code = 422
+
+        # add an error entry to the response?
+        # ...
+
+        # encode -
+        buffer = JSON.json(response_json_dictionary)
+        response = HTTP.Response(response_code, buffer)
+
+        # return -
+        return response
+    end
+
+    # ok, so I should have everything I need. Do the computation, 
+    # and return the result ...
+    # ...
+
+    # grab the payload -
+    buffer = JSON.json(response_json_dictionary)
+    response = HTTP.Response(response_code, buffer)
+
+    # return -
+    return response
+end
+
+function compute_contract_set_value_at_expiration(request::HTTP.Request)
 
     # initialize -
     response_json_dictionary = Dict{String,Any}()
@@ -108,7 +257,8 @@ function compute_contract_set_expiration(request::HTTP.Request)
 end
 
 # Register routes, and start the server -
-HTTP.@register(SERENITY_ROUTER, "POST", "/pooksoft/serenity/api/v1/expiration", compute_contract_set_expiration)
+HTTP.@register(SERENITY_ROUTER, "POST", "/pooksoft/serenity/api/v1/contract/expiration", compute_contract_set_value_at_expiration)
 HTTP.@register(SERENITY_ROUTER, "POST", "/pooksoft/serenity/api/v1/authenticate", authenticate)
+HTTP.@register(SERENITY_ROUTER, "POST", "/pooksoft/serenity/api/v1/contract/binary", compute_contract_set_price_binary_model)
 HTTP.@register(SERENITY_ROUTER,"GET","/pooksoft/serenity/api/v1/echo", echo)
 HTTP.serve(SERENITY_ROUTER, Sockets.localhost, 8000)

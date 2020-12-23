@@ -18,6 +18,9 @@ using SQLite
 using DataFrames
 using Query
 using CSV
+using Plots
+
+# Pooksoft codes -
 using PooksoftBase
 using PooksoftAlphaVantageDataStore
 using PooksoftAssetModelingKit
@@ -27,6 +30,7 @@ using PooksoftOptionsKit
 include("$(_PATH_TO_SRC)/Types.jl")
 include("$(_PATH_TO_SRC)/Database.jl")
 include("$(_PATH_TO_SRC)/Compute.jl")
+include("$(_PATH_TO_SRC)/Checks.jl")
 
 
 # notify the user

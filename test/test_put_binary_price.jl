@@ -20,7 +20,7 @@ authentication_dictionary = JSON.parse(String(raw_response.body))
 user_session_token = authentication_dictionary["user_session_token"]
 # ---------------------------------------------------------------------- #
 
-# -- STEP 2: COMPUTE CALL ---------------------------------------------- #
+# -- STEP 2: COMPUTE --------------------------------------------------- #
 # initialize -
 json_body = Dict{String,Any}()
 
@@ -28,31 +28,28 @@ json_body = Dict{String,Any}()
 json_body["user_api_key"] = "a404b4f0-e54a-44cb-9759-636338efc3c4"
 json_body["user_session_token"] = user_session_token
 
-# load the config -
-path_to_config_file = "./test/config/Straddle.json"
-contract_dictionary = JSON.parsefile(path_to_config_file)
-json_body["contract_set"] = contract_dictionary
+# load the example data -
+path_to_contract_file = "./test/config/Put-Binary-ALLY.json"
+contract_dictionary = JSON.parsefile(path_to_contract_file)
+json_body["contract_set_parameters"] = contract_dictionary["contract_set_parameters"]
+json_body["binary_lattice_parameters"] = contract_dictionary["binary_simulation_parameters"]
 
-# set the price range -
+# set the underlying price?
+baseUnderlyingPrice = 34.54
+json_body["underlying_price_value"] = baseUnderlyingPrice
+
+# setup the strike price range -
 simulation_dictionary = Dict{String,Any}()
-simulation_dictionary["start_price"] = 135.0
-simulation_dictionary["stop_price"] = 174.0
-simulation_dictionary["length"] = 100
-json_body["simulated_price_range"] = simulation_dictionary
+simulation_dictionary["start_price"] = 15.0
+simulation_dictionary["stop_price"] = 50.0
+simulation_dictionary["number_of_steps"] = 100
+json_body["simulated_strike_price_dictionary"] = simulation_dictionary
 
 # go -
-raw_response = HTTP.request("POST","http://localhost:8000/pooksoft/serenity/api/v1/contract/expiration",
+raw_response = HTTP.request("POST","http://localhost:8000/pooksoft/serenity/api/v1/contract/binary/put/price",
     ["Content-Type"=>"application/json"], 
     JSON.json(json_body))
 
 # get dictionary back from call -
 dd = JSON.parse(String(raw_response.body))
-
-# pull out the compute_result_array -
-compute_result_array = dd["compute_result_array"]
-price_array = compute_result_array[1]
-profit_array = compute_result_array[2]
-plot(price_array, profit_array, lw=2)
-xlabel!("Share Price (USD/share)",fontsize=14)
-ylabel!("Profit/Loss (USD/share)",fontsize=14)
 # ---------------------------------------------------------------------- #

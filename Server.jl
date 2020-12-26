@@ -136,7 +136,7 @@ function authenticate(request::HTTP.Request)
     return response
 end
 
-function compute_contract_set_price_binary_model(request::HTTP.Request)
+function compute_put_price_binary_model(request::HTTP.Request)
 
     # initialize -
     response_json_dictionary = Dict{String,Any}()
@@ -164,6 +164,7 @@ function compute_contract_set_price_binary_model(request::HTTP.Request)
 
     # check: do we have the user_api_key and the user_session_token?
     if (haskey(request_body_dictionary,"user_api_key") == false)
+        
         # ok, so we are missing the user_api_key, send back 
         # the appropriate response code, stack overflow says 422?
         response_code = 422
@@ -175,6 +176,7 @@ function compute_contract_set_price_binary_model(request::HTTP.Request)
         # return -
         return response
     end
+    user_api_key = request_body_dictionary["user_api_key"]
 
     # check: do we have the user_session_token?
     if (haskey(request_body_dictionary,"user_session_token") == false)
@@ -192,7 +194,7 @@ function compute_contract_set_price_binary_model(request::HTTP.Request)
     end
 
     # check: does the SERENITY_SESSION have an entry for this user_api_key?
-    if (haskey(SERENITY_SESSION,"user_api_key") == false)
+    if (haskey(SERENITY_SESSION, user_api_key) == false)
         
         # ok, so we are missing the user_api_key in the SERENITY_SESSION, send back 
         # the appropriate response code, stack overflow says 422?
@@ -210,10 +212,33 @@ function compute_contract_set_price_binary_model(request::HTTP.Request)
     end
 
     # ok, so I should have everything I need. Do the computation, 
+    
+    
     # and return the result ...
-    # ...
+    compute_result = compute_put_price_binary_model(request_body_dictionary)
+    if (isa(compute_result.value, Exception) == true)
 
-    # grab the payload -
+        # ok, something happend in the computation, return a 
+        response_code = 500
+
+        # add an error entry to the response?
+        error_message = compute_result.value.message
+        response_json_dictionary["error_message"] = error_message
+
+        # encode -
+        buffer = JSON.json(response_json_dictionary)
+        response = HTTP.Response(response_code, buffer)
+
+        # return -
+        return response
+    end
+    contract_price_tuple = compute_result.value
+    p = contract_price_tuple.cost_calculation_result.option_contract_price_array[1];
+    
+    # encode -
+    response_json_dictionary["compute_result_array"] = p
+
+    # encode the payload -
     buffer = JSON.json(response_json_dictionary)
     response = HTTP.Response(response_code, buffer)
 
@@ -259,6 +284,6 @@ end
 # Register routes, and start the server -
 HTTP.@register(SERENITY_ROUTER, "POST", "/pooksoft/serenity/api/v1/contract/expiration", compute_contract_set_value_at_expiration)
 HTTP.@register(SERENITY_ROUTER, "POST", "/pooksoft/serenity/api/v1/authenticate", authenticate)
-HTTP.@register(SERENITY_ROUTER, "POST", "/pooksoft/serenity/api/v1/contract/binary", compute_contract_set_price_binary_model)
+HTTP.@register(SERENITY_ROUTER, "POST", "/pooksoft/serenity/api/v1/contract/binary/put/price", compute_put_price_binary_model)
 HTTP.@register(SERENITY_ROUTER,"GET","/pooksoft/serenity/api/v1/echo", echo)
 HTTP.serve(SERENITY_ROUTER, Sockets.localhost, 8000)

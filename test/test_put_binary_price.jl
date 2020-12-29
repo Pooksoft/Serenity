@@ -40,9 +40,9 @@ json_body["underlying_price_value"] = baseUnderlyingPrice
 
 # setup the strike price range -
 simulation_dictionary = Dict{String,Any}()
-simulation_dictionary["start_price"] = 15.0
-simulation_dictionary["stop_price"] = 50.0
-simulation_dictionary["number_of_steps"] = 100
+simulation_dictionary["start_price"] = 28.0
+simulation_dictionary["stop_price"] = 45.0
+simulation_dictionary["number_of_steps"] = 200
 json_body["simulated_strike_price_dictionary"] = simulation_dictionary
 
 # go -
@@ -52,4 +52,11 @@ raw_response = HTTP.request("POST","http://localhost:8000/pooksoft/serenity/api/
 
 # get dictionary back from call -
 dd = JSON.parse(String(raw_response.body))
+# ---------------------------------------------------------------------- #
+
+# -- PLOT -------------------------------------------------------------- #
+pa = dd["compute_result_array"]
+spa = pa[1]
+iva = pa[3]
+opa = pa[4]
 # ---------------------------------------------------------------------- #

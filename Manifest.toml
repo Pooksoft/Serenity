@@ -420,9 +420,9 @@ version = "0.3.0"
 
 [[GeometryBasics]]
 deps = ["EarCut_jll", "IterTools", "LinearAlgebra", "StaticArrays", "StructArrays", "Tables"]
-git-tree-sha1 = "5f439f707352a988411d44cbb146fe23674e28b7"
+git-tree-sha1 = "876f77f0d3253e882ff588af1c95d0e4a86c9766"
 uuid = "5c1252a2-5f33-56bf-86c9-59e7332b4326"
-version = "0.3.4"
+version = "0.3.5"
 
 [[Grisu]]
 git-tree-sha1 = "03d381f65183cb2d0af8b3425fde97263ce9a995"
@@ -813,6 +813,12 @@ git-tree-sha1 = "173c7250ccd7c98615b04c669eb13fa7fab494b0"
 uuid = "91a5bcdd-55d7-5caf-9e0b-520d859cae80"
 version = "1.9.1"
 
+[[PlutoUI]]
+deps = ["Base64", "Dates", "Logging", "Markdown", "Random", "Suppressor"]
+git-tree-sha1 = "1b58f5a202953a2ef4dc8623e55fcc55c0f03c33"
+uuid = "7f904dfe-b85e-4ff6-b463-dae2292396a8"
+version = "0.6.10"
+
 [[PoissonRandom]]
 deps = ["Random", "Statistics", "Test"]
 git-tree-sha1 = "44d018211a56626288b5d3f8c6497d28c26dc850"
@@ -840,8 +846,6 @@ version = "1.0.0"
 [[PooksoftOptionsKit]]
 deps = ["CSV", "DataFrames", "Dates", "Documenter", "JSON", "LsqFit", "Optim", "PooksoftBase", "Reexport", "Statistics", "Test"]
 git-tree-sha1 = "b8dd038274379bd772020e17cd6bcb17019e123b"
-repo-rev = "master"
-repo-url = "https://github.com/Pooksoft/PooksoftOptionsKit.jl"
 uuid = "f44ba3c4-0ba4-432c-ac21-0a461a95f434"
 version = "0.1.1"
 
@@ -997,9 +1001,9 @@ uuid = "ea8e919c-243c-51af-8825-aaa63cd721ce"
 
 [[SLEEFPirates]]
 deps = ["IfElse", "Libdl", "VectorizationBase"]
-git-tree-sha1 = "d82dffab8f9e50d5110c5650c25fdf9e00dec316"
+git-tree-sha1 = "40d1fb2c97ddc50a74fa57eaad09d62bca391aae"
 uuid = "476501e8-09a2-5ece-8869-fb82de89a1fa"
-version = "0.6.1"
+version = "0.6.2"
 
 [[SQLite]]
 deps = ["BinaryProvider", "DBInterface", "Dates", "Libdl", "Random", "SQLite_jll", "Serialization", "Tables", "Test", "WeakRefStrings"]
@@ -1142,6 +1146,11 @@ deps = ["CompilerSupportLibraries_jll", "Libdl", "OpenBLAS_jll", "Pkg", "SuiteSp
 git-tree-sha1 = "013ff4504fc1d475aa80c63b455b6b3a58767db2"
 uuid = "fb77eaff-e24c-56d4-86b1-d163f2edb164"
 version = "5.2.0+1"
+
+[[Suppressor]]
+git-tree-sha1 = "a819d77f31f83e5792a76081eee1ea6342ab8787"
+uuid = "fd094767-a336-5f1f-9728-57cf17d0bbfb"
+version = "0.2.0"
 
 [[SymbolicUtils]]
 deps = ["AbstractAlgebra", "Combinatorics", "DataStructures", "NaNMath", "SpecialFunctions", "TimerOutputs"]

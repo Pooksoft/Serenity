@@ -1,19 +1,19 @@
 {
     "binary_simulation_parameters":{
-        "volatility":0.4557,
+        "volatility":0.3974,
         "riskFreeRate":0.0012,
         "dividendRate":0.0,
-        "numberOfLevels":100,
-        "calendarDaysToExpiration":127
+        "numberOfLevels":500,
+        "calendarDaysToExpiration":22
     },
     
     "contract_set_parameters":[
         {
             "type":"put",
             "ticker_symbol":"ALLY",
-            "sense":"sell",
-            "strike_price":30.0,
-            "premium_value":2.17,
+            "sense":"buy",
+            "strike_price":0.0,
+            "premium_value":0.0,
             "number_of_contracts":1,
             "contract_multiplier":1.0,
             "expiration":"2021-06-18"

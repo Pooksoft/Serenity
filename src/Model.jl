@@ -35,8 +35,7 @@ function compute_equity_price_binary_model(dictionary::Dict{String,Any})::Pookso
     numberOfLevels = binary_lattice_dictionary["numberOfLevels"]
     cal_days_to_exp = binary_lattice_dictionary["calendarDaysToExpiration"]
     days_to_expiration = (cal_days_to_exp)*(1/365)
-	binary_lattice_model = PSBinaryLatticeModel(volatility, days_to_expiration,
-        risk_free_rate, dividend_rate);
+	binary_lattice_model = PSBinaryLatticeModel(volatility, days_to_expiration, risk_free_rate, dividend_rate);
 
     # check: do we have an initial underlying price value?
     if (haskey(dictionary,"underlying_price_value") == false)

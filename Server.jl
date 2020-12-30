@@ -136,6 +136,9 @@ function authenticate(request::HTTP.Request)
     return response
 end
 
+"""
+    compute_put_price_binary_model()
+"""
 function compute_put_price_binary_model(request::HTTP.Request)
 
     # initialize -
@@ -166,84 +169,12 @@ function compute_put_price_binary_model(request::HTTP.Request)
     # build the request_body_dictionary -
     request_body_dictionary = JSON.parse(body_string)    
 
-    # check: do we have the user_api_key and the user_session_token?
-    if (haskey(request_body_dictionary,"user_api_key") == false)
-        
-        # ok, so we are missing the user_api_key, send back 
-        # the appropriate response code, stack overflow says 422?
-        response_code = 422
-
-        # message -
-        response_json_dictionary["error_location"] = "$(@__LINE__) of $(@__FILE__)"
-        response_json_dictionary["error_message"] = "The user_api_key is missing from the request_body_dictionary"
-
-        # encode -
-        buffer = JSON.json(response_json_dictionary)
-        response = HTTP.Response(response_code, buffer)
-
-        # return -
-        return response
+    # check the authentication status. This method returns a HTTP.response or nothing
+    authenticate_result = check_authentication_status(request_body_dictionary)
+    if (isnothing(authenticate_result) == false)
+        return authenticate_result
     end
-    user_api_key = request_body_dictionary["user_api_key"]
-
-    # check: do we have the user_session_token?
-    if (haskey(request_body_dictionary,"user_session_token") == false)
-        
-        # ok, so we are missing the user_session_token, send back 
-        # the appropriate response code, stack overflow says 422?
-        response_code = 422
-
-        # message -
-        response_json_dictionary["error_location"] = "$(@__LINE__) of $(@__FILE__)"
-        response_json_dictionary["error_message"] = "The user_session_token is missing from the request_body_dictionary"
-
-        # encode -
-        buffer = JSON.json(response_json_dictionary)
-        response = HTTP.Response(response_code, buffer)
-
-        # return -
-        return response
-    end
-    user_session_token = request_body_dictionary["user_session_token"]
-
-    # check: does the SERENITY_SESSION have an entry for this user_api_key?
-    if (haskey(SERENITY_SESSION, user_api_key) == false)
-        
-        # ok, so we are missing the user_api_key in the SERENITY_SESSION, send back 
-        # the appropriate response code, stack overflow says 422?
-        response_code = 422
-
-        # message -
-        response_json_dictionary["error_location"] = "$(@__LINE__) of $(@__FILE__)"
-        response_json_dictionary["error_message"] = "The user_api_key is missing from SERENITY_SESSION"
-
-        # encode -
-        buffer = JSON.json(response_json_dictionary)
-        response = HTTP.Response(response_code, buffer)
-
-        # return -
-        return response
-    end
-
-    # ok, so check keys -
-    if (SERENITY_SESSION[user_api_key] != user_session_token)
-        
-        # ok, so we are missing the user_api_key in the SERENITY_SESSION, send back 
-        # the appropriate response code, stack overflow says 422?
-        response_code = 422
-
-        # message -
-        response_json_dictionary["error_location"] = "$(@__LINE__) of $(@__FILE__)"
-        response_json_dictionary["error_message"] = "incorrect user_session_token"
-
-        # encode -
-        buffer = JSON.json(response_json_dictionary)
-        response = HTTP.Response(response_code, buffer)
-
-        # return -
-        return response
-    end
-
+    
     # ok, so I should have everything I need. Do the computation, 
     compute_result = compute_put_price_binary_model(request_body_dictionary)
     if (isa(compute_result.value, Exception) == true)
@@ -275,7 +206,10 @@ function compute_put_price_binary_model(request::HTTP.Request)
     return response
 end
 
-function compute_option_contract_set_value_at_expiration(request::HTTP.Request)
+"""
+    compute_option_contract_set_value_at_expiration()
+"""
+function compute_option_contract_set_value_at_expiration(request::HTTP.Request)::HTTP.Response
 
     # initialize -
     response_json_dictionary = Dict{String,Any}()
@@ -305,12 +239,14 @@ function compute_option_contract_set_value_at_expiration(request::HTTP.Request)
     # build the request_body_dictionary -
     request_body_dictionary = JSON.parse(body_string)    
 
-    # need to check authentication status -
-
-
+    # check the authentication status. This method returns a HTTP.response or nothing
+    authenticate_result = check_authentication_status(request_body_dictionary)
+    if (isnothing(authenticate_result) == false)
+        return authenticate_result
+    end
     
     # call -
-    compute_result = compute_option_contract_set_expiration(payload_dictionary)
+    compute_result = compute_option_contract_set_expiration(request_body_dictionary)
     if (isa(compute_result.value, Exception) == true)
         
         # ok, so we are missing the user_api_key in the SERENITY_SESSION, send back 
@@ -341,9 +277,81 @@ function compute_option_contract_set_value_at_expiration(request::HTTP.Request)
     return response
 end
 
+"""
+    compute_equity_price_binary_model()
+"""
+function compute_equity_price_binary_model(request::HTTP.Request)::HTTP.Response
+
+    # initialize -
+    response_json_dictionary = Dict{String,Any}()
+    response_code = 200
+
+    # check - do we have data from the body?
+    body_string = String(request.body)
+    if (isempty(body_string) == true)
+        
+        # ok, so we are missing the body of the message, send back 
+        # the appropriate response code, stack overflow says 422?
+        response_code = 422
+
+        # error message -
+        response_json_dictionary["error_location"] = "$(@__LINE__) of $(@__FILE__)"
+        response_json_dictionary["error_message"] = "The request.body is empty?"
+
+        # encode -
+        buffer = JSON.json(response_json_dictionary)
+        response = HTTP.Response(response_code, buffer)
+
+        # return -
+        return response
+    end
+
+    # ok, so if I get here, then I *have* a body, and its beautiful, so amazing ...
+    # build the request_body_dictionary -
+    request_body_dictionary = JSON.parse(body_string)    
+
+    # check the authentication status. This method returns a HTTP.response or nothing
+    authenticate_result = check_authentication_status(request_body_dictionary)
+    if (isnothing(authenticate_result) == false)
+        return authenticate_result
+    end
+
+    # Compute -
+    compute_result = compute_equity_price_binary_model(request_body_dictionary)
+    if (isa(compute_result.value, Exception) == true)
+        
+        # ok, so we are missing the user_api_key in the SERENITY_SESSION, send back 
+        # the appropriate response code, stack overflow says 422?
+        response_code = 500
+
+        # message -
+        response_json_dictionary["error_location"] = "$(@__LINE__) of $(@__FILE__)"
+        response_json_dictionary["error_message"] = "Compute failure. Error returned: $(compute_result.value)"
+
+        # encode -
+        buffer = JSON.json(response_json_dictionary)
+        response = HTTP.Response(response_code, buffer)
+
+        # return -
+        return response
+    end
+    bpa = compute_result.value
+
+    # encode -
+    response_json_dictionary["result"] = bpa
+
+    # grab the payload -
+    buffer = JSON.json(response_json_dictionary)
+    response = HTTP.Response(response_code, buffer)
+
+    # return -
+    return response
+end
+
 # Register routes, and start the server -
 HTTP.@register(SERENITY_ROUTER, "POST", "/pooksoft/serenity/api/v1/contract/expiration", compute_option_contract_set_value_at_expiration)
 HTTP.@register(SERENITY_ROUTER, "POST", "/pooksoft/serenity/api/v1/authenticate", authenticate)
 HTTP.@register(SERENITY_ROUTER, "POST", "/pooksoft/serenity/api/v1/contract/binary/put/price", compute_put_price_binary_model)
+HTTP.@register(SERENITY_ROUTER, "POST", "/pooksoft/serenity/api/v1/equity/binary/price", compute_equity_price_binary_model)
 HTTP.@register(SERENITY_ROUTER,"GET","/pooksoft/serenity/api/v1/echo", echo)
 HTTP.serve(SERENITY_ROUTER, Sockets.localhost, 8000)

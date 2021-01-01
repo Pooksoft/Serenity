@@ -116,6 +116,83 @@ function compute_put_price_binary_model(dictionary::Dict{String,Any})::PooksoftB
     return PSResult(predicted_price_dict)
 end
 
+function compute_call_price_binary_model(dictionary::Dict{String,Any})::PooksoftBase.PSResult
+
+    # check: do we have contract set key?
+    if (haskey(dictionary,"contract_set_parameters") == false)
+        error = PSError("Missing the contract_set_parameters key in the request dictionary")
+        return PSResult(error)
+    end
+
+    # get the contract set from the dictionary -
+    contract_dictionary = dictionary["contract_set_parameters"][1]
+    ticker_symbol = contract_dictionary["ticker_symbol"]
+    contract_sense_symbol = Symbol(contract_dictionary["sense"])
+    expiration_date = Date(contract_dictionary["expiration"])
+    contract_multiplier = contract_dictionary["contract_multiplier"]
+    number_of_contracts = contract_dictionary["number_of_contracts"]
+    contract_strike_price_value = contract_dictionary["contract_strike_price"]
+    premium_value = 0.0
+
+    # do we have the binary simulation parameters?
+    if (haskey(dictionary,"binary_lattice_parameters") == false)
+        error = PSError("Missing the binary_lattice_parameters key in the request dictionary")
+        return PSResult(error)
+    end
+    binary_lattice_dictionary = dictionary["binary_lattice_parameters"]
+    
+    # build binary lattice model -
+    volatility = binary_lattice_dictionary["volatility"]
+    risk_free_rate = binary_lattice_dictionary["riskFreeRate"]
+    dividend_rate = binary_lattice_dictionary["dividendRate"]
+    numberOfLevels = binary_lattice_dictionary["numberOfLevels"]
+    cal_days_to_exp = binary_lattice_dictionary["calendarDaysToExpiration"]
+    days_to_expiration = (cal_days_to_exp)*(1/365)
+	binary_lattice_model = PSBinaryLatticeModel(volatility, days_to_expiration,
+        risk_free_rate, dividend_rate);
+
+    # do we have an underlying price in the request?
+    if (haskey(dictionary,"underlying_price_value") == false)
+        error = PSError("Missing the underlying_price_value key in the request dictionary")
+        return PSResult(error)
+    end
+    underlying_price_value = dictionary["underlying_price_value"]
+
+    # ok, first we create the contract object (in this case put, buy)
+    callOptionContract = PSCallOptionContract(ticker_symbol, expiration_date, 
+        contract_strike_price_value, premium_value, number_of_contracts; 
+        sense=contract_sense_symbol, contractMultiplier=contract_multiplier)
+
+    # create a contract set -
+    contract_set = Set{PSAbstractAsset}()
+    push!(contract_set, callOptionContract);
+
+    # run the pricing calc -
+    result = option_contract_price(contract_set, binary_lattice_model,
+        underlying_price_value; earlyExercise=true)
+    if (isa(result.value, Exception) == true)
+        return result
+    end
+    results_tuple = result.value
+
+    # get the price -
+    p = results_tuple.cost_calculation_result.option_contract_price_array[1];
+    contract_value = p
+    if (p === nothing)
+        contract_value = 0.0
+    end
+    
+    # we are going to include some additional stuff in the 
+    predicted_price_dict = Dict{String,Any}()
+    predicted_price_dict["contract_strike_price"] = contract_strike_price_value
+    predicted_price_dict["underlying_price_value"] = underlying_price_value
+    predicted_price_dict["intrinsic_contract_value"] = max(0,(contract_strike_price_value - underlying_price_value))
+    predicted_price_dict["total_contract_value"] = contract_value   
+
+    # return -
+    return PSResult(predicted_price_dict)
+end
+
 function compute_contract_price_binary_model(dictionary::Dict{String,Any})::PooksoftBase.PSResult
 
     # initialize -

@@ -32,6 +32,7 @@ include("$(_PATH_TO_SRC)/Types.jl")
 include("$(_PATH_TO_SRC)/Database.jl")
 include("$(_PATH_TO_SRC)/Options.jl")
 include("$(_PATH_TO_SRC)/Model.jl")
+include("$(_PATH_TO_SRC)/Analysis.jl")
 include("$(_PATH_TO_SRC)/Checks.jl")
 
 # notify the user

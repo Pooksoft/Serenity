@@ -80,3 +80,46 @@ function compute_equity_price_binary_model(dictionary::Dict{String,Any})::Pookso
         return PSResult(error)
     end
 end
+
+function compute_equity_price_gbm_model(dictionary::Dict{String,Any})::PooksoftBase.PSResult
+
+    try
+        
+        # check: do we have binary lattice parameters in the dictionary?
+        if (haskey(dictionary,"gbm_simulation_parameters") == false)
+            error = PSError("Missing the gbm_simulation_parameters key in the request dictionary")
+            throw(PSResult(error))
+        end
+        gbm_model_parameters = dictionary["gbm_simulation_parameters"]
+        μ = gbm_model_parameters["equity_return_rate"]
+        σ = gbm_model_parameters["equity_volatility"]
+        initial_equity_price = gbm_model_parameters["initial_equity_price"]
+        time_start = gbm_model_parameters["time_start"]
+        time_stop = gbm_model_parameters["time_stop"]
+        time_step = gbm_model_parameters["time_step"]
+        number_of_trials = gbm_model_parameters["number_of_trials"]
+        return_time_step = gbm_model_parameters["gbm_model_parameters"]
+        
+        # create a PSGeometricBrownianMotionModelParameters -
+        gbm_model_parameter_object = PSGeometricBrownianMotionModelParameters(μ, σ)
+
+        # next create the tspan tuple -
+        tspan_tuple = (time_start, time_stop)
+
+        # call the solver -
+        compute_result = evaluate(gbm_model_parameter_object, initial_equity_price, tspan_tuple, time_step;
+            number_of_trials=number_of_trials, return_time_step=return_time_step)
+
+        # ok, check the compute result, ok?
+        if (isa(compute_result.value,Exception) == true)
+            rethrow(compute_result)   # oops - just re-throw the error the solver is sending back
+        end
+
+        # we are ok! grab - send all the results back -
+        # return_tuple = (T=T,X=X,μ=μ,σ=σ)
+        return_tuple = compute_result.value
+        return PSResult(return_tuple)
+    catch error
+        return PSResult(error)
+    end
+end

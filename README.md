@@ -1,10 +1,10 @@
 ## Introduction
 The Serenity platform for modeling financial decisions.  
 
-## Installation and Requirements
+### Installation and Requirements
 ``Serenity`` requires [Julia 1.5.x](https://julialang.org/downloads/) or above. 
 
-## How do you get the code?
+### How do you get the code?
 ``Serenity`` is an open source project, 
 available under a [MIT software license](https://github.com/Pooksoft/PooksoftAssetModelingKit.jl/blob/master/LICENSE).
 You can download this repository as a [zip file](https://en.wikipedia.org/wiki/Zip_(file_format)), clone or pull it by using the command (from the command-line):

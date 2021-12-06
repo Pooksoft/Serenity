@@ -118,7 +118,7 @@ price_data_dictionary
 
 # ╔═╡ d812551d-4b1c-49d8-ad8c-8a992a3d38b8
 md"""
-##### Compute the return $\mu_{i}$ and standard deviation of the return $\sigma_{i}$ for ticker symbol $i$ from the close price data
+##### Compute the return $\mu_{i}$ and standard deviation of the return $\sigma_{i}$ for ticker symbol $i$ from the end of date close price data
 """
 
 # ╔═╡ 34b06415-21c1-4904-97f0-ab614447355c
@@ -129,6 +129,8 @@ begin
 
 	# compute -
 	for ticker_symbol in ticker_symbol_array
+		
+		# the compute_return_array function is provided by Serenity -> computes the log return given a DataFrame, returns a DataFrame
 		r = compute_return_array(price_data_dictionary[ticker_symbol], :timestamp => :adjusted_close; β = (1.0/1.0))
 		return_data_dictionary[ticker_symbol] = r
 	end
@@ -144,6 +146,7 @@ begin
 	# number of bins -
 	number_of_bins = Int64(floor(0.1*length(return_data_dictionary[ticker_symbol][!,:μ])))
 
+	# make the plots the ticker symbols -
 	stephist(return_data_dictionary["ALLY"][!,:μ], bins=number_of_bins, normed=:true, lw=2, c=:red, label="ALLY")
 	stephist!(return_data_dictionary["MET"][!,:μ], bins=number_of_bins, normed=:true, lw=2, c=:darkgray, label="MET")
 	stephist!(return_data_dictionary["GM"][!,:μ], bins=number_of_bins, normed=:true, lw=2, c=:gray, label="GM")
@@ -155,6 +158,9 @@ begin
 	ylabel!("Frequency (N=$(number_of_bins); dimensionless)", fontsize=14)
 	xlims!((-100.0*μ_avg,100.0*μ_avg))
 end
+
+# ╔═╡ 45750dea-2e8d-4bd5-816c-598f1b78e46b
+
 
 # ╔═╡ e4619a42-4513-4141-be31-9c3539280151
 md"""
@@ -1351,7 +1357,8 @@ version = "0.9.1+5"
 # ╠═a59c6a99-1260-4bf1-a2af-5f360633fdae
 # ╟─d812551d-4b1c-49d8-ad8c-8a992a3d38b8
 # ╠═34b06415-21c1-4904-97f0-ab614447355c
-# ╟─cbbd8670-49ab-4601-b8d7-9f3f456752e8
+# ╠═cbbd8670-49ab-4601-b8d7-9f3f456752e8
+# ╠═45750dea-2e8d-4bd5-816c-598f1b78e46b
 # ╟─e4619a42-4513-4141-be31-9c3539280151
 # ╠═f9e5092b-a158-48cb-a919-96f30ec51038
 # ╟─c8c3fe32-560d-11ec-0617-2dc33608384a

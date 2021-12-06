@@ -51,47 +51,42 @@ We specify a list of ticker symbols that we want to model. Next, we check to see
 The parameters for the [Alphavantage.co](https://www.alphavantage.co) API call are stored in the `query_parameters` dictionary. For estimating a SIM, we use the daily close price for the last 100 trading days for each ticker. 
 """
 
-# ╔═╡ 3d0255e4-54f7-4cad-acc0-b56cd5012f4f
-begin
-
-	# initialize some storage -
-	price_data_dictionary = Dict{String,DataFrame}()
-
-	# which tickers do we want to look at -
-	ticker_symbol_array = ["MSFT", "ALLY", "MET", "AAPL", "GM"];
-
-	# setup: specify the query parameters for the call to Alphavantage -
-	# check out: https://www.alphavantage.co/documentation/
-	query_parameters = Dict{String,String}()
-	query_parameters["function"] = "TIME_SERIES_DAILY_ADJUSTED" 	# get the daily close price
-	query_parameters["apikey"] = ALPHAVANTAGE_API_KEY 				# your alphavantage API key
-	query_parameters["datatype"] = "csv" 							# we are going to do CSV (the other option is JSON)
-	query_parameters["outputsize"] = "full" 						# compact: last 100 trading days; full is 20 years
-
-	# show -
-	nothing 
-end
+# ╔═╡ a815a181-530a-4ede-a5df-a56d9dc769d2
+# which tickers do we want to look at -
+ticker_symbol_array = ["MSFT", "ALLY", "MET", "AAPL", "GM"];
 
 # ╔═╡ a6c4e663-f1e3-4e0c-a8bf-7c13fcb076f0
 begin
 
+	# initialize some storage -
+	price_data_dictionary = Dict{String,DataFrame}() # Dict key => value where key = ticker symbol and value = price DataFrame
+
+	# setup: specify the query parameters for the call to Alphavantage -
+	# check out the API documentation: https://www.alphavantage.co/documentation/
+	query_parameters = Dict{String,String}()
+	query_parameters["function"] = "TIME_SERIES_DAILY_ADJUSTED" 	# get the daily close price adjusted
+	query_parameters["apikey"] = ALPHAVANTAGE_API_KEY 				# your alphavantage API key goes here (see setup/config block below)
+	query_parameters["datatype"] = "csv" 							# download in CSV (the other option is JSON) format
+	query_parameters["outputsize"] = "full" 						# compact -vs- full: last 100 trading days -vs- up to 20 years of data
+
+	# data type: sub dir where we save the data
+	data_type_flag = "daily"
 	
 	# main download loop -
 	for ticker_symbol in ticker_symbol_array
 		
 		# check -> have we downloaded this data already?
-		data_file_path = joinpath(_PATH_TO_DATA,"daily","$(ticker_symbol).csv")
+		data_file_path = joinpath(_PATH_TO_DATA, "$(data_type_flag)", "$(ticker_symbol).csv")
 		if (does_data_file_exist(data_file_path) == false)
 		
-			# We do NOT have this data file -> download from AlphaVantage
-			query_parameters["symbol"] = ticker_symbol
-			url_string = build_url_query_string(DATASTORE_URL_STRING,query_parameters)
-
+			# We do NOT have this data file -> download from Alphavantage.co
 			# execute API call -> check to see if error -> turn into DataFrame
+			query_parameters["symbol"] = ticker_symbol
+			url_string = build_url_query_string(DATASTORE_URL_STRING, query_parameters)
 			data_table = http_get_call_with_url(url_string) |> check |> process_csv_api_data
 
-			# make the dir (if we don't have it already) -
-			mkpath(joinpath(_PATH_TO_DATA,"daily"))
+			# make the dir to save the data (if we don't have it already) -
+			mkpath(joinpath(_PATH_TO_DATA,"$(data_type_flag)"))
 
 			# dump data table to disk -
 			CSV.write(data_file_path, data_table)
@@ -139,12 +134,12 @@ end
 # ╔═╡ cbbd8670-49ab-4601-b8d7-9f3f456752e8
 begin
 
+	# compute some ranges -
 	ticker_symbol = "AAPL"
 	μ_avg = mean(return_data_dictionary[ticker_symbol][!,:μ])
-	σ_return = std(return_data_dictionary[ticker_symbol][!,:μ])
 	
-	# number of bins -
-	number_of_bins = Int64(floor(0.1*length(return_data_dictionary[ticker_symbol][!,:μ])))
+	# number of bins - 10% of the length of a test ticker
+	number_of_bins = convert(Int64,(floor(0.1*length(return_data_dictionary[ticker_symbol][!,:μ]))))
 
 	# make the plots the ticker symbols -
 	stephist(return_data_dictionary["ALLY"][!,:μ], bins=number_of_bins, normed=:true, lw=2, c=:red, label="ALLY")
@@ -153,7 +148,7 @@ begin
 	stephist!(return_data_dictionary["MSFT"][!,:μ], bins=number_of_bins, normed=:true, lw=2, c=:green, label="MSFT")
 	stephist!(return_data_dictionary["AAPL"][!,:μ], bins=number_of_bins, normed=:true, lw=2, c=:black, label="AAPL")
 	
-	
+	# label the plots -
 	xlabel!("Daily return μ (1/day)", fontsize=18)
 	ylabel!("Frequency (N=$(number_of_bins); dimensionless)", fontsize=14)
 	xlims!((-100.0*μ_avg,100.0*μ_avg))
@@ -1352,11 +1347,11 @@ version = "0.9.1+5"
 
 # ╔═╡ Cell order:
 # ╟─f66a480b-3f0c-4ebf-a8b8-e0f91dff851d
-# ╠═3d0255e4-54f7-4cad-acc0-b56cd5012f4f
+# ╠═a815a181-530a-4ede-a5df-a56d9dc769d2
 # ╠═a6c4e663-f1e3-4e0c-a8bf-7c13fcb076f0
 # ╠═a59c6a99-1260-4bf1-a2af-5f360633fdae
-# ╠═d812551d-4b1c-49d8-ad8c-8a992a3d38b8
-# ╠═34b06415-21c1-4904-97f0-ab614447355c
+# ╟─d812551d-4b1c-49d8-ad8c-8a992a3d38b8
+# ╟─34b06415-21c1-4904-97f0-ab614447355c
 # ╠═cbbd8670-49ab-4601-b8d7-9f3f456752e8
 # ╠═45750dea-2e8d-4bd5-816c-598f1b78e46b
 # ╟─e4619a42-4513-4141-be31-9c3539280151

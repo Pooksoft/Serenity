@@ -21,6 +21,7 @@ begin
 	using ProgressMeter
 	using Dates
 	using StatsPlots
+	using Statistics
 	
 	# load my lib of code -
 	include(joinpath(_PATH_TO_SRC,"Include.jl"))
@@ -62,10 +63,10 @@ begin
 	# setup: specify the query parameters for the call to Alphavantage -
 	# check out: https://www.alphavantage.co/documentation/
 	query_parameters = Dict{String,String}()
-	query_parameters["function"] = "TIME_SERIES_DAILY" 	# get the daily close price
-	query_parameters["apikey"] = ALPHAVANTAGE_API_KEY 	# your alphavantage API key
-	query_parameters["datatype"] = "csv" 				# we are going to do CSV (the other option is JSON)
-	query_parameters["outputsize"] = "compact" 			# compact: last 100 trading days
+	query_parameters["function"] = "TIME_SERIES_DAILY_ADJUSTED" 	# get the daily close price
+	query_parameters["apikey"] = ALPHAVANTAGE_API_KEY 				# your alphavantage API key
+	query_parameters["datatype"] = "csv" 							# we are going to do CSV (the other option is JSON)
+	query_parameters["outputsize"] = "full" 						# compact: last 100 trading days; full is 20 years
 
 	# show -
 	nothing 
@@ -93,7 +94,7 @@ begin
 			mkpath(joinpath(_PATH_TO_DATA,"daily"))
 
 			# dump data table to disk -
-			CSV.write(data_file_path,data_table)
+			CSV.write(data_file_path, data_table)
 
 			# put the price DataFrame into the price_data_dictionary -
 			price_data_dictionary[ticker_symbol] = data_table
@@ -115,37 +116,49 @@ end
 # ╔═╡ a59c6a99-1260-4bf1-a2af-5f360633fdae
 price_data_dictionary
 
+# ╔═╡ d812551d-4b1c-49d8-ad8c-8a992a3d38b8
+md"""
+##### Compute the return $\mu_{i}$ and standard deviation of the return $\sigma_{i}$ for ticker symbol $i$ from the close price data
+"""
+
 # ╔═╡ 34b06415-21c1-4904-97f0-ab614447355c
 begin
 
-	# compute -
-	r_msft = compute_return_array(price_data_dictionary["MSFT"], :timestamp => :close; β = (1.0/365.0))
-	r_ally = compute_return_array(price_data_dictionary["ALLY"], :timestamp => :close; β = (1.0/365.0))
-	r_met = compute_return_array(price_data_dictionary["MET"], :timestamp => :close; β = (1.0/365.0))
-	r_gm = compute_return_array(price_data_dictionary["GM"], :timestamp => :close; β = (1.0/365.0))
-	
-end
+	# initialize -
+	return_data_dictionary = Dict{String,DataFrame}()
 
-# ╔═╡ 349ee86b-8d6f-4e90-b877-54b94529ab87
-277.01*(exp(3.03113*(1/365)))
+	# compute -
+	for ticker_symbol in ticker_symbol_array
+		r = compute_return_array(price_data_dictionary[ticker_symbol], :timestamp => :adjusted_close; β = (1.0/1.0))
+		return_data_dictionary[ticker_symbol] = r
+	end
+end
 
 # ╔═╡ cbbd8670-49ab-4601-b8d7-9f3f456752e8
 begin
 
-	# number of bins -
-	number_of_bins = 20
+	ticker_symbol = "AAPL"
+	μ_avg = mean(return_data_dictionary[ticker_symbol][!,:μ])
+	σ_return = std(return_data_dictionary[ticker_symbol][!,:μ])
 	
-	#stephist(r_msft[!,:μ], bins=number_of_bins, normed=:true, lw=2, label="MSFT")
-	stephist(r_ally[!,:μ], bins=number_of_bins, normed=:true, lw=2, c=:red, label="ALLY")
-	stephist!(r_met[!,:μ], bins=number_of_bins, normed=:true, lw=2, c=:green, label="MET")
-	stephist!(r_gm[!,:μ], bins=number_of_bins, normed=:true, lw=2, c=:purple, label="GM")
-	xlabel!("Annualized Daily Return (dimensionless)", fontsize=18)
+	# number of bins -
+	number_of_bins = Int64(floor(0.1*length(return_data_dictionary[ticker_symbol][!,:μ])))
+
+	stephist(return_data_dictionary["ALLY"][!,:μ], bins=number_of_bins, normed=:true, lw=2, c=:red, label="ALLY")
+	stephist!(return_data_dictionary["MET"][!,:μ], bins=number_of_bins, normed=:true, lw=2, c=:darkgray, label="MET")
+	stephist!(return_data_dictionary["GM"][!,:μ], bins=number_of_bins, normed=:true, lw=2, c=:gray, label="GM")
+	stephist!(return_data_dictionary["MSFT"][!,:μ], bins=number_of_bins, normed=:true, lw=2, c=:green, label="MSFT")
+	stephist!(return_data_dictionary["AAPL"][!,:μ], bins=number_of_bins, normed=:true, lw=2, c=:black, label="AAPL")
+	
+	
+	xlabel!("Daily return μ (1/day)", fontsize=18)
 	ylabel!("Frequency (N=$(number_of_bins); dimensionless)", fontsize=14)
+	xlims!((-100.0*μ_avg,100.0*μ_avg))
 end
 
 # ╔═╡ e4619a42-4513-4141-be31-9c3539280151
 md"""
-##### Setup the Julia notebook environment
+###### Setup the Julia notebook environment
 """
 
 # ╔═╡ c8c3fe32-560d-11ec-0617-2dc33608384a
@@ -176,6 +189,7 @@ DataFrames = "a93c6f00-e57d-5684-b7b6-d8193f3e46c0"
 Dates = "ade2ca70-3891-5945-98fb-dc099432e06a"
 HTTP = "cd3eb016-35fb-5094-929b-558a96fad6f3"
 ProgressMeter = "92933f4c-e287-5a05-a399-4b506db050ca"
+Statistics = "10745b16-79ce-11e8-11f9-7d13ad32a3b2"
 StatsPlots = "f3b207a7-027a-5e70-b257-86293d7955fd"
 TOML = "fa267f1f-6049-4f14-aa54-33bafae1ed76"
 
@@ -1335,9 +1349,9 @@ version = "0.9.1+5"
 # ╠═3d0255e4-54f7-4cad-acc0-b56cd5012f4f
 # ╠═a6c4e663-f1e3-4e0c-a8bf-7c13fcb076f0
 # ╠═a59c6a99-1260-4bf1-a2af-5f360633fdae
+# ╟─d812551d-4b1c-49d8-ad8c-8a992a3d38b8
 # ╠═34b06415-21c1-4904-97f0-ab614447355c
-# ╠═349ee86b-8d6f-4e90-b877-54b94529ab87
-# ╠═cbbd8670-49ab-4601-b8d7-9f3f456752e8
+# ╟─cbbd8670-49ab-4601-b8d7-9f3f456752e8
 # ╟─e4619a42-4513-4141-be31-9c3539280151
 # ╠═f9e5092b-a158-48cb-a919-96f30ec51038
 # ╟─c8c3fe32-560d-11ec-0617-2dc33608384a

@@ -118,7 +118,7 @@ price_data_dictionary
 
 # ╔═╡ d812551d-4b1c-49d8-ad8c-8a992a3d38b8
 md"""
-##### Compute the return $\mu_{i}$ and standard deviation of the return $\sigma_{i}$ for ticker symbol $i$ from the end of date close price data
+##### Compute the return $\mu_{i}$ and standard deviation of the return $\sigma_{i}$ for ticker symbol $i$ from the end of date close price
 """
 
 # ╔═╡ 34b06415-21c1-4904-97f0-ab614447355c
@@ -1355,7 +1355,7 @@ version = "0.9.1+5"
 # ╠═3d0255e4-54f7-4cad-acc0-b56cd5012f4f
 # ╠═a6c4e663-f1e3-4e0c-a8bf-7c13fcb076f0
 # ╠═a59c6a99-1260-4bf1-a2af-5f360633fdae
-# ╟─d812551d-4b1c-49d8-ad8c-8a992a3d38b8
+# ╠═d812551d-4b1c-49d8-ad8c-8a992a3d38b8
 # ╠═34b06415-21c1-4904-97f0-ab614447355c
 # ╠═cbbd8670-49ab-4601-b8d7-9f3f456752e8
 # ╠═45750dea-2e8d-4bd5-816c-598f1b78e46b

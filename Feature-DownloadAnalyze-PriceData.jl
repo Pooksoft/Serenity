@@ -22,6 +22,7 @@ begin
 	using Dates
 	using StatsPlots
 	using Statistics
+	using Distributions
 	
 	# load my lib of code -
 	include(joinpath(_PATH_TO_SRC,"Include.jl"))
@@ -41,6 +42,15 @@ begin
 	# show -
 	nothing
 end
+
+# ╔═╡ 2bb52ee4-1c6f-46b6-b105-86827ada0f75
+md"""
+### Data-Driven Random Walk Simulations of Stock Price Dynamics
+
+##### Introduction
+##### Materials and Methods
+
+"""
 
 # ╔═╡ f66a480b-3f0c-4ebf-a8b8-e0f91dff851d
 md"""
@@ -188,6 +198,7 @@ PLUTO_PROJECT_TOML_CONTENTS = """
 CSV = "336ed68f-0bac-5ca0-87d4-7b16caf5d00b"
 DataFrames = "a93c6f00-e57d-5684-b7b6-d8193f3e46c0"
 Dates = "ade2ca70-3891-5945-98fb-dc099432e06a"
+Distributions = "31c24e10-a181-5473-b8eb-7969acd0382f"
 HTTP = "cd3eb016-35fb-5094-929b-558a96fad6f3"
 ProgressMeter = "92933f4c-e287-5a05-a399-4b506db050ca"
 Statistics = "10745b16-79ce-11e8-11f9-7d13ad32a3b2"
@@ -197,6 +208,7 @@ TOML = "fa267f1f-6049-4f14-aa54-33bafae1ed76"
 [compat]
 CSV = "~0.9.11"
 DataFrames = "~1.3.0"
+Distributions = "~0.25.34"
 HTTP = "~0.9.17"
 ProgressMeter = "~1.7.1"
 StatsPlots = "~0.14.29"
@@ -1346,6 +1358,7 @@ version = "0.9.1+5"
 """
 
 # ╔═╡ Cell order:
+# ╟─2bb52ee4-1c6f-46b6-b105-86827ada0f75
 # ╟─f66a480b-3f0c-4ebf-a8b8-e0f91dff851d
 # ╠═a815a181-530a-4ede-a5df-a56d9dc769d2
 # ╠═a6c4e663-f1e3-4e0c-a8bf-7c13fcb076f0

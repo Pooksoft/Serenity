@@ -1,8 +1,18 @@
 ### A Pluto.jl notebook ###
-# v0.17.2
+# v0.17.3
 
 using Markdown
 using InteractiveUtils
+
+# This Pluto notebook uses @bind for interactivity. When running this notebook outside of Pluto, the following 'mock version' of @bind gives bound variables a default value (instead of an error).
+macro bind(def, element)
+    quote
+        local iv = try Base.loaded_modules[Base.PkgId(Base.UUID("6e696c72-6542-2067-7265-42206c756150"), "AbstractPlutoDingetjes")].Bonds.initial_value catch; b -> missing; end
+        local el = $(esc(element))
+        global $(esc(def)) = Core.applicable(Base.get, el) ? Base.get(el) : iv(el)
+        el
+    end
+end
 
 # ╔═╡ f9e5092b-a158-48cb-a919-96f30ec51038
 begin
@@ -23,6 +33,7 @@ begin
 	using StatsPlots
 	using Statistics
 	using Distributions
+	using PlutoUI
 	
 	# load my lib of code -
 	include(joinpath(_PATH_TO_SRC,"Include.jl"))
@@ -45,7 +56,7 @@ end
 
 # ╔═╡ 2bb52ee4-1c6f-46b6-b105-86827ada0f75
 md"""
-### Data-Driven Random Walk Simulations of Stock Price Dynamics
+### Data-Driven Random Walk Simulations of Single and Multiple Asset Price Dynamics
 
 ##### Introduction
 ##### Materials and Methods
@@ -165,7 +176,115 @@ begin
 end
 
 # ╔═╡ 45750dea-2e8d-4bd5-816c-598f1b78e46b
+md"""
+#### Single Asset Random Walk Simulation
+"""
 
+# ╔═╡ a786ca10-06d2-4b76-97a9-2bcf879ea6cb
+# fit a Laplace distribution to a ticker -
+single_asset_ticker_symbol = "AAPL"
+
+# ╔═╡ 6bf06c12-cf25-43c4-81f3-b1d79d13fc94
+begin
+
+	# get the historical return data -
+	μ_vector = return_data_dictionary[single_asset_ticker_symbol][!,:μ]
+
+	# fit the model -
+	M = fit(Laplace,μ_vector)
+
+	# generate 10_000 samples
+	S = rand(M,10000)
+
+	# plot against actual -
+	stephist(return_data_dictionary[single_asset_ticker_symbol][!,:μ], bins=number_of_bins, normed=:true, lw=2, c=:black, 
+		label="$(single_asset_ticker_symbol)")
+
+	stephist!(S, bins=number_of_bins, normed=:true, lw=2, c=:red, 
+		label="$(single_asset_ticker_symbol) Model")
+
+	xlabel!("Daily return μ (1/day)", fontsize=18)
+	ylabel!("Frequency (N=$(number_of_bins); dimensionless)", fontsize=14)
+	xlims!((-100.0*μ_avg,100.0*μ_avg))
+end
+
+# ╔═╡ 54823f9e-be70-4d6e-a767-3ef717330203
+md"""
+###### Monte-carlo random walk price simulations for single asset
+"""
+
+# ╔═╡ 5a3500c2-4f82-43e9-a31b-d530f56fdbe9
+begin
+	# how many steps, sample paths etc -
+	number_of_steps = 21
+	number_of_sample_paths = 25000
+	skip_factor = convert(Int64,(floor(0.005*number_of_sample_paths)))
+	plot_index_array = 1:skip_factor:number_of_sample_paths |> collect
+
+	# what is the *actual* price data?
+	actual_price_data = price_data_dictionary[single_asset_ticker_symbol][end - number_of_steps:end, :adjusted_close]
+	
+	# get initial price -
+	initial_price_value = log(actual_price_data[1])
+
+	# compute a set of possible trajectories -> convert back to actual price -
+	simulated_price_trajectory = compute_random_walk_trajectory(M, initial_price_value, number_of_steps; 
+		number_of_sample_paths=number_of_sample_paths)  .|> exp
+
+	# show -
+	nothing
+end
+
+# ╔═╡ e36979d5-c1b6-4c17-a65a-d8de8e6bd8d0
+md"""
+Show actual price trajectory? $(@bind show_real_traj CheckBox()) 
+"""
+
+# ╔═╡ aeafe1ed-f217-48fd-9624-add5f6f791e6
+begin
+
+	# plot -
+	plot(simulated_price_trajectory[:,plot_index_array],c=:lightgray, legend=false)
+
+	if (show_real_traj == true)
+		plot!(actual_price_data[1:end-1],c=:red, lw=2)
+	end
+
+	xlabel!("Time step index (day)", fontsize=18)
+	ylabel!("$(single_asset_ticker_symbol) close price (USD/share)", fontsize=14)
+end
+
+# ╔═╡ 9feb542d-ace9-4154-b281-76033ba33d59
+begin
+	stephist(simulated_price_trajectory[end,:])
+	estimated_mean_price = round(mean(simulated_price_trajectory[end,:]), sigdigits=4)
+	std_estimated_price = round(std(simulated_price_trajectory[end,:]), sigdigits=4)
+	price_actual = actual_price_data[end-1]
+
+	with_terminal() do
+		println("---------------------------------------------------------------------")
+		println("Predicted: P_model = $(estimated_mean_price) ± $(std_estimated_price)")
+		println("Actual: P_actual = $(price_actual)")
+
+		# in the range?
+		LB = estimated_mean_price - std_estimated_price
+		UB = estimated_mean_price + std_estimated_price
+		is_in_range_flag = false
+		if (price_actual>= LB && price_actual <= UB)
+			is_in_range_flag = true
+		end		
+		println("In range (μ ± σ): $(is_in_range_flag)")
+
+		if (is_in_range_flag == true)
+			DL = round(price_actual - LB, sigdigits=4)
+			DU = round(UB - price_actual, sigdigits=4)
+			println("Distance from lower bound: $(DL)")
+			println("Distance from upper bound: $(DU)")
+		end
+		
+		println("---------------------------------------------------------------------")
+	end
+end
 
 # ╔═╡ e4619a42-4513-4141-be31-9c3539280151
 md"""
@@ -200,6 +319,7 @@ DataFrames = "a93c6f00-e57d-5684-b7b6-d8193f3e46c0"
 Dates = "ade2ca70-3891-5945-98fb-dc099432e06a"
 Distributions = "31c24e10-a181-5473-b8eb-7969acd0382f"
 HTTP = "cd3eb016-35fb-5094-929b-558a96fad6f3"
+PlutoUI = "7f904dfe-b85e-4ff6-b463-dae2292396a8"
 ProgressMeter = "92933f4c-e287-5a05-a399-4b506db050ca"
 Statistics = "10745b16-79ce-11e8-11f9-7d13ad32a3b2"
 StatsPlots = "f3b207a7-027a-5e70-b257-86293d7955fd"
@@ -210,6 +330,7 @@ CSV = "~0.9.11"
 DataFrames = "~1.3.0"
 Distributions = "~0.25.34"
 HTTP = "~0.9.17"
+PlutoUI = "~0.7.21"
 ProgressMeter = "~1.7.1"
 StatsPlots = "~0.14.29"
 """
@@ -226,6 +347,12 @@ deps = ["LinearAlgebra"]
 git-tree-sha1 = "485ee0867925449198280d4af84bdb46a2a404d0"
 uuid = "621f4979-c628-5d54-868e-fcf4e3e8185c"
 version = "1.0.1"
+
+[[deps.AbstractPlutoDingetjes]]
+deps = ["Pkg"]
+git-tree-sha1 = "abb72771fd8895a7ebd83d5632dc4b989b022b5b"
+uuid = "6e696c72-6542-2067-7265-42206c756150"
+version = "1.1.2"
 
 [[deps.Adapt]]
 deps = ["LinearAlgebra"]
@@ -549,6 +676,23 @@ deps = ["Artifacts", "Cairo_jll", "Fontconfig_jll", "FreeType2_jll", "Glib_jll",
 git-tree-sha1 = "129acf094d168394e80ee1dc4bc06ec835e510a3"
 uuid = "2e76f6c2-a576-52d4-95c1-20adfe4de566"
 version = "2.8.1+1"
+
+[[deps.Hyperscript]]
+deps = ["Test"]
+git-tree-sha1 = "8d511d5b81240fc8e6802386302675bdf47737b9"
+uuid = "47d2ed2b-36de-50cf-bf87-49c2cf4b8b91"
+version = "0.0.4"
+
+[[deps.HypertextLiteral]]
+git-tree-sha1 = "2b078b5a615c6c0396c77810d92ee8c6f470d238"
+uuid = "ac1192a8-f4b3-4bfe-ba22-af5b92cd3ab2"
+version = "0.9.3"
+
+[[deps.IOCapture]]
+deps = ["Logging", "Random"]
+git-tree-sha1 = "f7be53659ab06ddc986428d3a9dcc95f6fa6705a"
+uuid = "b5f81e59-6552-4d32-b1f0-c071b021bf89"
+version = "0.2.2"
 
 [[deps.IniFile]]
 deps = ["Test"]
@@ -891,6 +1035,12 @@ deps = ["Base64", "Contour", "Dates", "Downloads", "FFMPEG", "FixedPointNumbers"
 git-tree-sha1 = "8789439a899b77f4fbb4d7298500a6a5781205bc"
 uuid = "91a5bcdd-55d7-5caf-9e0b-520d859cae80"
 version = "1.25.0"
+
+[[deps.PlutoUI]]
+deps = ["AbstractPlutoDingetjes", "Base64", "Dates", "Hyperscript", "HypertextLiteral", "IOCapture", "InteractiveUtils", "JSON", "Logging", "Markdown", "Random", "Reexport", "UUIDs"]
+git-tree-sha1 = "b68904528fd538f1cb6a3fbc44d2abdc498f9e8e"
+uuid = "7f904dfe-b85e-4ff6-b463-dae2292396a8"
+version = "0.7.21"
 
 [[deps.PooledArrays]]
 deps = ["DataAPI", "Future"]
@@ -1361,12 +1511,19 @@ version = "0.9.1+5"
 # ╟─2bb52ee4-1c6f-46b6-b105-86827ada0f75
 # ╟─f66a480b-3f0c-4ebf-a8b8-e0f91dff851d
 # ╠═a815a181-530a-4ede-a5df-a56d9dc769d2
-# ╠═a6c4e663-f1e3-4e0c-a8bf-7c13fcb076f0
+# ╟─a6c4e663-f1e3-4e0c-a8bf-7c13fcb076f0
 # ╠═a59c6a99-1260-4bf1-a2af-5f360633fdae
 # ╟─d812551d-4b1c-49d8-ad8c-8a992a3d38b8
 # ╟─34b06415-21c1-4904-97f0-ab614447355c
 # ╠═cbbd8670-49ab-4601-b8d7-9f3f456752e8
-# ╠═45750dea-2e8d-4bd5-816c-598f1b78e46b
+# ╟─45750dea-2e8d-4bd5-816c-598f1b78e46b
+# ╠═a786ca10-06d2-4b76-97a9-2bcf879ea6cb
+# ╟─6bf06c12-cf25-43c4-81f3-b1d79d13fc94
+# ╟─54823f9e-be70-4d6e-a767-3ef717330203
+# ╠═5a3500c2-4f82-43e9-a31b-d530f56fdbe9
+# ╟─e36979d5-c1b6-4c17-a65a-d8de8e6bd8d0
+# ╟─aeafe1ed-f217-48fd-9624-add5f6f791e6
+# ╟─9feb542d-ace9-4154-b281-76033ba33d59
 # ╟─e4619a42-4513-4141-be31-9c3539280151
 # ╠═f9e5092b-a158-48cb-a919-96f30ec51038
 # ╟─c8c3fe32-560d-11ec-0617-2dc33608384a

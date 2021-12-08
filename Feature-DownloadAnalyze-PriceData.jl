@@ -74,7 +74,7 @@ The parameters for the [Alphavantage.co](https://www.alphavantage.co) API call a
 
 # ╔═╡ a815a181-530a-4ede-a5df-a56d9dc769d2
 # which tickers do we want to look at -
-ticker_symbol_array = ["MSFT", "ALLY", "MET", "AAPL", "GM"];
+ticker_symbol_array = ["MSFT", "ALLY", "MET", "AAPL", "GM", "PFE", "JNJ"];
 
 # ╔═╡ a6c4e663-f1e3-4e0c-a8bf-7c13fcb076f0
 begin
@@ -182,7 +182,7 @@ md"""
 
 # ╔═╡ a786ca10-06d2-4b76-97a9-2bcf879ea6cb
 # fit a Laplace distribution to a ticker -
-single_asset_ticker_symbol = "AAPL"
+single_asset_ticker_symbol = "PFE"
 
 # ╔═╡ 6bf06c12-cf25-43c4-81f3-b1d79d13fc94
 begin

@@ -47,3 +47,11 @@ function compute_random_walk_trajectory(model::Distribution, initial_price::Floa
     # return -
     return price_array
 end
+
+
+
+# short cut method RWMC method -
+(model::Distribution)(initial_price::Float64,number_of_steps::Int64; number_of_sample_paths = 1) = 
+    compute_random_walk_trajectory(model, initial_price, number_of_steps; 
+        number_of_sample_paths = number_of_sample_paths)
+

@@ -182,7 +182,7 @@ md"""
 
 # ╔═╡ a786ca10-06d2-4b76-97a9-2bcf879ea6cb
 # fit a Laplace distribution to a ticker -
-single_asset_ticker_symbol = "PFE"
+single_asset_ticker_symbol = "JNJ"
 
 # ╔═╡ 6bf06c12-cf25-43c4-81f3-b1d79d13fc94
 begin
@@ -191,10 +191,10 @@ begin
 	μ_vector = return_data_dictionary[single_asset_ticker_symbol][!,:μ]
 
 	# fit the model -
-	M = fit(Laplace,μ_vector)
+	MODEL = fit(Laplace,μ_vector)
 
 	# generate 10_000 samples
-	S = rand(M,10000)
+	S = rand(MODEL,10000)
 
 	# plot against actual -
 	stephist(return_data_dictionary[single_asset_ticker_symbol][!,:μ], bins=number_of_bins, normed=:true, lw=2, c=:black, 
@@ -228,7 +228,7 @@ begin
 	initial_price_value = log(actual_price_data[1])
 
 	# compute a set of possible trajectories -> convert back to actual price -
-	simulated_price_trajectory = compute_random_walk_trajectory(M, initial_price_value, number_of_steps; 
+	simulated_price_trajectory = MODEL(initial_price_value, number_of_steps; 
 		number_of_sample_paths=number_of_sample_paths)  .|> exp
 
 	# show -
@@ -1520,7 +1520,7 @@ version = "0.9.1+5"
 # ╠═a786ca10-06d2-4b76-97a9-2bcf879ea6cb
 # ╟─6bf06c12-cf25-43c4-81f3-b1d79d13fc94
 # ╟─54823f9e-be70-4d6e-a767-3ef717330203
-# ╠═5a3500c2-4f82-43e9-a31b-d530f56fdbe9
+# ╟─5a3500c2-4f82-43e9-a31b-d530f56fdbe9
 # ╟─e36979d5-c1b6-4c17-a65a-d8de8e6bd8d0
 # ╟─aeafe1ed-f217-48fd-9624-add5f6f791e6
 # ╟─9feb542d-ace9-4154-b281-76033ba33d59

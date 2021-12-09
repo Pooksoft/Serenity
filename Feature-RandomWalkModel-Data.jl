@@ -182,7 +182,7 @@ md"""
 
 # ╔═╡ a786ca10-06d2-4b76-97a9-2bcf879ea6cb
 # fit a Laplace distribution to a ticker -
-single_asset_ticker_symbol = "JNJ"
+single_asset_ticker_symbol = "GM"
 
 # ╔═╡ 6bf06c12-cf25-43c4-81f3-b1d79d13fc94
 begin
@@ -244,14 +244,15 @@ Show actual price trajectory? $(@bind show_real_traj CheckBox())
 begin
 
 	# plot -
-	plot(simulated_price_trajectory[:,plot_index_array],c=:lightgray, legend=false)
+	plot(simulated_price_trajectory[:,plot_index_array],c=:lightgray, legend=false, label="")
 
 	if (show_real_traj == true)
-		plot!(actual_price_data[1:end-1],c=:red, lw=2)
+		plot!(actual_price_data[1:end-1],c=:red, lw=3, legend = :topleft, label="$(single_asset_ticker_symbol) actual")
 	end
 
 	xlabel!("Time step index (day)", fontsize=18)
-	ylabel!("$(single_asset_ticker_symbol) close price (USD/share)", fontsize=14)
+	ylabel!("Simulated $(single_asset_ticker_symbol) close price (USD/share)", fontsize=14)
+	title!("Random walk simulation $(single_asset_ticker_symbol) (N = $(number_of_sample_paths))", fontsize=18)
 end
 
 # ╔═╡ 9feb542d-ace9-4154-b281-76033ba33d59
@@ -1544,7 +1545,7 @@ version = "0.9.1+5"
 # ╟─54823f9e-be70-4d6e-a767-3ef717330203
 # ╠═5a3500c2-4f82-43e9-a31b-d530f56fdbe9
 # ╟─e36979d5-c1b6-4c17-a65a-d8de8e6bd8d0
-# ╟─aeafe1ed-f217-48fd-9624-add5f6f791e6
+# ╠═aeafe1ed-f217-48fd-9624-add5f6f791e6
 # ╟─9feb542d-ace9-4154-b281-76033ba33d59
 # ╟─36372d31-215d-4299-b4f1-49e42d8b0dbd
 # ╟─e4619a42-4513-4141-be31-9c3539280151

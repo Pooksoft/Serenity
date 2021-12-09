@@ -48,14 +48,54 @@ function compute_random_walk_model_trajectory(model::Distribution, initial_price
     return price_array
 end
 
+function compute_rwm_cumulative_probabilty(compare::Function, price_array::Array{Float64,1})
+
+    # initialize -
+    number_of_samples = length(price_array)
+    tmp_array = BitArray(undef, (number_of_samples, 1))
+
+    # main -
+    for sample_index = 1:number_of_samples
+
+        # get the sample price -
+        sample_price = price_array[sample_index]
+
+        # check: which is larger, sample or target price?
+        compare(sample_price) ? tmp_array[sample_index] = 1 : tmp_array[sample_index] = 0
+    end
+
+    # sum the tmp_array -
+    number_of_larger_values = sum(tmp_array)
+
+    # compute the probability -
+    return (number_of_larger_values / number_of_samples)
+end
+
 function compute_rwm_cumulative_probabilty(price_array::Array{Float64,1}, target_price::Float64)
 
+    # initialize -
+    number_of_samples = length(price_array)
+    tmp_array = Array{Int64,1}()
 
+    # main -
+    for sample_index = 1:number_of_samples
 
-end 
+        # get the sample price -
+        sample_price = price_array[sample_index]
+
+        # check: which is larger, sample or target price?
+        sample_price <= target_price ? push!(tmp_array, 1) : push!(tmp_array, 0)
+    end
+
+    # sum the tmp_array -
+    number_of_larger_values = sum(tmp_array)
+
+    # compute the probability -
+    return (number_of_larger_values / number_of_samples)
+end
 
 # short cut method RWMC method -
-(model::Distribution)(initial_price::Float64,number_of_steps::Int64; number_of_sample_paths = 1) = 
-    compute_random_walk_model_trajectory(model, initial_price, number_of_steps; 
+(model::Distribution)(initial_price::Float64, number_of_steps::Int64; number_of_sample_paths = 1) =
+    compute_random_walk_model_trajectory(model, initial_price, number_of_steps;
         number_of_sample_paths = number_of_sample_paths)
 

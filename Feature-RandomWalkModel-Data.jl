@@ -56,7 +56,7 @@ end
 
 # ╔═╡ 2bb52ee4-1c6f-46b6-b105-86827ada0f75
 md"""
-### Data-Driven Random Walk Simulations of Single and Multiple Asset Price Dynamics
+### Random Walk Simulations of Single and Multiple Asset Price Dynamics
 
 ##### Introduction
 ##### Materials and Methods
@@ -284,6 +284,28 @@ begin
 		
 		println("---------------------------------------------------------------------")
 	end
+end
+
+# ╔═╡ 36372d31-215d-4299-b4f1-49e42d8b0dbd
+begin
+
+	# compute the cumulative probability in the range [0,μ + 3*σ]
+	LB = estimated_mean_price - 3*std_estimated_price
+	UB = estimated_mean_price + 3*std_estimated_price
+	price_range = range(LB,stop=UB, length=1000) |> collect
+	cprob = Array{Float64,1}()
+
+	for price in price_range
+		p = compute_rwm_cumulative_probabilty(x->(x<=price), simulated_price_trajectory[end,:])
+		push!(cprob,p)
+	end
+
+	# plot -
+	#plot(price_range, cprob, legend=:right, label="P(X≤x)", lw=2)
+	plot(price_range, 1 .- cprob, legend=:right, label="P(X≥x)", lw=2, c=:red)
+	xlabel!("$(single_asset_ticker_symbol) close daily price (USD/share)", fontsize=18)
+	ylabel!("1 - cumulative probability P(X≤x)")
+	title!("$(single_asset_ticker_symbol) (T = $(number_of_steps) days)", fontsize=18)
 end
 
 # ╔═╡ e4619a42-4513-4141-be31-9c3539280151
@@ -1520,10 +1542,11 @@ version = "0.9.1+5"
 # ╠═a786ca10-06d2-4b76-97a9-2bcf879ea6cb
 # ╟─6bf06c12-cf25-43c4-81f3-b1d79d13fc94
 # ╟─54823f9e-be70-4d6e-a767-3ef717330203
-# ╟─5a3500c2-4f82-43e9-a31b-d530f56fdbe9
+# ╠═5a3500c2-4f82-43e9-a31b-d530f56fdbe9
 # ╟─e36979d5-c1b6-4c17-a65a-d8de8e6bd8d0
 # ╟─aeafe1ed-f217-48fd-9624-add5f6f791e6
 # ╟─9feb542d-ace9-4154-b281-76033ba33d59
+# ╟─36372d31-215d-4299-b4f1-49e42d8b0dbd
 # ╟─e4619a42-4513-4141-be31-9c3539280151
 # ╠═f9e5092b-a158-48cb-a919-96f30ec51038
 # ╟─c8c3fe32-560d-11ec-0617-2dc33608384a

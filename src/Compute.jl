@@ -25,7 +25,7 @@ function compute_return_array(data_table::DataFrame, key::Pair{Symbol,Symbol}; Î
     return return_table
 end
 
-function compute_random_walk_trajectory(model::Distribution, initial_price::Float64,
+function compute_random_walk_model_trajectory(model::Distribution, initial_price::Float64,
     number_of_steps::Int64; number_of_sample_paths = 1)
 
     # initialize -
@@ -48,10 +48,14 @@ function compute_random_walk_trajectory(model::Distribution, initial_price::Floa
     return price_array
 end
 
+function compute_rwm_cumulative_probabilty(price_array::Array{Float64,1}, target_price::Float64)
 
+
+
+end 
 
 # short cut method RWMC method -
 (model::Distribution)(initial_price::Float64,number_of_steps::Int64; number_of_sample_paths = 1) = 
-    compute_random_walk_trajectory(model, initial_price, number_of_steps; 
+    compute_random_walk_model_trajectory(model, initial_price, number_of_steps; 
         number_of_sample_paths = number_of_sample_paths)
 

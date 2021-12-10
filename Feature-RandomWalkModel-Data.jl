@@ -63,7 +63,7 @@ end
 
 # ╔═╡ 2bb52ee4-1c6f-46b6-b105-86827ada0f75
 md"""
-## Random Walk Simulations to Estimate the Price of a Single Risky Asset
+# Random Walk Simulations of the Price of a Risky Asset
 """
 
 # ╔═╡ 2f499c95-38cf-4856-b199-6c9aac44237a
@@ -76,7 +76,7 @@ md"""
 ### Materials and Methods
 
 ###### What is a Random Walk Model (RWM)?
-A simple model for computing the time evolution of the price of a risky asset, for example, the price of a stock with the ticker symbol `XYZ`, is to use a [random walk model](https://en.wikipedia.org/wiki/Random_walk). Let the price of `XYZ` at time $j$ be given by $P_{j}$ (units: USD/share). Then we know during the next time period (index $j+1$) the `XYZ` share price will be given by:
+A [random walk model](https://en.wikipedia.org/wiki/Random_walk) is a tool for computing the time evolution of the price of a risky asset, for example, the price of a stock with the ticker symbol `XYZ`. Let the price of `XYZ` at time $j$ be given by $P_{j}$ (units: USD/share). Then we know during the next time period (index $j+1$) the `XYZ` share price will be given by:
 
 $$P_{j+1} = P_{j}\exp\left(\mu_{j\rightarrow{j+1}}\Delta{t}\right)$$
 

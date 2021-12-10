@@ -34,6 +34,9 @@ begin
 	using Statistics
 	using Distributions
 	using PlutoUI
+	using PlotThemes
+
+	theme(:default)
 	
 	# load my lib of code -
 	include(joinpath(_PATH_TO_SRC,"Include.jl"))
@@ -56,7 +59,7 @@ end
 
 # ╔═╡ 2bb52ee4-1c6f-46b6-b105-86827ada0f75
 md"""
-### Random Walk Simulations of Single and Multiple Asset Price Dynamics
+## Random Walk Simulations for the Close Price of a Single Risky Asset
 
 ##### Introduction
 ##### Materials and Methods
@@ -65,7 +68,7 @@ md"""
 
 # ╔═╡ f66a480b-3f0c-4ebf-a8b8-e0f91dff851d
 md"""
-##### Let's download price data from [Alphavantage.co](https://www.alphavantage.co)
+##### Download historical price data from the [Alphavantage.co](https://www.alphavantage.co) financial data application programming interface
 We specify a list of ticker symbols that we want to model. Next, we check to see if we have price data already saved locally in the `data` subdirectory for each ticker. 
 * If yes, then we load the saved file as a [DataFrame](https://dataframes.juliadata.org/stable/) and store it in the `price_data_dictionary` where the keys are the ticker strings e.g., MSFT, etc. 
 * if no, we download new data from [Alphavantage.co](https://www.alphavantage.co), save this data locally as a `CSV` file (<ticker>.csv), and finally we store the price data as a DataFrame in the `price_data_dictionary` where the keys are the ticker symbols.
@@ -74,7 +77,7 @@ The parameters for the [Alphavantage.co](https://www.alphavantage.co) API call a
 
 # ╔═╡ a815a181-530a-4ede-a5df-a56d9dc769d2
 # which tickers do we want to look at -
-ticker_symbol_array = ["MSFT", "ALLY", "MET", "AAPL", "GM", "PFE", "JNJ"];
+ticker_symbol_array = sort(["MSFT", "ALLY", "MET", "AAPL", "GM", "PFE", "JNJ", "ACI", "TGT"]);
 
 # ╔═╡ a6c4e663-f1e3-4e0c-a8bf-7c13fcb076f0
 begin
@@ -92,22 +95,32 @@ begin
 
 	# data type: sub dir where we save the data
 	data_type_flag = "daily"
+	training_prediction_flag = "training"
 	
 	# main download loop -
 	for ticker_symbol in ticker_symbol_array
 		
 		# check -> have we downloaded this data already?
-		data_file_path = joinpath(_PATH_TO_DATA, "$(data_type_flag)", "$(ticker_symbol).csv")
-		if (does_data_file_exist(data_file_path) == false)
-		
+		data_file_path = joinpath(_PATH_TO_DATA, "$(training_prediction_flag)", "$(data_type_flag)", 
+			"$(ticker_symbol).csv")
+		if (ispath(data_file_path) == false || does_data_file_exist(data_file_path) == false)
+
+			# let use know what is going on ...
+			with_terminal() do
+				println("Starting $(ticker_symbol) download ...")
+			end
+			
 			# We do NOT have this data file -> download from Alphavantage.co
 			# execute API call -> check to see if error -> turn into DataFrame
 			query_parameters["symbol"] = ticker_symbol
 			url_string = build_url_query_string(DATASTORE_URL_STRING, query_parameters)
 			data_table = http_get_call_with_url(url_string) |> check |> process_csv_api_data
 
+			# sleep -
+			sleep(30); # to avoid issue w/API limits
+
 			# make the dir to save the data (if we don't have it already) -
-			mkpath(joinpath(_PATH_TO_DATA,"$(data_type_flag)"))
+			mkpath(joinpath(_PATH_TO_DATA, "$(training_prediction_flag)", "$(data_type_flag)"))
 
 			# dump data table to disk -
 			CSV.write(data_file_path, data_table)
@@ -162,12 +175,23 @@ begin
 	# number of bins - 10% of the length of a test ticker
 	number_of_bins = convert(Int64,(floor(0.1*length(return_data_dictionary[ticker_symbol][!,:μ]))))
 
-	# make the plots the ticker symbols -
-	stephist(return_data_dictionary["ALLY"][!,:μ], bins=number_of_bins, normed=:true, lw=2, c=:red, label="ALLY")
-	stephist!(return_data_dictionary["MET"][!,:μ], bins=number_of_bins, normed=:true, lw=2, c=:darkgray, label="MET")
-	stephist!(return_data_dictionary["GM"][!,:μ], bins=number_of_bins, normed=:true, lw=2, c=:gray, label="GM")
-	stephist!(return_data_dictionary["MSFT"][!,:μ], bins=number_of_bins, normed=:true, lw=2, c=:green, label="MSFT")
-	stephist!(return_data_dictionary["AAPL"][!,:μ], bins=number_of_bins, normed=:true, lw=2, c=:black, label="AAPL")
+	# number of tickers -
+	number_of_ticker_symbols = length(ticker_symbol_array)
+	for ticker_index = 1:number_of_ticker_symbols
+		local_ticker_symbol = ticker_symbol_array[ticker_index]
+		
+		if (ticker_index == 1)
+			
+			# make the first plot -
+			stephist(return_data_dictionary[local_ticker_symbol][!,:μ], bins=number_of_bins, normed=:true, 
+				background_color = RGB(0.99, 0.98, 0.96), background_color_outside = RGB(1.0, 1.0, 1.0),
+				foreground_color_minor_grid = RGB(1.0,1.0,1.0),
+				lw=4, c=:red, label="$(local_ticker_symbol)", foreground_color_legend = nothing)
+		else
+			stephist!(return_data_dictionary[local_ticker_symbol][!,:μ], bins=number_of_bins, normed=:true, lw=1, 
+				c=RGB(0.45,0.45,0.45), label="$(local_ticker_symbol)")
+		end
+	end
 	
 	# label the plots -
 	xlabel!("Daily return μ (1/day)", fontsize=18)
@@ -175,14 +199,9 @@ begin
 	xlims!((-100.0*μ_avg,100.0*μ_avg))
 end
 
-# ╔═╡ 45750dea-2e8d-4bd5-816c-598f1b78e46b
-md"""
-#### Single Asset Random Walk Simulation
-"""
-
 # ╔═╡ a786ca10-06d2-4b76-97a9-2bcf879ea6cb
 # fit a Laplace distribution to a ticker -
-single_asset_ticker_symbol = "GM"
+single_asset_ticker_symbol = "PFE"
 
 # ╔═╡ 6bf06c12-cf25-43c4-81f3-b1d79d13fc94
 begin
@@ -244,10 +263,10 @@ Show actual price trajectory? $(@bind show_real_traj CheckBox())
 begin
 
 	# plot -
-	plot(simulated_price_trajectory[:,plot_index_array],c=:lightgray, legend=false, label="")
+	plot(simulated_price_trajectory[:,plot_index_array],c=RGB(0.64,0.64,0.64), legend=false, label="", lw=1)
 
 	if (show_real_traj == true)
-		plot!(actual_price_data[1:end-1],c=:red, lw=3, legend = :topleft, label="$(single_asset_ticker_symbol) actual")
+		plot!(actual_price_data[1:end],c=:red, lw=3, legend = :topleft, label="$(single_asset_ticker_symbol) actual")
 	end
 
 	xlabel!("Time step index (day)", fontsize=18)
@@ -260,7 +279,7 @@ begin
 	stephist(simulated_price_trajectory[end,:])
 	estimated_mean_price = round(mean(simulated_price_trajectory[end,:]), sigdigits=4)
 	std_estimated_price = round(std(simulated_price_trajectory[end,:]), sigdigits=4)
-	price_actual = actual_price_data[end-1]
+	price_actual = actual_price_data[end]
 
 	with_terminal() do
 		println("---------------------------------------------------------------------")
@@ -342,6 +361,7 @@ DataFrames = "a93c6f00-e57d-5684-b7b6-d8193f3e46c0"
 Dates = "ade2ca70-3891-5945-98fb-dc099432e06a"
 Distributions = "31c24e10-a181-5473-b8eb-7969acd0382f"
 HTTP = "cd3eb016-35fb-5094-929b-558a96fad6f3"
+PlotThemes = "ccf2f8ad-2431-5c83-bf29-c5338b663b6a"
 PlutoUI = "7f904dfe-b85e-4ff6-b463-dae2292396a8"
 ProgressMeter = "92933f4c-e287-5a05-a399-4b506db050ca"
 Statistics = "10745b16-79ce-11e8-11f9-7d13ad32a3b2"
@@ -353,6 +373,7 @@ CSV = "~0.9.11"
 DataFrames = "~1.3.0"
 Distributions = "~0.25.34"
 HTTP = "~0.9.17"
+PlotThemes = "~2.0.1"
 PlutoUI = "~0.7.21"
 ProgressMeter = "~1.7.1"
 StatsPlots = "~0.14.29"
@@ -1539,14 +1560,13 @@ version = "0.9.1+5"
 # ╟─d812551d-4b1c-49d8-ad8c-8a992a3d38b8
 # ╟─34b06415-21c1-4904-97f0-ab614447355c
 # ╠═cbbd8670-49ab-4601-b8d7-9f3f456752e8
-# ╟─45750dea-2e8d-4bd5-816c-598f1b78e46b
 # ╠═a786ca10-06d2-4b76-97a9-2bcf879ea6cb
 # ╟─6bf06c12-cf25-43c4-81f3-b1d79d13fc94
 # ╟─54823f9e-be70-4d6e-a767-3ef717330203
 # ╠═5a3500c2-4f82-43e9-a31b-d530f56fdbe9
 # ╟─e36979d5-c1b6-4c17-a65a-d8de8e6bd8d0
 # ╠═aeafe1ed-f217-48fd-9624-add5f6f791e6
-# ╟─9feb542d-ace9-4154-b281-76033ba33d59
+# ╠═9feb542d-ace9-4154-b281-76033ba33d59
 # ╟─36372d31-215d-4299-b4f1-49e42d8b0dbd
 # ╟─e4619a42-4513-4141-be31-9c3539280151
 # ╠═f9e5092b-a158-48cb-a919-96f30ec51038

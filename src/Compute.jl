@@ -29,6 +29,7 @@ function compute_random_walk_model_trajectory(model::Distribution, initial_price
     number_of_steps::Int64; number_of_sample_paths = 1)
 
     # initialize -
+    number_of_steps = number_of_steps + 1
     price_array = Array{Float64,2}(undef, number_of_steps, number_of_sample_paths)
 
     # insert the first value -

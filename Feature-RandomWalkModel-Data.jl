@@ -52,6 +52,10 @@ begin
 	
 	# get some stuff from the configuration dictionary -
 	ALPHAVANTAGE_API_KEY = configuration_dictionary["API"]["alphavantage_api_key"]
+
+	# background color plots -
+	background_color_outside = RGB(1.0, 1.0, 1.0)
+	background_color = RGB(0.99, 0.98, 0.96)
 	
 	# show -
 	nothing
@@ -60,27 +64,90 @@ end
 # ╔═╡ 2bb52ee4-1c6f-46b6-b105-86827ada0f75
 md"""
 ## Random Walk Simulations for the Close Price of a Single Risky Asset
+"""
 
-##### Introduction
-##### Materials and Methods
+# ╔═╡ 2f499c95-38cf-4856-b199-6c9aac44237a
+md"""
+### Introduction
+"""
 
+# ╔═╡ 34bf07e8-5c47-4aa8-aa2c-161709c158be
+md"""
+### Materials and Methods
+
+###### What is a Random Walk Model (RWM)?
+A simple model for computing the time evolution of the price of a risky asset, for example, the price of a stock with the ticker symbol `XYZ`, is to use a [random walk model](https://en.wikipedia.org/wiki/Random_walk). Let the price of `XYZ` at time $j$ be given by $P_{j}$ (units: USD/share). Then we know during the next time period (index $j+1$) the `XYZ` share price will be given by:
+
+$$P_{j+1} = P_{j}\exp\left(\mu_{j\rightarrow{j+1}}\Delta{t}\right)$$
+
+where $\Delta{t}$ denotes the length of time between periods $j$ and $j+1$ (units: time) and $\mu_{j\rightarrow{j+1}}$ denotes the growth rate (in the financial world called the [return](https://www.investopedia.com/terms/a/absolutereturn.asp)) between time period(s) $j$ and $j+1$ (units: time$^{-1}$). The growth rate $\mu_{j\rightarrow{j+1}}$ changes with ticker i.e., is different for different tickers, and also changes with time in an unpredictable way, i.e., it is not constant between time period $j\rightarrow{j+1}$. Dividing both sides by $P_{j}$ and taking the [natural log](https://en.wikipedia.org/wiki/Natural_logarithm) gives the expression:
+
+$$p_{j+1} = p_{j} + \mu_{j\rightarrow{j+1}}\Delta{t}$$
+
+where $p_{\star}$ denotes the log of the price at time $\star$ (units: dimensionless). This expression is a basic [random walk model](https://en.wikipedia.org/wiki/Random_walk). The challenge to using this model is how to estimate the growth rate 
+$\mu_{j\rightarrow{j+1}}$ because the values for $\mu_{j\rightarrow{j+1}}$ are [time-dependent random variables](https://en.wikipedia.org/wiki/Stochastic_process) which are [distributed](https://en.wikipedia.org/wiki/Probability_distribution) in some unknown way. However, if we had a value for $\mu_{j\rightarrow{j+1}}$ (or at least a model to estimate a value for it, denoted as $\hat{\mu}_{j\rightarrow{j+1}}$), we could 
+simulate the price of `XYZ` during the next time period $j+1$ given knowledge of the price now (time period $j$). For example, given a value for the close price of `XYZ` on Monday, we could estimate a value for the close price of `XYZ` on Tuesday if we simulated daily price changes.
+
+###### Estimating models for the growth rate $\mu$ from historical data
+Suppose values for the growth rate $\mu_{j\rightarrow{j+1}}$ were governed by some [probability distribution](https://en.wikipedia.org/wiki/Probability_distribution) $\mathcal{D}\left(\bar{m},\sigma\right)$ where $\bar{m}$ 
+denotes the [mean value](https://en.wikipedia.org/wiki/Mean) and $\sigma$ denotes the [standard deviation](https://en.wikipedia.org/wiki/Standard_deviation). Of course, we do not know the actual values for 
+$\left(\bar{m},\sigma\right)$, but we can estimate them from historial price data.
+
+
+"""
+
+# ╔═╡ 623701bf-9a1e-412a-8081-9a4f2544af9b
+
+
+# ╔═╡ 9943d000-83d0-413d-a231-0295fb19df71
+md"""
+### Results and Discussion
 """
 
 # ╔═╡ f66a480b-3f0c-4ebf-a8b8-e0f91dff851d
 md"""
-##### Download historical price data from the [Alphavantage.co](https://www.alphavantage.co) financial data application programming interface
+###### Download historical price data from the [Alphavantage.co](https://www.alphavantage.co) financial data application programming interface (API)
 We specify a list of ticker symbols that we want to model. Next, we check to see if we have price data already saved locally in the `data` subdirectory for each ticker. 
 * If yes, then we load the saved file as a [DataFrame](https://dataframes.juliadata.org/stable/) and store it in the `price_data_dictionary` where the keys are the ticker strings e.g., MSFT, etc. 
 * if no, we download new data from [Alphavantage.co](https://www.alphavantage.co), save this data locally as a `CSV` file (<ticker>.csv), and finally we store the price data as a DataFrame in the `price_data_dictionary` where the keys are the ticker symbols.
 The parameters for the [Alphavantage.co](https://www.alphavantage.co) API call are stored in the `query_parameters` dictionary. For estimating a SIM, we use the daily close price for the last 100 trading days for each ticker. 
 """
 
-# ╔═╡ a815a181-530a-4ede-a5df-a56d9dc769d2
-# which tickers do we want to look at -
-ticker_symbol_array = sort(["MSFT", "ALLY", "MET", "AAPL", "GM", "PFE", "JNJ", "ACI", "TGT"]);
+# ╔═╡ d812551d-4b1c-49d8-ad8c-8a992a3d38b8
+md"""
+###### Compute the return $\mu_{i}$ for ticker symbol $i$ from the daily close price
+"""
+
+# ╔═╡ a786ca10-06d2-4b76-97a9-2bcf879ea6cb
+# fit a Laplace distribution to a ticker -
+single_asset_ticker_symbol = "JNJ";
+
+# ╔═╡ 54823f9e-be70-4d6e-a767-3ef717330203
+md"""
+###### Monte-carlo random walk price simulations for single asset
+"""
+
+# ╔═╡ e36979d5-c1b6-4c17-a65a-d8de8e6bd8d0
+md"""
+Show actual price trajectory? $(@bind show_real_traj CheckBox()) 
+"""
+
+# ╔═╡ c32725a4-e276-4372-8d06-d40ba52c9f09
+md"""
+### Conclusions
+"""
+
+# ╔═╡ f1a71f47-fb19-4988-a439-2ff8d38be5b7
+
+
+# ╔═╡ 6e23a712-048f-4c9b-bef4-997155f1df41
+
+
+# ╔═╡ 0cefc746-94a0-4d96-98c7-5f6f770d69b0
+
 
 # ╔═╡ a6c4e663-f1e3-4e0c-a8bf-7c13fcb076f0
-begin
+function download_ticker_data(ticker_symbol_array::Array{String,1})::Dict{String,DataFrame}
 
 	# initialize some storage -
 	price_data_dictionary = Dict{String,DataFrame}() # Dict key => value where key = ticker symbol and value = price DataFrame
@@ -139,16 +206,20 @@ begin
 	end
 
 	# show -
-	nothing 
+	return price_data_dictionary 
 end
 
-# ╔═╡ a59c6a99-1260-4bf1-a2af-5f360633fdae
-price_data_dictionary
+# ╔═╡ a815a181-530a-4ede-a5df-a56d9dc769d2
+begin
+	# which tickers do we want to look at -
+	ticker_symbol_array = sort(["MSFT", "ALLY", "MET", "AAPL", "GM", "PFE", "JNJ", "ACI", "TGT"]);
 
-# ╔═╡ d812551d-4b1c-49d8-ad8c-8a992a3d38b8
-md"""
-##### Compute the return $\mu_{i}$ and standard deviation of the return $\sigma_{i}$ for ticker symbol $i$ from the end of date close price
-"""
+	# download the data (or load from local cache)
+	price_data_dictionary = download_ticker_data(ticker_symbol_array);
+	
+	# show -
+	nothing
+end
 
 # ╔═╡ 34b06415-21c1-4904-97f0-ab614447355c
 begin
@@ -184,7 +255,7 @@ begin
 			
 			# make the first plot -
 			stephist(return_data_dictionary[local_ticker_symbol][!,:μ], bins=number_of_bins, normed=:true, 
-				background_color = RGB(0.99, 0.98, 0.96), background_color_outside = RGB(1.0, 1.0, 1.0),
+				background_color = background_color, background_color_outside = background_color_outside,
 				foreground_color_minor_grid = RGB(1.0,1.0,1.0),
 				lw=4, c=:red, label="$(local_ticker_symbol)", foreground_color_legend = nothing)
 		else
@@ -198,10 +269,6 @@ begin
 	ylabel!("Frequency (N=$(number_of_bins); dimensionless)", fontsize=14)
 	xlims!((-100.0*μ_avg,100.0*μ_avg))
 end
-
-# ╔═╡ a786ca10-06d2-4b76-97a9-2bcf879ea6cb
-# fit a Laplace distribution to a ticker -
-single_asset_ticker_symbol = "PFE"
 
 # ╔═╡ 6bf06c12-cf25-43c4-81f3-b1d79d13fc94
 begin
@@ -217,7 +284,7 @@ begin
 
 	# plot against actual -
 	stephist(return_data_dictionary[single_asset_ticker_symbol][!,:μ], bins=number_of_bins, normed=:true, lw=2, c=:black, 
-		label="$(single_asset_ticker_symbol)")
+		label="$(single_asset_ticker_symbol)", background_color = background_color, background_color_outside = background_color_outside)
 
 	stephist!(S, bins=number_of_bins, normed=:true, lw=2, c=:red, 
 		label="$(single_asset_ticker_symbol) Model")
@@ -227,43 +294,34 @@ begin
 	xlims!((-100.0*μ_avg,100.0*μ_avg))
 end
 
-# ╔═╡ 54823f9e-be70-4d6e-a767-3ef717330203
-md"""
-###### Monte-carlo random walk price simulations for single asset
-"""
-
 # ╔═╡ 5a3500c2-4f82-43e9-a31b-d530f56fdbe9
 begin
 	# how many steps, sample paths etc -
-	number_of_steps = 21
+	number_of_days = 21
 	number_of_sample_paths = 25000
 	skip_factor = convert(Int64,(floor(0.005*number_of_sample_paths)))
 	plot_index_array = 1:skip_factor:number_of_sample_paths |> collect
 
 	# what is the *actual* price data?
-	actual_price_data = price_data_dictionary[single_asset_ticker_symbol][end - number_of_steps:end, :adjusted_close]
+	actual_price_data = price_data_dictionary[single_asset_ticker_symbol][end - number_of_days:end, :adjusted_close]
 	
 	# get initial price -
 	initial_price_value = log(actual_price_data[1])
 
 	# compute a set of possible trajectories -> convert back to actual price -
-	simulated_price_trajectory = MODEL(initial_price_value, number_of_steps; 
+	simulated_price_trajectory = MODEL(initial_price_value, number_of_days; 
 		number_of_sample_paths=number_of_sample_paths)  .|> exp
 
 	# show -
 	nothing
 end
 
-# ╔═╡ e36979d5-c1b6-4c17-a65a-d8de8e6bd8d0
-md"""
-Show actual price trajectory? $(@bind show_real_traj CheckBox()) 
-"""
-
 # ╔═╡ aeafe1ed-f217-48fd-9624-add5f6f791e6
 begin
 
 	# plot -
-	plot(simulated_price_trajectory[:,plot_index_array],c=RGB(0.64,0.64,0.64), legend=false, label="", lw=1)
+	plot(simulated_price_trajectory[:,plot_index_array],c=RGB(0.64,0.64,0.64), legend=false, label="", lw=1, 
+		background_color = background_color, background_color_outside = background_color_outside)
 
 	if (show_real_traj == true)
 		plot!(actual_price_data[1:end],c=:red, lw=3, legend = :topleft, label="$(single_asset_ticker_symbol) actual")
@@ -271,7 +329,7 @@ begin
 
 	xlabel!("Time step index (day)", fontsize=18)
 	ylabel!("Simulated $(single_asset_ticker_symbol) close price (USD/share)", fontsize=14)
-	title!("Random walk simulation $(single_asset_ticker_symbol) (N = $(number_of_sample_paths))", fontsize=18)
+	title!("Random walk simulation $(single_asset_ticker_symbol) (N = $(number_of_sample_paths))", fontsize=12)
 end
 
 # ╔═╡ 9feb542d-ace9-4154-b281-76033ba33d59
@@ -322,16 +380,12 @@ begin
 
 	# plot -
 	#plot(price_range, cprob, legend=:right, label="P(X≤x)", lw=2)
-	plot(price_range, 1 .- cprob, legend=:right, label="P(X≥x)", lw=2, c=:red)
+	plot(price_range, 1 .- cprob, legend=:right, label="P(X≥x)", lw=2, c=:red, 
+		background_color = background_color, background_color_outside = background_color_outside)
 	xlabel!("$(single_asset_ticker_symbol) close daily price (USD/share)", fontsize=18)
 	ylabel!("1 - cumulative probability P(X≤x)")
-	title!("$(single_asset_ticker_symbol) (T = $(number_of_steps) days)", fontsize=18)
+	title!("$(single_asset_ticker_symbol) (T = $(number_of_days) days)", fontsize=18)
 end
-
-# ╔═╡ e4619a42-4513-4141-be31-9c3539280151
-md"""
-###### Setup the Julia notebook environment
-"""
 
 # ╔═╡ c8c3fe32-560d-11ec-0617-2dc33608384a
 html"""
@@ -352,6 +406,47 @@ a {
     padding: 0px 30px;
 }
 </style>"""
+
+# ╔═╡ 5394b13a-e629-47c8-902d-685c061b37ae
+html"""
+<script>
+	// initialize -
+	var section = 0;
+	var subsection = 0;
+	var headers = document.querySelectorAll('h3, h4');
+	
+	// main loop -
+	for (var i=0; i < headers.length; i++) {
+	    
+		var header = headers[i];
+	    var text = header.innerText;
+	    var original = header.getAttribute("text-original");
+	    if (original === null) {
+	        
+			// Save original header text
+	        header.setAttribute("text-original", text);
+	    } else {
+	        
+			// Replace with original text before adding section number
+	        text = header.getAttribute("text-original");
+	    }
+	
+	    var numbering = "";
+	    switch (header.tagName) {
+	        case 'H3':
+	            section += 1;
+	            numbering = section + ".";
+	            subsection = 0;
+	            break;
+	        case 'H4':
+	            subsection += 1;
+	            numbering = section + "." + subsection;
+	            break;
+	    }
+		// update the header text 
+		header.innerText = numbering + " " + text;
+	};
+</script>"""
 
 # ╔═╡ 00000000-0000-0000-0000-000000000001
 PLUTO_PROJECT_TOML_CONTENTS = """
@@ -1553,23 +1648,30 @@ version = "0.9.1+5"
 
 # ╔═╡ Cell order:
 # ╟─2bb52ee4-1c6f-46b6-b105-86827ada0f75
+# ╟─2f499c95-38cf-4856-b199-6c9aac44237a
+# ╟─34bf07e8-5c47-4aa8-aa2c-161709c158be
+# ╟─623701bf-9a1e-412a-8081-9a4f2544af9b
+# ╟─9943d000-83d0-413d-a231-0295fb19df71
 # ╟─f66a480b-3f0c-4ebf-a8b8-e0f91dff851d
 # ╠═a815a181-530a-4ede-a5df-a56d9dc769d2
-# ╟─a6c4e663-f1e3-4e0c-a8bf-7c13fcb076f0
-# ╠═a59c6a99-1260-4bf1-a2af-5f360633fdae
 # ╟─d812551d-4b1c-49d8-ad8c-8a992a3d38b8
-# ╟─34b06415-21c1-4904-97f0-ab614447355c
-# ╠═cbbd8670-49ab-4601-b8d7-9f3f456752e8
+# ╠═34b06415-21c1-4904-97f0-ab614447355c
+# ╟─cbbd8670-49ab-4601-b8d7-9f3f456752e8
 # ╠═a786ca10-06d2-4b76-97a9-2bcf879ea6cb
 # ╟─6bf06c12-cf25-43c4-81f3-b1d79d13fc94
 # ╟─54823f9e-be70-4d6e-a767-3ef717330203
-# ╠═5a3500c2-4f82-43e9-a31b-d530f56fdbe9
+# ╟─5a3500c2-4f82-43e9-a31b-d530f56fdbe9
 # ╟─e36979d5-c1b6-4c17-a65a-d8de8e6bd8d0
-# ╠═aeafe1ed-f217-48fd-9624-add5f6f791e6
-# ╠═9feb542d-ace9-4154-b281-76033ba33d59
+# ╟─aeafe1ed-f217-48fd-9624-add5f6f791e6
+# ╟─9feb542d-ace9-4154-b281-76033ba33d59
 # ╟─36372d31-215d-4299-b4f1-49e42d8b0dbd
-# ╟─e4619a42-4513-4141-be31-9c3539280151
+# ╟─c32725a4-e276-4372-8d06-d40ba52c9f09
+# ╟─f1a71f47-fb19-4988-a439-2ff8d38be5b7
+# ╟─6e23a712-048f-4c9b-bef4-997155f1df41
+# ╟─0cefc746-94a0-4d96-98c7-5f6f770d69b0
+# ╠═a6c4e663-f1e3-4e0c-a8bf-7c13fcb076f0
 # ╠═f9e5092b-a158-48cb-a919-96f30ec51038
 # ╟─c8c3fe32-560d-11ec-0617-2dc33608384a
+# ╟─5394b13a-e629-47c8-902d-685c061b37ae
 # ╟─00000000-0000-0000-0000-000000000001
 # ╟─00000000-0000-0000-0000-000000000002

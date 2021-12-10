@@ -63,7 +63,7 @@ end
 
 # ╔═╡ 2bb52ee4-1c6f-46b6-b105-86827ada0f75
 md"""
-## Random Walk Simulations for the Close Price of a Single Risky Asset
+## Random Walk Simulations to Estimate the Price of a Single Risky Asset
 """
 
 # ╔═╡ 2f499c95-38cf-4856-b199-6c9aac44237a
@@ -90,14 +90,12 @@ simulate the price of `XYZ` during the next time period $j+1$ given knowledge of
 
 ###### Estimating models for the growth rate $\mu$ from historical data
 Suppose values for the growth rate $\mu_{j\rightarrow{j+1}}$ were governed by some [probability distribution](https://en.wikipedia.org/wiki/Probability_distribution) $\mathcal{D}\left(\bar{m},\sigma\right)$ where $\bar{m}$ 
-denotes the [mean value](https://en.wikipedia.org/wiki/Mean) and $\sigma$ denotes the [standard deviation](https://en.wikipedia.org/wiki/Standard_deviation). Of course, we do not know the actual values for 
-$\left(\bar{m},\sigma\right)$, but we can estimate them from historial price data.
+denotes the [mean value](https://en.wikipedia.org/wiki/Mean) and $\sigma$ denotes the [standard deviation](https://en.wikipedia.org/wiki/Standard_deviation) of the growth rate $\mu_{j\rightarrow{j+1}}$. Of course, we do not know the actual values for 
+$\left(\bar{m},\sigma\right)$, but we can estimate them from historial price data. Nor do we know the form of $\mathcal{D}\left(\bar{m},\sigma\right)$, but we can pick several different forms and see if they match the historical return data.
+An even better way to learn $\mathcal{D}\left(\bar{m},\sigma\right)$ would be to learn the form of the distribution from the data itself using a technique such as [Kernel Density Estimation](https://en.wikipedia.org/wiki/Kernel_density_estimation) or KDE. However, KDE is a little advanced, maybe later. 
 
 
 """
-
-# ╔═╡ 623701bf-9a1e-412a-8081-9a4f2544af9b
-
 
 # ╔═╡ 9943d000-83d0-413d-a231-0295fb19df71
 md"""
@@ -120,7 +118,7 @@ md"""
 
 # ╔═╡ a786ca10-06d2-4b76-97a9-2bcf879ea6cb
 # fit a Laplace distribution to a ticker -
-single_asset_ticker_symbol = "JNJ";
+single_asset_ticker_symbol = "TGT";
 
 # ╔═╡ 54823f9e-be70-4d6e-a767-3ef717330203
 md"""
@@ -142,6 +140,9 @@ md"""
 
 # ╔═╡ 6e23a712-048f-4c9b-bef4-997155f1df41
 
+
+# ╔═╡ ed3013f5-6d5e-436b-a6fc-aba6e1ce10f7
+html"<button onclick='present()'>present</button>"
 
 # ╔═╡ 0cefc746-94a0-4d96-98c7-5f6f770d69b0
 
@@ -1650,7 +1651,6 @@ version = "0.9.1+5"
 # ╟─2bb52ee4-1c6f-46b6-b105-86827ada0f75
 # ╟─2f499c95-38cf-4856-b199-6c9aac44237a
 # ╟─34bf07e8-5c47-4aa8-aa2c-161709c158be
-# ╟─623701bf-9a1e-412a-8081-9a4f2544af9b
 # ╟─9943d000-83d0-413d-a231-0295fb19df71
 # ╟─f66a480b-3f0c-4ebf-a8b8-e0f91dff851d
 # ╠═a815a181-530a-4ede-a5df-a56d9dc769d2
@@ -1658,16 +1658,17 @@ version = "0.9.1+5"
 # ╠═34b06415-21c1-4904-97f0-ab614447355c
 # ╟─cbbd8670-49ab-4601-b8d7-9f3f456752e8
 # ╠═a786ca10-06d2-4b76-97a9-2bcf879ea6cb
-# ╟─6bf06c12-cf25-43c4-81f3-b1d79d13fc94
+# ╠═6bf06c12-cf25-43c4-81f3-b1d79d13fc94
 # ╟─54823f9e-be70-4d6e-a767-3ef717330203
 # ╟─5a3500c2-4f82-43e9-a31b-d530f56fdbe9
-# ╟─e36979d5-c1b6-4c17-a65a-d8de8e6bd8d0
+# ╠═e36979d5-c1b6-4c17-a65a-d8de8e6bd8d0
 # ╟─aeafe1ed-f217-48fd-9624-add5f6f791e6
 # ╟─9feb542d-ace9-4154-b281-76033ba33d59
 # ╟─36372d31-215d-4299-b4f1-49e42d8b0dbd
 # ╟─c32725a4-e276-4372-8d06-d40ba52c9f09
 # ╟─f1a71f47-fb19-4988-a439-2ff8d38be5b7
 # ╟─6e23a712-048f-4c9b-bef4-997155f1df41
+# ╠═ed3013f5-6d5e-436b-a6fc-aba6e1ce10f7
 # ╟─0cefc746-94a0-4d96-98c7-5f6f770d69b0
 # ╠═a6c4e663-f1e3-4e0c-a8bf-7c13fcb076f0
 # ╠═f9e5092b-a158-48cb-a919-96f30ec51038

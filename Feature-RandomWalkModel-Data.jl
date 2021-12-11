@@ -147,7 +147,7 @@ downloaded from using [Alphavantage.co](https://www.alphavantage.co) application
 
 # ╔═╡ a786ca10-06d2-4b76-97a9-2bcf879ea6cb
 # fit a distribution to a ticker -
-single_asset_ticker_symbol = "JNJ";
+single_asset_ticker_symbol = "DIS";
 
 # ╔═╡ edfbf364-e126-4e95-93d2-a6adfb340045
 md"""
@@ -168,7 +168,7 @@ To further explore the question of normality, we performed the [Kolmogorov–Smi
 
 # ╔═╡ 10fa507e-1429-4eb0-b74c-1e6638725690
 md"""
-##### Monte carlo simulations of the daily close price
+##### Monte Carlo simulations of the daily close price using the Laplace RWM
 
 A basic explain of Monte Carlo simulations goes here
 """
@@ -375,7 +375,7 @@ __Fig XX__: In sample random walk simulation of ticker = $(single_asset_ticker_s
 
 # ╔═╡ b547311c-ddf0-4053-9de4-f0e85b861e63
 md"""
-__Table XX__: Comparison of the actual close price versus the Monte Carlo simulated close price for a 𝒯 = $(number_of_days) day prediction horizon for each ticker in the PSIA (𝒫 = 40). Each ticker was classified into class c ∈ {-1,0,1} where: +1 overbought, 0 in-range, or -1 oversold. The classification was made based upon whether the actual close price Pₐ ∈ Pₑ ± σ, where Pₐ denotes the actual close price (units: USD/share), Pₑ denotes the mean simulated close price (units: USD/share), and σ denotes the standard deviation of the simulated close price (units: USD/share) computed over the family Monte Carlo trajectories (N = $(number_of_sample_paths)).
+__Table XX__: Comparison of the actual close price versus the Monte Carlo simulated close price for a 𝒯 = $(number_of_days) day prediction horizon for each ticker in the PSIA (𝒫 = 40). Each ticker was classified into class c ∈ {-1,0,1} where: +1 overbought, 0 in-range, or -1 oversold. The classification was based upon whether the actual close price Pₐ ∈ Pₑ ± σ, where Pₐ denotes the actual close price (units: USD/share), Pₑ denotes the mean simulated close price (units: USD/share), and σ denotes the standard deviation of the simulated close price (units: USD/share) computed over the family Monte Carlo trajectories (N = $(number_of_sample_paths)).
 """
 
 # ╔═╡ 849f69b0-07af-40ab-8295-c0b80a26a2d5
@@ -1801,7 +1801,7 @@ version = "0.9.1+5"
 # ╠═a786ca10-06d2-4b76-97a9-2bcf879ea6cb
 # ╟─edfbf364-e126-4e95-93d2-a6adfb340045
 # ╟─a3d29aa3-96ca-4681-960c-3b4b04b1e40d
-# ╠═6bf06c12-cf25-43c4-81f3-b1d79d13fc94
+# ╟─6bf06c12-cf25-43c4-81f3-b1d79d13fc94
 # ╟─1d72b291-24b7-4ec6-8307-1da0bc4a9183
 # ╠═039be00b-490e-4d41-92a1-fa8e4fac9517
 # ╟─10fa507e-1429-4eb0-b74c-1e6638725690

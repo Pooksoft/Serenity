@@ -166,6 +166,11 @@ md"""
 To further explore the question of normality, we performed the [Kolmogorov–Smirnov (KS) test](https://en.wikipedia.org/wiki/Kolmogorov–Smirnov_test), using the KS test implementation in the [HypothesisTests.jl](https://juliastats.org/HypothesisTests.jl/latest/nonparametric/#Kolmogorov-Smirnov-test-1) package, to test if the historical return data were normally distributed (Table XX).
 """
 
+# ╔═╡ 17722a2e-ea9c-4278-951c-cba014810d01
+md"""
+Table goes here with the p-values for the NORMAL and LAPLACE for all ticker symbols
+"""
+
 # ╔═╡ 10fa507e-1429-4eb0-b74c-1e6638725690
 md"""
 ##### Monte Carlo simulations of the daily close price using the Laplace RWM
@@ -1804,6 +1809,7 @@ version = "0.9.1+5"
 # ╟─6bf06c12-cf25-43c4-81f3-b1d79d13fc94
 # ╟─1d72b291-24b7-4ec6-8307-1da0bc4a9183
 # ╠═039be00b-490e-4d41-92a1-fa8e4fac9517
+# ╟─17722a2e-ea9c-4278-951c-cba014810d01
 # ╟─10fa507e-1429-4eb0-b74c-1e6638725690
 # ╠═5a3500c2-4f82-43e9-a31b-d530f56fdbe9
 # ╟─a1e1d5f8-e06e-4682-ab54-a9454a8e3b30

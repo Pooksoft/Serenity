@@ -36,6 +36,7 @@ begin
     using PlutoUI
     using PlotThemes
 	using HypothesisTests
+	using PrettyTables
 	
     theme(:default)
 
@@ -146,7 +147,7 @@ downloaded from using [Alphavantage.co](https://www.alphavantage.co) application
 
 # ╔═╡ a786ca10-06d2-4b76-97a9-2bcf879ea6cb
 # fit a distribution to a ticker -
-single_asset_ticker_symbol = "CSCO";
+single_asset_ticker_symbol = "JNJ";
 
 # ╔═╡ edfbf364-e126-4e95-93d2-a6adfb340045
 md"""
@@ -162,7 +163,7 @@ __Fig 2__: Comparison of the actual (red line) and estimated histogram for the a
 
 # ╔═╡ 1d72b291-24b7-4ec6-8307-1da0bc4a9183
 md"""
-To further explore the question of normality, we performed the [Kolmogorov–Smirnov (KS) test](https://en.wikipedia.org/wiki/Kolmogorov–Smirnov_test) to estimate if the distribution of return values are normally distributed. We used the [KS test implementation in the HypothesisTests.jl](https://juliastats.org/HypothesisTests.jl/latest/nonparametric/#Kolmogorov-Smirnov-test-1) package.
+To further explore the question of normality, we performed the [Kolmogorov–Smirnov (KS) test](https://en.wikipedia.org/wiki/Kolmogorov–Smirnov_test), using the KS test implementation in the [HypothesisTests.jl](https://juliastats.org/HypothesisTests.jl/latest/nonparametric/#Kolmogorov-Smirnov-test-1) package, to test if the historical return data were normally distributed (Table XX).
 """
 
 # ╔═╡ 10fa507e-1429-4eb0-b74c-1e6638725690
@@ -315,15 +316,16 @@ begin
     μ_vector = return_data_dictionary[single_asset_ticker_symbol][!, :μ]
 
     # fit the model -
-    MODEL_NORMAL = fit(Normal, μ_vector)
-    MODEL = fit(Laplace, μ_vector)
+    NORMAL = fit(Normal, μ_vector)
+    LAPLACE = fit(Laplace, μ_vector)
 
     # generate 10_000 samples
-    S = rand(MODEL, 10000)
-    SN = rand(MODEL_NORMAL, 10000)
+    S = rand(LAPLACE, 5000)
+    SN = rand(NORMAL, 5000)
 
     # plot against actual -
-    stephist(return_data_dictionary[single_asset_ticker_symbol][!, :μ], bins = number_of_bins, normed = :true, lw = 2, c = CB_RED,
+    stephist(return_data_dictionary[single_asset_ticker_symbol][!, :μ], bins = number_of_bins, normed = :true, 
+		lw = 2, c = CB_RED,
         label = "$(single_asset_ticker_symbol)", background_color = background_color,
         background_color_outside = background_color_outside, foreground_color_legend = nothing)
 
@@ -339,26 +341,29 @@ begin
 end
 
 # ╔═╡ 039be00b-490e-4d41-92a1-fa8e4fac9517
-ks_test_result = HypothesisTests.ExactOneSampleKSTest(unique(μ_vector), MODEL)
+ks_test_result = HypothesisTests.ExactOneSampleKSTest(unique(μ_vector), LAPLACE)
 
 # ╔═╡ 5a3500c2-4f82-43e9-a31b-d530f56fdbe9
 begin
-    # how many steps, sample paths etc -
+    
+	# how many steps, sample paths etc -
     number_of_days = 21
-    number_of_sample_paths = 25000
-    skip_factor = convert(Int64, (floor(0.005 * number_of_sample_paths)))
-    plot_index_array = 1:skip_factor:number_of_sample_paths |> collect
+    number_of_sample_paths = 50000
+	monte_carlo_simulation_dictionary = Dict{String,Array{Float64,2}}()
 
-    # what is the *actual* price data?
-    actual_price_data = price_data_dictionary[single_asset_ticker_symbol][end-number_of_days:end, :adjusted_close]
+	for ticker_symbol ∈ ticker_symbol_array
 
-    # get initial price -
-    initial_price_value = log(actual_price_data[1])
+		# what is the *actual* price data?
+    	actual_price_data = price_data_dictionary[ticker_symbol][end-number_of_days:end, :adjusted_close]
 
-    # compute a set of possible trajectories -> convert back to actual price -
-    simulated_price_trajectory = MODEL(initial_price_value, number_of_days;
-        number_of_sample_paths = number_of_sample_paths) .|> exp
+    	# get initial price -
+    	initial_price_value = log(actual_price_data[1])
 
+    	# compute a set of possible trajectories -> convert back to actual price -
+    	monte_carlo_simulation_dictionary[ticker_symbol] = LAPLACE(initial_price_value, number_of_days;
+        		number_of_sample_paths = number_of_sample_paths) .|> exp
+	end
+    
     # show -
     nothing
 end
@@ -368,15 +373,34 @@ md"""
 __Fig XX__: In sample random walk simulation (N = $(number_of_sample_paths) sample paths) of ticker $(single_asset_ticker_symbol) for T = $(number_of_days) days. Gray lines denotes simulated sample paths. Red line denotes actual price trajectory for ticker $(single_asset_ticker_symbol).
 """
 
+# ╔═╡ b547311c-ddf0-4053-9de4-f0e85b861e63
+md"""
+__Table XX__: Monte carlo simulation for a 𝒯 = $(number_of_days) day prediction horizon.
+"""
+
+# ╔═╡ 849f69b0-07af-40ab-8295-c0b80a26a2d5
+md"""
+__Fig XX__: In sample random walk simulation (N = $(number_of_sample_paths) sample paths) of ticker $(single_asset_ticker_symbol) for T = $(number_of_days) days. Gray lines denotes simulated sample paths. Red line denotes actual price trajectory for ticker $(single_asset_ticker_symbol).
+"""
+
 # ╔═╡ aeafe1ed-f217-48fd-9624-add5f6f791e6
 begin
-
+	
+	# setup some preliminaries -
+	skip_factor = convert(Int64, (floor(0.005 * number_of_sample_paths)))
+    plot_index_array = 1:skip_factor:number_of_sample_paths |> collect
+	simulated_price_trajectory = monte_carlo_simulation_dictionary[single_asset_ticker_symbol]
+	
+	# what is the *actual* price data?
+    actual_price_data = price_data_dictionary[single_asset_ticker_symbol][end-number_of_days:end, :adjusted_close]
+	
     # plot -
     plot(simulated_price_trajectory[:, plot_index_array], c = CB_LBLUE, legend = false, label = "", lw = 1,
         background_color = background_color, background_color_outside = background_color_outside)
 
     if (show_real_traj == true)
-        plot!(actual_price_data[1:end], c = CB_RED, lw = 3, legend = :topleft, label = "$(single_asset_ticker_symbol) actual")
+        plot!(actual_price_data[1:end], c = CB_RED, lw = 3, legend = :topleft, 
+			label = "$(single_asset_ticker_symbol) actual", foreground_color_legend = nothing)
     end
 
     xlabel!("Time step index (day)", fontsize = 18)
@@ -384,46 +408,12 @@ begin
     # title!("Random walk simulation $(single_asset_ticker_symbol) (N = $(number_of_sample_paths))", fontsize=12)
 end
 
-# ╔═╡ 9feb542d-ace9-4154-b281-76033ba33d59
-begin
-    stephist(simulated_price_trajectory[end, :])
-    estimated_mean_price = round(mean(simulated_price_trajectory[end, :]), sigdigits = 4)
-    std_estimated_price = round(std(simulated_price_trajectory[end, :]), sigdigits = 4)
-    price_actual = actual_price_data[end]
-
-    with_terminal() do
-        println("---------------------------------------------------------------------")
-        println("Predicted: P_model = $(estimated_mean_price) ± $(std_estimated_price)")
-        println("Actual: P_actual = $(price_actual)")
-
-        # in the range?
-        LB = estimated_mean_price - std_estimated_price
-        UB = estimated_mean_price + std_estimated_price
-        is_in_range_flag = false
-        if (price_actual >= LB && price_actual <= UB)
-            is_in_range_flag = true
-        end
-        println("In range (μ ± σ): $(is_in_range_flag)")
-
-        if (is_in_range_flag == true)
-            DL = round(price_actual - LB, sigdigits = 4)
-            DU = round(UB - price_actual, sigdigits = 4)
-            println("Distance from lower bound: $(DL)")
-            println("Distance from upper bound: $(DU)")
-        end
-
-        println("---------------------------------------------------------------------")
-    end
-end
-
-# ╔═╡ 849f69b0-07af-40ab-8295-c0b80a26a2d5
-md"""
-__Fig XX__: In sample random walk simulation (N = $(number_of_sample_paths) sample paths) of ticker $(single_asset_ticker_symbol) for T = $(number_of_days) days. Gray lines denotes simulated sample paths. Red line denotes actual price trajectory for ticker $(single_asset_ticker_symbol).
-"""
-
 # ╔═╡ 36372d31-215d-4299-b4f1-49e42d8b0dbd
 begin
 
+	estimated_mean_price = round(mean(simulated_price_trajectory[end, :]), sigdigits = 4)
+    std_estimated_price = round(std(simulated_price_trajectory[end, :]), sigdigits = 4)
+	
     # compute the cumulative probability in the range [0,μ + 3*σ]
     LB = estimated_mean_price - 3 * std_estimated_price
     UB = estimated_mean_price + 3 * std_estimated_price
@@ -438,10 +428,62 @@ begin
     # plot -
     #plot(price_range, cprob, legend=:right, label="P(X≤x)", lw=2)
     plot(price_range, 1 .- cprob, legend = :topright, label = "P(X≥x)", lw = 2, c = :red,
-        background_color = background_color, background_color_outside = background_color_outside, foreground_color_legend = nothing)
+        background_color = background_color, background_color_outside = background_color_outside, 
+		foreground_color_legend = nothing)
     xlabel!("$(single_asset_ticker_symbol) close daily price (USD/share)", fontsize = 18)
     ylabel!("1 - cumulative probability P(X≤x)")
     #title!("$(single_asset_ticker_symbol) (T = $(number_of_days) days)", fontsize=18)
+end
+
+# ╔═╡ 2ed2f3c3-619b-4aed-b88b-b92a43578d84
+with_terminal() do
+
+	# how many tickers do we have?
+	number_of_ticker_symbols = length(ticker_symbol_array)
+
+	# initialize some storage -
+	state_table = Array{Any,2}(undef, number_of_ticker_symbols, 7)
+	
+	for ticker_symbol_index ∈ 1:number_of_ticker_symbols 
+
+		# get the symbol -
+		ticker_symbol = ticker_symbol_array[ticker_symbol_index]
+
+		# compute some data re this symbol -
+		simulated_price_trajectory = monte_carlo_simulation_dictionary[ticker_symbol]
+		estimated_mean_price = round(mean(simulated_price_trajectory[end, :]), sigdigits = 4)
+    	std_estimated_price = round(std(simulated_price_trajectory[end, :]), sigdigits = 4)
+		actual_price_data = price_data_dictionary[ticker_symbol][end-number_of_days:end, :adjusted_close]
+    	price_actual = actual_price_data[end]
+		LB = estimated_mean_price - std_estimated_price
+        UB = estimated_mean_price + std_estimated_price
+		
+		# populate state table -
+		state_table[ticker_symbol_index,1] = ticker_symbol
+		state_table[ticker_symbol_index,2] = price_actual
+		state_table[ticker_symbol_index,3] = estimated_mean_price
+		state_table[ticker_symbol_index,4] = LB
+		state_table[ticker_symbol_index,5] = UB
+		
+        DL = round(price_actual - LB, sigdigits = 4)
+        Δ = round(UB - LB, sigdigits = 4)
+		state_table[ticker_symbol_index,6] = DL/Δ
+		
+		if ((DL/Δ) <= 1.0 && (DL/Δ)>=0.0)
+			state_table[ticker_symbol_index,7] = true
+		else
+			state_table[ticker_symbol_index,7] = false
+		end
+		
+	end
+
+	table_header = (
+		["ticker", "actual Pₐ", "estimate Pₑ", "ℒ = (Pₑ - σ)", "𝒰 = (Pₑ + σ)", "θ", "Pₐ ∈ Pₑ ± σ"],
+		["", "USD/share", "USD/share", "USD/share", "", "", "USD/share"]
+	)
+	
+	pretty_table(state_table, header=table_header)
+	
 end
 
 # ╔═╡ c8c3fe32-560d-11ec-0617-2dc33608384a
@@ -516,6 +558,7 @@ HTTP = "cd3eb016-35fb-5094-929b-558a96fad6f3"
 HypothesisTests = "09f84164-cd44-5f33-b23f-e6b0d136a0d5"
 PlotThemes = "ccf2f8ad-2431-5c83-bf29-c5338b663b6a"
 PlutoUI = "7f904dfe-b85e-4ff6-b463-dae2292396a8"
+PrettyTables = "08abe8d2-0d0c-5749-adfa-8a2ac140af0d"
 ProgressMeter = "92933f4c-e287-5a05-a399-4b506db050ca"
 Statistics = "10745b16-79ce-11e8-11f9-7d13ad32a3b2"
 StatsPlots = "f3b207a7-027a-5e70-b257-86293d7955fd"
@@ -529,6 +572,7 @@ HTTP = "~0.9.17"
 HypothesisTests = "~0.10.6"
 PlotThemes = "~2.0.1"
 PlutoUI = "~0.7.22"
+PrettyTables = "~1.2.3"
 ProgressMeter = "~1.7.1"
 StatsPlots = "~0.14.29"
 """
@@ -1754,7 +1798,7 @@ version = "0.9.1+5"
 # ╠═a786ca10-06d2-4b76-97a9-2bcf879ea6cb
 # ╟─edfbf364-e126-4e95-93d2-a6adfb340045
 # ╟─a3d29aa3-96ca-4681-960c-3b4b04b1e40d
-# ╟─6bf06c12-cf25-43c4-81f3-b1d79d13fc94
+# ╠═6bf06c12-cf25-43c4-81f3-b1d79d13fc94
 # ╟─1d72b291-24b7-4ec6-8307-1da0bc4a9183
 # ╠═039be00b-490e-4d41-92a1-fa8e4fac9517
 # ╟─10fa507e-1429-4eb0-b74c-1e6638725690
@@ -1762,9 +1806,10 @@ version = "0.9.1+5"
 # ╟─a1e1d5f8-e06e-4682-ab54-a9454a8e3b30
 # ╟─e36979d5-c1b6-4c17-a65a-d8de8e6bd8d0
 # ╠═aeafe1ed-f217-48fd-9624-add5f6f791e6
-# ╟─9feb542d-ace9-4154-b281-76033ba33d59
+# ╟─b547311c-ddf0-4053-9de4-f0e85b861e63
+# ╟─2ed2f3c3-619b-4aed-b88b-b92a43578d84
 # ╟─849f69b0-07af-40ab-8295-c0b80a26a2d5
-# ╟─36372d31-215d-4299-b4f1-49e42d8b0dbd
+# ╠═36372d31-215d-4299-b4f1-49e42d8b0dbd
 # ╠═c32725a4-e276-4372-8d06-d40ba52c9f09
 # ╟─f1a71f47-fb19-4988-a439-2ff8d38be5b7
 # ╠═a6c4e663-f1e3-4e0c-a8bf-7c13fcb076f0

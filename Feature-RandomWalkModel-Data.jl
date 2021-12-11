@@ -56,6 +56,10 @@ begin
 	# background color plots -
 	background_color_outside = RGB(1.0, 1.0, 1.0)
 	background_color = RGB(0.99, 0.98, 0.96)
+	CB_BLUE = RGB(68/255,119/255,170/255)
+	CB_LBLUE = RGB(102/255, 204/255, 238/255)
+	CB_GRAY = RGB(187/255, 187/255, 187/255)
+	CB_RED = RGB(238/255, 102/255, 119/255)
 	
 	# show -
 	nothing
@@ -63,7 +67,7 @@ end
 
 # ╔═╡ 2bb52ee4-1c6f-46b6-b105-86827ada0f75
 md"""
-# Random Walk Simulations of the Price of a Risky Asset
+# Random Walk Simulation of Risky Asset Prices 
 """
 
 # ╔═╡ 2f499c95-38cf-4856-b199-6c9aac44237a
@@ -75,24 +79,24 @@ md"""
 md"""
 ### Materials and Methods
 
-###### What is a Random Walk Model (RWM)?
-A [random walk model](https://en.wikipedia.org/wiki/Random_walk) is a tool for computing the time evolution of the price of a risky asset, for example, the price of a stock with the ticker symbol `XYZ`. Let the price of `XYZ` at time $j$ be given by $P_{j}$ (units: USD/share). Then we know during the next time period (index $j+1$) the `XYZ` share price will be given by:
+###### Random Walk Models (RWMs)
+[Random walk models](https://en.wikipedia.org/wiki/Random_walk) are tools for computing the time evolution of the prices of risky assets, for example, the price of a stock with the ticker symbol `XYZ`. Let the price of `XYZ` at time $j$ be given by $P_{j}$ (units: USD/share). Then during the next time period (index $j+1$) the `XYZ` share price will be given by:
 
 $$P_{j+1} = P_{j}\exp\left(\mu_{j\rightarrow{j+1}}\Delta{t}\right)$$
 
-where $\Delta{t}$ denotes the length of time between periods $j$ and $j+1$ (units: time) and $\mu_{j\rightarrow{j+1}}$ denotes the growth rate (in the financial world called the [return](https://www.investopedia.com/terms/a/absolutereturn.asp)) between time period(s) $j$ and $j+1$ (units: time$^{-1}$). The growth rate $\mu_{j\rightarrow{j+1}}$ changes with ticker i.e., is different for different tickers, and also changes with time in an unpredictable way, i.e., it is not constant between time period $j\rightarrow{j+1}$. Dividing both sides by $P_{j}$ and taking the [natural log](https://en.wikipedia.org/wiki/Natural_logarithm) gives the expression:
+where $\Delta{t}$ denotes the length of time between periods $j$ and $j+1$ (units: time) and $\mu_{j\rightarrow{j+1}}$ denotes the growth rate (in the financial world called the [return](https://www.investopedia.com/terms/a/absolutereturn.asp)) between time period(s) $j$ and $j+1$ (units: time$^{-1}$). The growth rate $\mu_{j\rightarrow{j+1}}$ is different for different tickers, and is not constant between time period $j\rightarrow{j+1}$. Dividing both sides by $P_{j}$ and taking the [natural log](https://en.wikipedia.org/wiki/Natural_logarithm) gives the expression:
 
 $$p_{j+1} = p_{j} + \mu_{j\rightarrow{j+1}}\Delta{t}$$
 
 where $p_{\star}$ denotes the log of the price at time $\star$ (units: dimensionless). This expression is a basic [random walk model](https://en.wikipedia.org/wiki/Random_walk). The challenge to using this model is how to estimate the growth rate 
 $\mu_{j\rightarrow{j+1}}$ because the values for $\mu_{j\rightarrow{j+1}}$ are [time-dependent random variables](https://en.wikipedia.org/wiki/Stochastic_process) which are [distributed](https://en.wikipedia.org/wiki/Probability_distribution) in some unknown way. However, if we had a value for $\mu_{j\rightarrow{j+1}}$ (or at least a model to estimate a value for it, denoted as $\hat{\mu}_{j\rightarrow{j+1}}$), we could 
-simulate the price of `XYZ` during the next time period $j+1$ given knowledge of the price now (time period $j$). For example, given a value for the close price of `XYZ` on Monday, we could estimate a value for the close price of `XYZ` on Tuesday if we simulated daily price changes.
+simulate the price of `XYZ` during the next time period $j+1$ given knowledge of the price now (time period $j$). For example, given a value for the close price of `XYZ` on Monday, we could estimate a value for the close price of `XYZ` on Tuesday if we had a model for the daily growth rate.
 
 ###### Estimating models for the growth rate $\mu$ from historical data
-Suppose values for the growth rate $\mu_{j\rightarrow{j+1}}$ were governed by some [probability distribution](https://en.wikipedia.org/wiki/Probability_distribution) $\mathcal{D}\left(\bar{m},\sigma\right)$ where $\bar{m}$ 
+Suppose values the growth rate were governed by some [probability distribution](https://en.wikipedia.org/wiki/Probability_distribution) $\mathcal{D}\left(\bar{m},\sigma\right)$ where $\bar{m}$ 
 denotes the [mean value](https://en.wikipedia.org/wiki/Mean) and $\sigma$ denotes the [standard deviation](https://en.wikipedia.org/wiki/Standard_deviation) of the growth rate $\mu_{j\rightarrow{j+1}}$. Of course, we do not know the actual values for 
 $\left(\bar{m},\sigma\right)$, but we can estimate them from historial price data. Nor do we know the form of $\mathcal{D}\left(\bar{m},\sigma\right)$, but we can pick several different forms and see if they match the historical return data.
-An even better way to learn $\mathcal{D}\left(\bar{m},\sigma\right)$ would be to learn the form of the distribution from the data itself using a technique such as [Kernel Density Estimation](https://en.wikipedia.org/wiki/Kernel_density_estimation) or KDE. However, KDE is a little advanced, maybe later. 
+An even better way to learn $\mathcal{D}\left(\bar{m},\sigma\right)$ would be to estimate the form of the distribution from the data itself using a technique such as [Kernel Density Estimation](https://en.wikipedia.org/wiki/Kernel_density_estimation) or KDE. However, KDE is a little advanced for now, maybe later. 
 
 
 """
@@ -111,18 +115,37 @@ We specify a list of ticker symbols that we want to model. Next, we check to see
 The parameters for the [Alphavantage.co](https://www.alphavantage.co) API call are stored in the `query_parameters` dictionary. For estimating a SIM, we use the daily close price for the last 100 trading days for each ticker. 
 """
 
-# ╔═╡ d812551d-4b1c-49d8-ad8c-8a992a3d38b8
+# ╔═╡ 54efa70c-bac6-4d7c-93df-0dfd1b89769d
+# which tickers do we want to look at -
+ticker_symbol_array = sort(["MSFT", "ALLY", "MET", "AAPL", "GM", "PFE", "JNJ", "ACI", "TGT", 
+	"MMM", "AXP", "AMGN", "BA", "CAT", "CVX", "CSCO", "KO", "DIS","DOW", "GS", "HD", "IBM", "HON", "INTC", "JNJ", "JPM", 
+	"MCD", "MRK", "NKE", "PG", "CRM", "TRV", "UNH", "VZ", "V", "WBA", "WMT"
+]);
+
+# ╔═╡ 61ab2949-d72f-4d80-a717-4b6a9227de0e
 md"""
-###### Compute the return $\mu_{i}$ for ticker symbol $i$ from the daily close price
+###### Compute the growth rate $\mu_{j\rightarrow{j+1}}$ from historical data
+"""
+
+# ╔═╡ a39b90ec-a4c5-472f-b00e-c81ee9c5576f
+md"""
+__Fig. 1__: Histogram of the adjusted daily returns computed using the `stephist` routine of the [StatsPlots.jl](https://github.com/JuliaPlots/StatsPlots.jl) package for the ticker symbols in `ticker_symbols_array`. The number of bins was set to be 10% of the number of records for `AAPL` (shown in red) and was constant for each ticker. The returns were calculated using between approximately 10 and 20 years of historical daily adjusted close price data.  
+"""
+
+# ╔═╡ edfbf364-e126-4e95-93d2-a6adfb340045
+md"""
+###### The daily return of individual ticker symbols is not normally distributed
+
+A key assumption often made in mathematical finance is that the growth rate $\mu_{j\rightarrow{j+1}}$ (returns) computed using the log of the prices is normally distributed. However, a closer examination of the $\mu_{j\rightarrow{j+1}}$ values computed from historical data suggests this is not true. 
 """
 
 # ╔═╡ a786ca10-06d2-4b76-97a9-2bcf879ea6cb
 # fit a Laplace distribution to a ticker -
-single_asset_ticker_symbol = "TGT";
+single_asset_ticker_symbol = "JNJ";
 
-# ╔═╡ 54823f9e-be70-4d6e-a767-3ef717330203
+# ╔═╡ a3d29aa3-96ca-4681-960c-3b4b04b1e40d
 md"""
-###### Monte-carlo random walk price simulations for single asset
+__Fig 2__: Comparison of the actual (red line) and estimated histogram for the adjusted daily returns for ticker = $(single_asset_ticker_symbol) using a [Laplace distribution](https://en.wikipedia.org/wiki/Laplace_distribution) for the return model (blue line) and a [Normal distribution](https://en.wikipedia.org/wiki/Normal_distribution) for the return model (light blue line). The return model distributions were estimated using the `fit` routine of the [Distributions.jl](https://github.com/JuliaStats/Distributions.jl) package. The `fit` routine uses multiple approaches to estimate the parameters in the distribution including [Maximum Likelihood Estimation (MLE)](https://en.wikipedia.org/wiki/Maximum_likelihood_estimation). 
 """
 
 # ╔═╡ e36979d5-c1b6-4c17-a65a-d8de8e6bd8d0
@@ -133,18 +156,11 @@ Show actual price trajectory? $(@bind show_real_traj CheckBox())
 # ╔═╡ c32725a4-e276-4372-8d06-d40ba52c9f09
 md"""
 ### Conclusions
+
+
 """
 
 # ╔═╡ f1a71f47-fb19-4988-a439-2ff8d38be5b7
-
-
-# ╔═╡ 6e23a712-048f-4c9b-bef4-997155f1df41
-
-
-# ╔═╡ ed3013f5-6d5e-436b-a6fc-aba6e1ce10f7
-html"<button onclick='present()'>present</button>"
-
-# ╔═╡ 0cefc746-94a0-4d96-98c7-5f6f770d69b0
 
 
 # ╔═╡ a6c4e663-f1e3-4e0c-a8bf-7c13fcb076f0
@@ -185,7 +201,7 @@ function download_ticker_data(ticker_symbol_array::Array{String,1})::Dict{String
 			data_table = http_get_call_with_url(url_string) |> check |> process_csv_api_data
 
 			# sleep -
-			sleep(30); # to avoid issue w/API limits
+			sleep(10); # to avoid issue w/API limits
 
 			# make the dir to save the data (if we don't have it already) -
 			mkpath(joinpath(_PATH_TO_DATA, "$(training_prediction_flag)", "$(data_type_flag)"))
@@ -210,17 +226,9 @@ function download_ticker_data(ticker_symbol_array::Array{String,1})::Dict{String
 	return price_data_dictionary 
 end
 
-# ╔═╡ a815a181-530a-4ede-a5df-a56d9dc769d2
-begin
-	# which tickers do we want to look at -
-	ticker_symbol_array = sort(["MSFT", "ALLY", "MET", "AAPL", "GM", "PFE", "JNJ", "ACI", "TGT"]);
-
-	# download the data (or load from local cache)
-	price_data_dictionary = download_ticker_data(ticker_symbol_array);
-	
-	# show -
-	nothing
-end
+# ╔═╡ 5c5d5eeb-6775-452f-880d-7b4fa2acda57
+# download the data (or load from local cache)
+price_data_dictionary = download_ticker_data(ticker_symbol_array);
 
 # ╔═╡ 34b06415-21c1-4904-97f0-ab614447355c
 begin
@@ -232,8 +240,8 @@ begin
 	for ticker_symbol in ticker_symbol_array
 		
 		# the compute_return_array function is provided by Serenity -> computes the log return given a DataFrame, returns a DataFrame
-		r = compute_return_array(price_data_dictionary[ticker_symbol], :timestamp => :adjusted_close; β = (1.0/1.0))
-		return_data_dictionary[ticker_symbol] = r
+		return_data_dictionary[ticker_symbol] = compute_return_array(price_data_dictionary[ticker_symbol], 
+			:timestamp => :adjusted_close; β = (1.0/1.0))
 	end
 end
 
@@ -258,10 +266,10 @@ begin
 			stephist(return_data_dictionary[local_ticker_symbol][!,:μ], bins=number_of_bins, normed=:true, 
 				background_color = background_color, background_color_outside = background_color_outside,
 				foreground_color_minor_grid = RGB(1.0,1.0,1.0),
-				lw=4, c=:red, label="$(local_ticker_symbol)", foreground_color_legend = nothing)
+				lw=4, c=CB_RED, label="$(local_ticker_symbol)", foreground_color_legend = nothing)
 		else
 			stephist!(return_data_dictionary[local_ticker_symbol][!,:μ], bins=number_of_bins, normed=:true, lw=1, 
-				c=RGB(0.45,0.45,0.45), label="$(local_ticker_symbol)")
+				c=CB_GRAY, label="$(local_ticker_symbol)")
 		end
 	end
 	
@@ -278,17 +286,23 @@ begin
 	μ_vector = return_data_dictionary[single_asset_ticker_symbol][!,:μ]
 
 	# fit the model -
+	MODEL_NORMAL = fit(Normal,μ_vector)
 	MODEL = fit(Laplace,μ_vector)
 
 	# generate 10_000 samples
 	S = rand(MODEL,10000)
+	SN = rand(MODEL_NORMAL,10000)
 
 	# plot against actual -
-	stephist(return_data_dictionary[single_asset_ticker_symbol][!,:μ], bins=number_of_bins, normed=:true, lw=2, c=:black, 
-		label="$(single_asset_ticker_symbol)", background_color = background_color, background_color_outside = background_color_outside)
+	stephist(return_data_dictionary[single_asset_ticker_symbol][!,:μ], bins=number_of_bins, normed=:true, lw=2, c=CB_RED, 
+		label="$(single_asset_ticker_symbol)", background_color = background_color, 
+		background_color_outside = background_color_outside, foreground_color_legend = nothing)
 
-	stephist!(S, bins=number_of_bins, normed=:true, lw=2, c=:red, 
-		label="$(single_asset_ticker_symbol) Model")
+	stephist!(S, bins=number_of_bins, normed=:true, lw=2, c= CB_BLUE, 
+		label="$(single_asset_ticker_symbol) Laplace Model")
+
+	stephist!(SN, bins=number_of_bins, normed=:true, lw=2, c=CB_LBLUE, 
+		label="$(single_asset_ticker_symbol) Normal Model")
 
 	xlabel!("Daily return μ (1/day)", fontsize=18)
 	ylabel!("Frequency (N=$(number_of_bins); dimensionless)", fontsize=14)
@@ -317,6 +331,11 @@ begin
 	nothing
 end
 
+# ╔═╡ a1e1d5f8-e06e-4682-ab54-a9454a8e3b30
+md"""
+__Fig XX__: In sample random walk simulation (N = $(number_of_sample_paths) sample paths) of ticker $(single_asset_ticker_symbol) for T = $(number_of_days) days. Gray lines denotes simulated sample paths. Red line denotes actual price trajectory for ticker $(single_asset_ticker_symbol).
+"""
+
 # ╔═╡ aeafe1ed-f217-48fd-9624-add5f6f791e6
 begin
 
@@ -330,7 +349,7 @@ begin
 
 	xlabel!("Time step index (day)", fontsize=18)
 	ylabel!("Simulated $(single_asset_ticker_symbol) close price (USD/share)", fontsize=14)
-	title!("Random walk simulation $(single_asset_ticker_symbol) (N = $(number_of_sample_paths))", fontsize=12)
+	# title!("Random walk simulation $(single_asset_ticker_symbol) (N = $(number_of_sample_paths))", fontsize=12)
 end
 
 # ╔═╡ 9feb542d-ace9-4154-b281-76033ba33d59
@@ -365,6 +384,11 @@ begin
 	end
 end
 
+# ╔═╡ 849f69b0-07af-40ab-8295-c0b80a26a2d5
+md"""
+__Fig XX__: In sample random walk simulation (N = $(number_of_sample_paths) sample paths) of ticker $(single_asset_ticker_symbol) for T = $(number_of_days) days. Gray lines denotes simulated sample paths. Red line denotes actual price trajectory for ticker $(single_asset_ticker_symbol).
+"""
+
 # ╔═╡ 36372d31-215d-4299-b4f1-49e42d8b0dbd
 begin
 
@@ -381,11 +405,11 @@ begin
 
 	# plot -
 	#plot(price_range, cprob, legend=:right, label="P(X≤x)", lw=2)
-	plot(price_range, 1 .- cprob, legend=:right, label="P(X≥x)", lw=2, c=:red, 
-		background_color = background_color, background_color_outside = background_color_outside)
+	plot(price_range, 1 .- cprob, legend=:topright, label="P(X≥x)", lw=2, c=:red, 
+		background_color = background_color, background_color_outside = background_color_outside, foreground_color_legend = nothing)
 	xlabel!("$(single_asset_ticker_symbol) close daily price (USD/share)", fontsize=18)
 	ylabel!("1 - cumulative probability P(X≤x)")
-	title!("$(single_asset_ticker_symbol) (T = $(number_of_days) days)", fontsize=18)
+	#title!("$(single_asset_ticker_symbol) (T = $(number_of_days) days)", fontsize=18)
 end
 
 # ╔═╡ c8c3fe32-560d-11ec-0617-2dc33608384a
@@ -1653,23 +1677,25 @@ version = "0.9.1+5"
 # ╟─34bf07e8-5c47-4aa8-aa2c-161709c158be
 # ╟─9943d000-83d0-413d-a231-0295fb19df71
 # ╟─f66a480b-3f0c-4ebf-a8b8-e0f91dff851d
-# ╠═a815a181-530a-4ede-a5df-a56d9dc769d2
-# ╟─d812551d-4b1c-49d8-ad8c-8a992a3d38b8
+# ╠═54efa70c-bac6-4d7c-93df-0dfd1b89769d
+# ╠═5c5d5eeb-6775-452f-880d-7b4fa2acda57
+# ╟─61ab2949-d72f-4d80-a717-4b6a9227de0e
 # ╠═34b06415-21c1-4904-97f0-ab614447355c
+# ╟─a39b90ec-a4c5-472f-b00e-c81ee9c5576f
 # ╟─cbbd8670-49ab-4601-b8d7-9f3f456752e8
+# ╟─edfbf364-e126-4e95-93d2-a6adfb340045
 # ╠═a786ca10-06d2-4b76-97a9-2bcf879ea6cb
-# ╠═6bf06c12-cf25-43c4-81f3-b1d79d13fc94
-# ╟─54823f9e-be70-4d6e-a767-3ef717330203
+# ╟─a3d29aa3-96ca-4681-960c-3b4b04b1e40d
+# ╟─6bf06c12-cf25-43c4-81f3-b1d79d13fc94
 # ╟─5a3500c2-4f82-43e9-a31b-d530f56fdbe9
-# ╠═e36979d5-c1b6-4c17-a65a-d8de8e6bd8d0
-# ╟─aeafe1ed-f217-48fd-9624-add5f6f791e6
+# ╟─a1e1d5f8-e06e-4682-ab54-a9454a8e3b30
+# ╟─e36979d5-c1b6-4c17-a65a-d8de8e6bd8d0
+# ╠═aeafe1ed-f217-48fd-9624-add5f6f791e6
 # ╟─9feb542d-ace9-4154-b281-76033ba33d59
+# ╟─849f69b0-07af-40ab-8295-c0b80a26a2d5
 # ╟─36372d31-215d-4299-b4f1-49e42d8b0dbd
-# ╟─c32725a4-e276-4372-8d06-d40ba52c9f09
+# ╠═c32725a4-e276-4372-8d06-d40ba52c9f09
 # ╟─f1a71f47-fb19-4988-a439-2ff8d38be5b7
-# ╟─6e23a712-048f-4c9b-bef4-997155f1df41
-# ╠═ed3013f5-6d5e-436b-a6fc-aba6e1ce10f7
-# ╟─0cefc746-94a0-4d96-98c7-5f6f770d69b0
 # ╠═a6c4e663-f1e3-4e0c-a8bf-7c13fcb076f0
 # ╠═f9e5092b-a158-48cb-a919-96f30ec51038
 # ╟─c8c3fe32-560d-11ec-0617-2dc33608384a

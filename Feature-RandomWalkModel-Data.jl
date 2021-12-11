@@ -17,52 +17,53 @@ end
 # ╔═╡ f9e5092b-a158-48cb-a919-96f30ec51038
 begin
 
-	# setup: we need to specify the paths where we can find our project resources
-	_PATH_TO_ROOT = pwd()
-	_PATH_TO_SRC = joinpath(_PATH_TO_ROOT, "src")
-	_PATH_TO_DATA = joinpath(_PATH_TO_ROOT, "data")
-	_PATH_TO_CONFIG = joinpath(_PATH_TO_ROOT, "configuration")
+    # setup: we need to specify the paths where we can find our project resources
+    _PATH_TO_ROOT = pwd()
+    _PATH_TO_SRC = joinpath(_PATH_TO_ROOT, "src")
+    _PATH_TO_DATA = joinpath(_PATH_TO_ROOT, "data")
+    _PATH_TO_CONFIG = joinpath(_PATH_TO_ROOT, "configuration")
 
-	# what packages are we going to use?
-	using DataFrames
-	using CSV
-	using HTTP
-	using TOML
-	using ProgressMeter
-	using Dates
-	using StatsPlots
-	using Statistics
-	using Distributions
-	using PlutoUI
-	using PlotThemes
-
-	theme(:default)
+    # what packages are we going to use?
+    using DataFrames
+    using CSV
+    using HTTP
+    using TOML
+    using ProgressMeter
+    using Dates
+    using StatsPlots
+    using Statistics
+    using Distributions
+    using PlutoUI
+    using PlotThemes
+	using HypothesisTests
 	
-	# load my lib of code -
-	include(joinpath(_PATH_TO_SRC,"Include.jl"))
+    theme(:default)
 
-	# alias the AlphaVantage URL -
-	DATASTORE_URL_STRING = "https://www.alphavantage.co/query?"
+    # load my lib of code -
+    include(joinpath(_PATH_TO_SRC, "Include.jl"))
 
-	# What we have here is a classic good news, bad news situation ...
-	# Bad news: We don't check in our AlphaVantage API key to GitHub (sorry). 
-	# Good news: AlphaVantage API keys are free. 
-	# check out: https://www.alphavantage.co/support/#api-key
-	configuration_dictionary = TOML.parsefile(joinpath(_PATH_TO_CONFIG, "Configuration.toml"))
-	
-	# get some stuff from the configuration dictionary -
-	ALPHAVANTAGE_API_KEY = configuration_dictionary["API"]["alphavantage_api_key"]
+    # alias the AlphaVantage URL -
+    DATASTORE_URL_STRING = "https://www.alphavantage.co/query?"
 
-	# background color plots -
-	background_color_outside = RGB(1.0, 1.0, 1.0)
-	background_color = RGB(0.99, 0.98, 0.96)
-	CB_BLUE = RGB(68/255,119/255,170/255)
-	CB_LBLUE = RGB(102/255, 204/255, 238/255)
-	CB_GRAY = RGB(187/255, 187/255, 187/255)
-	CB_RED = RGB(238/255, 102/255, 119/255)
-	
-	# show -
-	nothing
+    # What we have here is a classic good news, bad news situation ...
+    # Bad news: We don't check in our AlphaVantage API key to GitHub (sorry). 
+    # Good news: AlphaVantage API keys are free. 
+    # check out: https://www.alphavantage.co/support/#api-key
+    configuration_dictionary = TOML.parsefile(joinpath(_PATH_TO_CONFIG, "Configuration.toml"))
+
+    # get some stuff from the configuration dictionary -
+    ALPHAVANTAGE_API_KEY = configuration_dictionary["API"]["alphavantage_api_key"]
+
+    # background color plots -
+    background_color_outside = RGB(1.0, 1.0, 1.0)
+    background_color = RGB(0.99, 0.98, 0.96)
+    CB_BLUE = RGB(68 / 255, 119 / 255, 170 / 255)
+    CB_LBLUE = RGB(102 / 255, 204 / 255, 238 / 255)
+    CB_GRAY = RGB(187 / 255, 187 / 255, 187 / 255)
+    CB_RED = RGB(238 / 255, 102 / 255, 119 / 255)
+
+    # show -
+    nothing
 end
 
 # ╔═╡ 2bb52ee4-1c6f-46b6-b105-86827ada0f75
@@ -116,8 +117,8 @@ The parameters for the [Alphavantage.co](https://www.alphavantage.co) API call a
 # ╔═╡ 54efa70c-bac6-4d7c-93df-0dfd1b89769d
 # Pooksoft Industrial Average (PSIA) -> the DJIA + some stuff
 ticker_symbol_array = sort(["MSFT", "ALLY", "MET", "AAPL", "GM", "PFE", "JNJ", "TGT", "WFC", "AIG", "F", "GE", "AMD",
-	"MMM", "AXP", "AMGN", "BA", "CAT", "CVX", "CSCO", "KO", "DIS","DOW", "GS", "HD", "IBM", "HON", "INTC", "JNJ", "JPM", 
-	"MCD", "MRK", "NKE", "PG", "CRM", "TRV", "UNH", "VZ", "V", "WBA", "WMT"
+    "MMM", "AXP", "AMGN", "BA", "CAT", "CVX", "CSCO", "KO", "DIS", "DOW", "GS", "HD", "IBM", "HON", "INTC", "JNJ", "JPM",
+    "MCD", "MRK", "NKE", "PG", "CRM", "TRV", "UNH", "VZ", "V", "WBA", "WMT"
 ]);
 
 # ╔═╡ 61ab2949-d72f-4d80-a717-4b6a9227de0e
@@ -145,18 +146,23 @@ downloaded from using [Alphavantage.co](https://www.alphavantage.co) application
 
 # ╔═╡ a786ca10-06d2-4b76-97a9-2bcf879ea6cb
 # fit a distribution to a ticker -
-single_asset_ticker_symbol = "CSCO";
+single_asset_ticker_symbol = "AAPL";
 
 # ╔═╡ edfbf364-e126-4e95-93d2-a6adfb340045
 md"""
 ###### The daily return of individual ticker symbols is not normally distributed
 
-A key assumption often made in mathematical finance is that the growth rate $\mu_{j\rightarrow{j+1}}$ (return) computed using the log of the prices is normally distributed. However, a closer examination of the $\mu_{j\rightarrow{j+1}}$ values computed from historical data suggests this is not true (Fig. 2). Visual inspection of the histograms computed using a [Laplace distribution](https://en.wikipedia.org/wiki/Laplace_distribution) (Fig 2, dark blue) for the returns appear to be closer to the historical data (Fig 2, red) compared to a [Normal distribution](https://en.wikipedia.org/wiki/Normal_distribution) (Fig 2, light blue).
+A key assumption often made in mathematical finance is that the growth rate $\mu_{j\rightarrow{j+1}}$ (return) computed using the log of the prices is normally distributed. However, a closer examination of the $\mu_{j\rightarrow{j+1}}$ values computed from historical data suggests this is not true (Fig. 2). Visual inspection of the histograms computed using a [Laplace distribution](https://en.wikipedia.org/wiki/Laplace_distribution) (Fig 2, dark blue) for the returns appear to be closer to the historical data (Fig 2, red) compared to a [Normal distribution](https://en.wikipedia.org/wiki/Normal_distribution) (Fig 2, light blue). 
 """
 
 # ╔═╡ a3d29aa3-96ca-4681-960c-3b4b04b1e40d
 md"""
 __Fig 2__: Comparison of the actual (red line) and estimated histogram for the adjusted daily returns for ticker = $(single_asset_ticker_symbol) using a [Laplace distribution](https://en.wikipedia.org/wiki/Laplace_distribution) for the return model (blue line) and a [Normal distribution](https://en.wikipedia.org/wiki/Normal_distribution) for the return model (light blue line). The return model distributions were estimated using the `fit` routine of the [Distributions.jl](https://github.com/JuliaStats/Distributions.jl) package. The `fit` routine uses multiple approaches to estimate the parameters in the distribution including [Maximum Likelihood Estimation (MLE)](https://en.wikipedia.org/wiki/Maximum_likelihood_estimation). 
+"""
+
+# ╔═╡ 1d72b291-24b7-4ec6-8307-1da0bc4a9183
+md"""
+To further explore the question of normality, we performed the [Kolmogorov–Smirnov (KS) test](https://en.wikipedia.org/wiki/Kolmogorov–Smirnov_test) to estimate if the distribution of return values are normally distributed. We used the [KS test implementation in the HypothesisTests.jl](https://juliastats.org/HypothesisTests.jl/latest/nonparametric/#Kolmogorov-Smirnov-test-1) package.
 """
 
 # ╔═╡ e36979d5-c1b6-4c17-a65a-d8de8e6bd8d0
@@ -177,64 +183,64 @@ md"""
 # ╔═╡ a6c4e663-f1e3-4e0c-a8bf-7c13fcb076f0
 function download_ticker_data(ticker_symbol_array::Array{String,1})::Dict{String,DataFrame}
 
-	# initialize some storage -
-	price_data_dictionary = Dict{String,DataFrame}() # Dict key => value where key = ticker symbol and value = price DataFrame
+    # initialize some storage -
+    price_data_dictionary = Dict{String,DataFrame}() # Dict key => value where key = ticker symbol and value = price DataFrame
 
-	# setup: specify the query parameters for the call to Alphavantage -
-	# check out the API documentation: https://www.alphavantage.co/documentation/
-	query_parameters = Dict{String,String}()
-	query_parameters["function"] = "TIME_SERIES_DAILY_ADJUSTED" 	# get the daily close price adjusted
-	query_parameters["apikey"] = ALPHAVANTAGE_API_KEY 				# your alphavantage API key goes here (see setup/config block below)
-	query_parameters["datatype"] = "csv" 							# download in CSV (the other option is JSON) format
-	query_parameters["outputsize"] = "full" 						# compact -vs- full: last 100 trading days -vs- up to 20 years of data
+    # setup: specify the query parameters for the call to Alphavantage -
+    # check out the API documentation: https://www.alphavantage.co/documentation/
+    query_parameters = Dict{String,String}()
+    query_parameters["function"] = "TIME_SERIES_DAILY_ADJUSTED" # get the daily close price adjusted
+    query_parameters["apikey"] = ALPHAVANTAGE_API_KEY # your alphavantage API key goes here (see setup/config block below)
+    query_parameters["datatype"] = "csv" # download in CSV (the other option is JSON) format
+    query_parameters["outputsize"] = "full" # compact -vs- full: last 100 trading days -vs- up to 20 years of data
 
-	# data type: sub dir where we save the data
-	data_type_flag = "daily"
-	training_prediction_flag = "training"
-	
-	# main download loop -
-	for ticker_symbol in ticker_symbol_array
-		
-		# check -> have we downloaded this data already?
-		data_file_path = joinpath(_PATH_TO_DATA, "$(training_prediction_flag)", "$(data_type_flag)", 
-			"$(ticker_symbol).csv")
-		if (ispath(data_file_path) == false || does_data_file_exist(data_file_path) == false)
+    # data type: sub dir where we save the data
+    data_type_flag = "daily"
+    training_prediction_flag = "training"
 
-			# let use know what is going on ...
-			with_terminal() do
-				println("Starting $(ticker_symbol) download ...")
-			end
-			
-			# We do NOT have this data file -> download from Alphavantage.co
-			# execute API call -> check to see if error -> turn into DataFrame
-			query_parameters["symbol"] = ticker_symbol
-			url_string = build_url_query_string(DATASTORE_URL_STRING, query_parameters)
-			data_table = http_get_call_with_url(url_string) |> check |> process_csv_api_data
+    # main download loop -
+    for ticker_symbol in ticker_symbol_array
 
-			# sleep -
-			sleep(10); # to avoid issue w/API limits
+        # check -> have we downloaded this data already?
+        data_file_path = joinpath(_PATH_TO_DATA, "$(training_prediction_flag)", "$(data_type_flag)",
+            "$(ticker_symbol).csv")
+        if (ispath(data_file_path) == false || does_data_file_exist(data_file_path) == false)
 
-			# make the dir to save the data (if we don't have it already) -
-			mkpath(joinpath(_PATH_TO_DATA, "$(training_prediction_flag)", "$(data_type_flag)"))
+            # let use know what is going on ...
+            with_terminal() do
+                println("Starting $(ticker_symbol) download ...")
+            end
 
-			# dump data table to disk -
-			CSV.write(data_file_path, data_table)
+            # We do NOT have this data file -> download from Alphavantage.co
+            # execute API call -> check to see if error -> turn into DataFrame
+            query_parameters["symbol"] = ticker_symbol
+            url_string = build_url_query_string(DATASTORE_URL_STRING, query_parameters)
+            data_table = http_get_call_with_url(url_string) |> check |> process_csv_api_data
 
-			# put the price DataFrame into the price_data_dictionary -
-			price_data_dictionary[ticker_symbol] = data_table
-			
-		else
+            # sleep -
+            sleep(10) # to avoid issue w/API limits
 
-			# we already have this ticker downloaded. load the existing file from disk -
-			data_table = CSV.read(data_file_path, DataFrame)
+            # make the dir to save the data (if we don't have it already) -
+            mkpath(joinpath(_PATH_TO_DATA, "$(training_prediction_flag)", "$(data_type_flag)"))
 
-			# put the price DataFrame into the price_data_dictionary -
-			price_data_dictionary[ticker_symbol] = data_table
-		end
-	end
+            # dump data table to disk -
+            CSV.write(data_file_path, data_table)
 
-	# show -
-	return price_data_dictionary 
+            # put the price DataFrame into the price_data_dictionary -
+            price_data_dictionary[ticker_symbol] = data_table
+
+        else
+
+            # we already have this ticker downloaded. load the existing file from disk -
+            data_table = CSV.read(data_file_path, DataFrame)
+
+            # put the price DataFrame into the price_data_dictionary -
+            price_data_dictionary[ticker_symbol] = data_table
+        end
+    end
+
+    # show -
+    return price_data_dictionary
 end
 
 # ╔═╡ 5c5d5eeb-6775-452f-880d-7b4fa2acda57
@@ -244,107 +250,110 @@ price_data_dictionary = download_ticker_data(ticker_symbol_array);
 # ╔═╡ 34b06415-21c1-4904-97f0-ab614447355c
 begin
 
-	# initialize -
-	return_data_dictionary = Dict{String,DataFrame}()
+    # initialize -
+    return_data_dictionary = Dict{String,DataFrame}()
 
-	# compute -
-	for ticker_symbol ∈ ticker_symbol_array
-		
-		# compute_return_array function is provided by Serenity -> computes the log return given a DataFrame, returns a DataFrame
-		return_data_dictionary[ticker_symbol] = compute_log_return_array(price_data_dictionary[ticker_symbol], 
-			:timestamp => :adjusted_close; Δt = (1.0/1.0))
-	end
+    # compute -
+    for ticker_symbol ∈ ticker_symbol_array
+
+        # compute_return_array function is provided by Serenity -> computes the log return given a DataFrame, returns a DataFrame
+        return_data_dictionary[ticker_symbol] = compute_log_return_array(price_data_dictionary[ticker_symbol],
+            :timestamp => :adjusted_close; Δt = (1.0 / 1.0))
+    end
 end
 
 # ╔═╡ cbbd8670-49ab-4601-b8d7-9f3f456752e8
 begin
 
-	# compute some ranges -
-	ticker_symbol = "AAPL"
-	μ_avg = mean(return_data_dictionary[ticker_symbol][!,:μ])
-	
-	# number of bins - 10% of the length of a test ticker
-	number_of_bins = convert(Int64,(floor(0.1*length(return_data_dictionary[ticker_symbol][!,:μ]))))
+    # compute some ranges -
+    ticker_symbol = "AAPL"
+    μ_avg = mean(return_data_dictionary[ticker_symbol][!, :μ])
 
-	# number of tickers -
-	number_of_ticker_symbols = length(ticker_symbol_array)
-	for ticker_index = number_of_ticker_symbols:-1:1
-		local_ticker_symbol = ticker_symbol_array[ticker_index]
-		
-		if (ticker_index == number_of_ticker_symbols)
-			
-			# make the first plot -
-			stephist(return_data_dictionary[local_ticker_symbol][!,:μ], bins=number_of_bins, normed=:true, 
-				background_color = background_color, background_color_outside = background_color_outside,
-				foreground_color_minor_grid = RGB(1.0,1.0,1.0),
-				lw=1, c=CB_GRAY,  foreground_color_legend = nothing, label="")
-			
-		elseif (ticker_index != 1 && ticker_index != number_of_ticker_symbols)
-			
-			stephist!(return_data_dictionary[local_ticker_symbol][!,:μ], bins=number_of_bins, normed=:true, lw=1, 
-					c=CB_GRAY, label="")
-		else
-			stephist!(return_data_dictionary[local_ticker_symbol][!,:μ], bins=number_of_bins, normed=:true, lw=2, 
-					c=CB_RED, label="$(local_ticker_symbol)")	
-		end
-	end
-	
-	# label the plots -
-	xlabel!("Daily return μ (1/day)", fontsize=18)
-	ylabel!("Frequency (N=$(number_of_bins); dimensionless)", fontsize=14)
-	xlims!((-100.0*μ_avg,100.0*μ_avg))
+    # number of bins - 10% of the length of a test ticker
+    number_of_bins = convert(Int64, (floor(0.1 * length(return_data_dictionary[ticker_symbol][!, :μ]))))
+
+    # number of tickers -
+    number_of_ticker_symbols = length(ticker_symbol_array)
+    for ticker_index = number_of_ticker_symbols:-1:1
+        local_ticker_symbol = ticker_symbol_array[ticker_index]
+
+        if (ticker_index == number_of_ticker_symbols)
+
+            # make the first plot -
+            stephist(return_data_dictionary[local_ticker_symbol][!, :μ], bins = number_of_bins, normed = :true,
+                background_color = background_color, background_color_outside = background_color_outside,
+                foreground_color_minor_grid = RGB(1.0, 1.0, 1.0),
+                lw = 1, c = CB_GRAY, foreground_color_legend = nothing, label = "")
+
+        elseif (ticker_index != 1 && ticker_index != number_of_ticker_symbols)
+
+            stephist!(return_data_dictionary[local_ticker_symbol][!, :μ], bins = number_of_bins, normed = :true, lw = 1,
+                c = CB_GRAY, label = "")
+        else
+            stephist!(return_data_dictionary[local_ticker_symbol][!, :μ], bins = number_of_bins, normed = :true, lw = 2,
+                c = CB_RED, label = "$(local_ticker_symbol)")
+        end
+    end
+
+    # label the plots -
+    xlabel!("Daily return μ (1/day)", fontsize = 18)
+    ylabel!("Frequency (N=$(number_of_bins); dimensionless)", fontsize = 14)
+    xlims!((-100.0 * μ_avg, 100.0 * μ_avg))
 end
 
 # ╔═╡ 6bf06c12-cf25-43c4-81f3-b1d79d13fc94
 begin
 
-	# get the historical return data -
-	μ_vector = return_data_dictionary[single_asset_ticker_symbol][!,:μ]
+    # get the historical return data -
+    μ_vector = return_data_dictionary[single_asset_ticker_symbol][!, :μ]
 
-	# fit the model -
-	MODEL_NORMAL = fit(Normal,μ_vector)
-	MODEL = fit(Laplace,μ_vector)
+    # fit the model -
+    MODEL_NORMAL = fit(Normal, μ_vector)
+    MODEL = fit(Laplace, μ_vector)
 
-	# generate 10_000 samples
-	S = rand(MODEL,10000)
-	SN = rand(MODEL_NORMAL,10000)
+    # generate 10_000 samples
+    S = rand(MODEL, 10000)
+    SN = rand(MODEL_NORMAL, 10000)
 
-	# plot against actual -
-	stephist(return_data_dictionary[single_asset_ticker_symbol][!,:μ], bins=number_of_bins, normed=:true, lw=2, c=CB_RED, 
-		label="$(single_asset_ticker_symbol)", background_color = background_color, 
-		background_color_outside = background_color_outside, foreground_color_legend = nothing)
+    # plot against actual -
+    stephist(return_data_dictionary[single_asset_ticker_symbol][!, :μ], bins = number_of_bins, normed = :true, lw = 2, c = CB_RED,
+        label = "$(single_asset_ticker_symbol)", background_color = background_color,
+        background_color_outside = background_color_outside, foreground_color_legend = nothing)
 
-	stephist!(S, bins=number_of_bins, normed=:true, lw=2, c= CB_BLUE, 
-		label="$(single_asset_ticker_symbol) Laplace Model")
+    stephist!(S, bins = number_of_bins, normed = :true, lw = 2, c = CB_BLUE,
+        label = "$(single_asset_ticker_symbol) Laplace Model")
 
-	stephist!(SN, bins=number_of_bins, normed=:true, lw=2, c=CB_LBLUE, 
-		label="$(single_asset_ticker_symbol) Normal Model")
+    stephist!(SN, bins = number_of_bins, normed = :true, lw = 2, c = CB_LBLUE,
+        label = "$(single_asset_ticker_symbol) Normal Model")
 
-	xlabel!("Daily return μ (1/day)", fontsize=18)
-	ylabel!("Frequency (N=$(number_of_bins); dimensionless)", fontsize=14)
-	xlims!((-100.0*μ_avg,100.0*μ_avg))
+    xlabel!("Daily return μ (1/day)", fontsize = 18)
+    ylabel!("Frequency (N=$(number_of_bins); dimensionless)", fontsize = 14)
+    xlims!((-100.0 * μ_avg, 100.0 * μ_avg))
 end
+
+# ╔═╡ 039be00b-490e-4d41-92a1-fa8e4fac9517
+ks_test_result = HypothesisTests.ExactOneSampleKSTest(unique(μ_vector), MODEL)
 
 # ╔═╡ 5a3500c2-4f82-43e9-a31b-d530f56fdbe9
 begin
-	# how many steps, sample paths etc -
-	number_of_days = 21
-	number_of_sample_paths = 25000
-	skip_factor = convert(Int64,(floor(0.005*number_of_sample_paths)))
-	plot_index_array = 1:skip_factor:number_of_sample_paths |> collect
+    # how many steps, sample paths etc -
+    number_of_days = 21
+    number_of_sample_paths = 25000
+    skip_factor = convert(Int64, (floor(0.005 * number_of_sample_paths)))
+    plot_index_array = 1:skip_factor:number_of_sample_paths |> collect
 
-	# what is the *actual* price data?
-	actual_price_data = price_data_dictionary[single_asset_ticker_symbol][end - number_of_days:end, :adjusted_close]
-	
-	# get initial price -
-	initial_price_value = log(actual_price_data[1])
+    # what is the *actual* price data?
+    actual_price_data = price_data_dictionary[single_asset_ticker_symbol][end-number_of_days:end, :adjusted_close]
 
-	# compute a set of possible trajectories -> convert back to actual price -
-	simulated_price_trajectory = MODEL(initial_price_value, number_of_days; 
-		number_of_sample_paths=number_of_sample_paths)  .|> exp
+    # get initial price -
+    initial_price_value = log(actual_price_data[1])
 
-	# show -
-	nothing
+    # compute a set of possible trajectories -> convert back to actual price -
+    simulated_price_trajectory = MODEL(initial_price_value, number_of_days;
+        number_of_sample_paths = number_of_sample_paths) .|> exp
+
+    # show -
+    nothing
 end
 
 # ╔═╡ a1e1d5f8-e06e-4682-ab54-a9454a8e3b30
@@ -355,49 +364,49 @@ __Fig XX__: In sample random walk simulation (N = $(number_of_sample_paths) samp
 # ╔═╡ aeafe1ed-f217-48fd-9624-add5f6f791e6
 begin
 
-	# plot -
-	plot(simulated_price_trajectory[:,plot_index_array],c=CB_LBLUE, legend=false, label="", lw=1, 
-		background_color = background_color, background_color_outside = background_color_outside)
+    # plot -
+    plot(simulated_price_trajectory[:, plot_index_array], c = CB_LBLUE, legend = false, label = "", lw = 1,
+        background_color = background_color, background_color_outside = background_color_outside)
 
-	if (show_real_traj == true)
-		plot!(actual_price_data[1:end],c=CB_RED, lw=3, legend = :topleft, label="$(single_asset_ticker_symbol) actual")
-	end
+    if (show_real_traj == true)
+        plot!(actual_price_data[1:end], c = CB_RED, lw = 3, legend = :topleft, label = "$(single_asset_ticker_symbol) actual")
+    end
 
-	xlabel!("Time step index (day)", fontsize=18)
-	ylabel!("Simulated $(single_asset_ticker_symbol) close price (USD/share)", fontsize=14)
-	# title!("Random walk simulation $(single_asset_ticker_symbol) (N = $(number_of_sample_paths))", fontsize=12)
+    xlabel!("Time step index (day)", fontsize = 18)
+    ylabel!("Simulated $(single_asset_ticker_symbol) close price (USD/share)", fontsize = 14)
+    # title!("Random walk simulation $(single_asset_ticker_symbol) (N = $(number_of_sample_paths))", fontsize=12)
 end
 
 # ╔═╡ 9feb542d-ace9-4154-b281-76033ba33d59
 begin
-	stephist(simulated_price_trajectory[end,:])
-	estimated_mean_price = round(mean(simulated_price_trajectory[end,:]), sigdigits=4)
-	std_estimated_price = round(std(simulated_price_trajectory[end,:]), sigdigits=4)
-	price_actual = actual_price_data[end]
+    stephist(simulated_price_trajectory[end, :])
+    estimated_mean_price = round(mean(simulated_price_trajectory[end, :]), sigdigits = 4)
+    std_estimated_price = round(std(simulated_price_trajectory[end, :]), sigdigits = 4)
+    price_actual = actual_price_data[end]
 
-	with_terminal() do
-		println("---------------------------------------------------------------------")
-		println("Predicted: P_model = $(estimated_mean_price) ± $(std_estimated_price)")
-		println("Actual: P_actual = $(price_actual)")
+    with_terminal() do
+        println("---------------------------------------------------------------------")
+        println("Predicted: P_model = $(estimated_mean_price) ± $(std_estimated_price)")
+        println("Actual: P_actual = $(price_actual)")
 
-		# in the range?
-		LB = estimated_mean_price - std_estimated_price
-		UB = estimated_mean_price + std_estimated_price
-		is_in_range_flag = false
-		if (price_actual>= LB && price_actual <= UB)
-			is_in_range_flag = true
-		end		
-		println("In range (μ ± σ): $(is_in_range_flag)")
+        # in the range?
+        LB = estimated_mean_price - std_estimated_price
+        UB = estimated_mean_price + std_estimated_price
+        is_in_range_flag = false
+        if (price_actual >= LB && price_actual <= UB)
+            is_in_range_flag = true
+        end
+        println("In range (μ ± σ): $(is_in_range_flag)")
 
-		if (is_in_range_flag == true)
-			DL = round(price_actual - LB, sigdigits=4)
-			DU = round(UB - price_actual, sigdigits=4)
-			println("Distance from lower bound: $(DL)")
-			println("Distance from upper bound: $(DU)")
-		end
-		
-		println("---------------------------------------------------------------------")
-	end
+        if (is_in_range_flag == true)
+            DL = round(price_actual - LB, sigdigits = 4)
+            DU = round(UB - price_actual, sigdigits = 4)
+            println("Distance from lower bound: $(DL)")
+            println("Distance from upper bound: $(DU)")
+        end
+
+        println("---------------------------------------------------------------------")
+    end
 end
 
 # ╔═╡ 849f69b0-07af-40ab-8295-c0b80a26a2d5
@@ -408,24 +417,24 @@ __Fig XX__: In sample random walk simulation (N = $(number_of_sample_paths) samp
 # ╔═╡ 36372d31-215d-4299-b4f1-49e42d8b0dbd
 begin
 
-	# compute the cumulative probability in the range [0,μ + 3*σ]
-	LB = estimated_mean_price - 3*std_estimated_price
-	UB = estimated_mean_price + 3*std_estimated_price
-	price_range = range(LB,stop=UB, length=1000) |> collect
-	cprob = Array{Float64,1}()
+    # compute the cumulative probability in the range [0,μ + 3*σ]
+    LB = estimated_mean_price - 3 * std_estimated_price
+    UB = estimated_mean_price + 3 * std_estimated_price
+    price_range = range(LB, stop = UB, length = 1000) |> collect
+    cprob = Array{Float64,1}()
 
-	for price in price_range
-		p = compute_rwm_cumulative_probabilty(x->(x<=price), simulated_price_trajectory[end,:])
-		push!(cprob,p)
-	end
+    for price in price_range
+        p = compute_rwm_cumulative_probabilty(x -> (x <= price), simulated_price_trajectory[end, :])
+        push!(cprob, p)
+    end
 
-	# plot -
-	#plot(price_range, cprob, legend=:right, label="P(X≤x)", lw=2)
-	plot(price_range, 1 .- cprob, legend=:topright, label="P(X≥x)", lw=2, c=:red, 
-		background_color = background_color, background_color_outside = background_color_outside, foreground_color_legend = nothing)
-	xlabel!("$(single_asset_ticker_symbol) close daily price (USD/share)", fontsize=18)
-	ylabel!("1 - cumulative probability P(X≤x)")
-	#title!("$(single_asset_ticker_symbol) (T = $(number_of_days) days)", fontsize=18)
+    # plot -
+    #plot(price_range, cprob, legend=:right, label="P(X≤x)", lw=2)
+    plot(price_range, 1 .- cprob, legend = :topright, label = "P(X≥x)", lw = 2, c = :red,
+        background_color = background_color, background_color_outside = background_color_outside, foreground_color_legend = nothing)
+    xlabel!("$(single_asset_ticker_symbol) close daily price (USD/share)", fontsize = 18)
+    ylabel!("1 - cumulative probability P(X≤x)")
+    #title!("$(single_asset_ticker_symbol) (T = $(number_of_days) days)", fontsize=18)
 end
 
 # ╔═╡ c8c3fe32-560d-11ec-0617-2dc33608384a
@@ -497,6 +506,7 @@ DataFrames = "a93c6f00-e57d-5684-b7b6-d8193f3e46c0"
 Dates = "ade2ca70-3891-5945-98fb-dc099432e06a"
 Distributions = "31c24e10-a181-5473-b8eb-7969acd0382f"
 HTTP = "cd3eb016-35fb-5094-929b-558a96fad6f3"
+HypothesisTests = "09f84164-cd44-5f33-b23f-e6b0d136a0d5"
 PlotThemes = "ccf2f8ad-2431-5c83-bf29-c5338b663b6a"
 PlutoUI = "7f904dfe-b85e-4ff6-b463-dae2292396a8"
 ProgressMeter = "92933f4c-e287-5a05-a399-4b506db050ca"
@@ -505,12 +515,13 @@ StatsPlots = "f3b207a7-027a-5e70-b257-86293d7955fd"
 TOML = "fa267f1f-6049-4f14-aa54-33bafae1ed76"
 
 [compat]
-CSV = "~0.9.11"
+CSV = "~0.8.5"
 DataFrames = "~1.3.0"
-Distributions = "~0.25.34"
+Distributions = "~0.25.35"
 HTTP = "~0.9.17"
+HypothesisTests = "~0.10.6"
 PlotThemes = "~2.0.1"
-PlutoUI = "~0.7.21"
+PlutoUI = "~0.7.22"
 ProgressMeter = "~1.7.1"
 StatsPlots = "~0.14.29"
 """
@@ -574,10 +585,10 @@ uuid = "6e34b625-4abd-537c-b88f-471c36dfa7a0"
 version = "1.0.8+0"
 
 [[deps.CSV]]
-deps = ["CodecZlib", "Dates", "FilePathsBase", "InlineStrings", "Mmap", "Parsers", "PooledArrays", "SentinelArrays", "Tables", "Unicode", "WeakRefStrings"]
-git-tree-sha1 = "49f14b6c56a2da47608fe30aed711b5882264d7a"
+deps = ["Dates", "Mmap", "Parsers", "PooledArrays", "SentinelArrays", "Tables", "Unicode"]
+git-tree-sha1 = "b83aa3f513be680454437a0eee21001607e5d983"
 uuid = "336ed68f-0bac-5ca0-87d4-7b16caf5d00b"
-version = "0.9.11"
+version = "0.8.5"
 
 [[deps.Cairo_jll]]
 deps = ["Artifacts", "Bzip2_jll", "Fontconfig_jll", "FreeType2_jll", "Glib_jll", "JLLWrappers", "LZO_jll", "Libdl", "Pixman_jll", "Pkg", "Xorg_libXext_jll", "Xorg_libXrender_jll", "Zlib_jll", "libpng_jll"]
@@ -587,27 +598,21 @@ version = "1.16.1+0"
 
 [[deps.ChainRulesCore]]
 deps = ["Compat", "LinearAlgebra", "SparseArrays"]
-git-tree-sha1 = "f885e7e7c124f8c92650d61b9477b9ac2ee607dd"
+git-tree-sha1 = "4c26b4e9e91ca528ea212927326ece5918a04b47"
 uuid = "d360d2e6-b24c-11e9-a2a3-2a2ae2dbcce4"
-version = "1.11.1"
+version = "1.11.2"
 
 [[deps.ChangesOfVariables]]
-deps = ["LinearAlgebra", "Test"]
-git-tree-sha1 = "9a1d594397670492219635b35a3d830b04730d62"
+deps = ["ChainRulesCore", "LinearAlgebra", "Test"]
+git-tree-sha1 = "bf98fa45a0a4cee295de98d4c1462be26345b9a1"
 uuid = "9e997f8a-9a97-42d5-a9f1-ce6bfc15e2c0"
-version = "0.1.1"
+version = "0.1.2"
 
 [[deps.Clustering]]
 deps = ["Distances", "LinearAlgebra", "NearestNeighbors", "Printf", "SparseArrays", "Statistics", "StatsBase"]
 git-tree-sha1 = "75479b7df4167267d75294d14b58244695beb2ac"
 uuid = "aaaa29a8-35af-508c-8bc3-b662a17a0fe5"
 version = "0.14.2"
-
-[[deps.CodecZlib]]
-deps = ["TranscodingStreams", "Zlib_jll"]
-git-tree-sha1 = "ded953804d019afa9a3f98981d99b33e3db7b6da"
-uuid = "944b1d66-785c-5afd-91f1-9de20f533193"
-version = "0.7.0"
 
 [[deps.ColorSchemes]]
 deps = ["ColorTypes", "Colors", "FixedPointNumbers", "Random"]
@@ -627,6 +632,16 @@ git-tree-sha1 = "417b0ed7b8b838aa6ca0a87aadf1bb9eb111ce40"
 uuid = "5ae59095-9a9b-59fe-a467-6f913c188581"
 version = "0.12.8"
 
+[[deps.Combinatorics]]
+git-tree-sha1 = "08c8b6831dc00bfea825826be0bc8336fc369860"
+uuid = "861a8166-3701-5b0c-9a16-15d98fcdc6aa"
+version = "1.0.2"
+
+[[deps.CommonSolve]]
+git-tree-sha1 = "68a0743f578349ada8bc911a5cbd5a2ef6ed6d1f"
+uuid = "38540f10-b2f7-11e9-35d8-d573e4eb0ff2"
+version = "0.2.0"
+
 [[deps.Compat]]
 deps = ["Base64", "Dates", "DelimitedFiles", "Distributed", "InteractiveUtils", "LibGit2", "Libdl", "LinearAlgebra", "Markdown", "Mmap", "Pkg", "Printf", "REPL", "Random", "SHA", "Serialization", "SharedArrays", "Sockets", "SparseArrays", "Statistics", "Test", "UUIDs", "Unicode"]
 git-tree-sha1 = "dce3e3fea680869eaa0b774b2e8343e9ff442313"
@@ -636,6 +651,12 @@ version = "3.40.0"
 [[deps.CompilerSupportLibraries_jll]]
 deps = ["Artifacts", "Libdl"]
 uuid = "e66e0078-7015-5450-92f7-15fbd957f2ae"
+
+[[deps.ConstructionBase]]
+deps = ["LinearAlgebra"]
+git-tree-sha1 = "f74e9d5388b8620b4cee35d4c5a618dd4dc547f4"
+uuid = "187b0558-2788-49d3-abe0-74a17ed4e7c9"
+version = "1.3.0"
 
 [[deps.Contour]]
 deps = ["StaticArrays"]
@@ -661,9 +682,9 @@ version = "1.3.0"
 
 [[deps.DataStructures]]
 deps = ["Compat", "InteractiveUtils", "OrderedCollections"]
-git-tree-sha1 = "7d9d316f04214f7efdbb6398d545446e246eff02"
+git-tree-sha1 = "3daef5523dd2e769dad2365274f760ff5f282c7d"
 uuid = "864edb3b-99cc-5e75-8d2d-829cb0a9cfe8"
-version = "0.18.10"
+version = "0.18.11"
 
 [[deps.DataValueInterfaces]]
 git-tree-sha1 = "bfc1187b79289637fa0ef6d4436ebdfe6905cbd6"
@@ -702,9 +723,9 @@ uuid = "8ba89e20-285c-5b6f-9357-94700520ee1b"
 
 [[deps.Distributions]]
 deps = ["ChainRulesCore", "DensityInterface", "FillArrays", "LinearAlgebra", "PDMats", "Printf", "QuadGK", "Random", "SparseArrays", "SpecialFunctions", "Statistics", "StatsBase", "StatsFuns", "Test"]
-git-tree-sha1 = "7f3bec11f4bcd01bc1f507ebce5eadf1b0a78f47"
+git-tree-sha1 = "d6cc7abd52ebae5815fd75f6004a44abcf7a6b00"
 uuid = "31c24e10-a181-5473-b8eb-7969acd0382f"
-version = "0.25.34"
+version = "0.25.35"
 
 [[deps.DocStringExtensions]]
 deps = ["LibGit2"]
@@ -751,12 +772,6 @@ deps = ["Artifacts", "JLLWrappers", "Libdl", "Pkg"]
 git-tree-sha1 = "c6033cc3892d0ef5bb9cd29b7f2f0331ea5184ea"
 uuid = "f5851436-0d7a-5f13-b9de-f02708fd171a"
 version = "3.3.10+0"
-
-[[deps.FilePathsBase]]
-deps = ["Compat", "Dates", "Mmap", "Printf", "Test", "UUIDs"]
-git-tree-sha1 = "04d13bfa8ef11720c24e4d840c0033d145537df7"
-uuid = "48062228-2e41-5def-b9a4-89aafe57970f"
-version = "0.9.17"
 
 [[deps.FillArrays]]
 deps = ["LinearAlgebra", "Random", "SparseArrays", "Statistics"]
@@ -868,6 +883,12 @@ git-tree-sha1 = "2b078b5a615c6c0396c77810d92ee8c6f470d238"
 uuid = "ac1192a8-f4b3-4bfe-ba22-af5b92cd3ab2"
 version = "0.9.3"
 
+[[deps.HypothesisTests]]
+deps = ["Combinatorics", "Distributions", "LinearAlgebra", "Random", "Rmath", "Roots", "Statistics", "StatsBase"]
+git-tree-sha1 = "dc9bb7abfa265e0cf030635315184a476a2dd5f3"
+uuid = "09f84164-cd44-5f33-b23f-e6b0d136a0d5"
+version = "0.10.6"
+
 [[deps.IOCapture]]
 deps = ["Logging", "Random"]
 git-tree-sha1 = "f7be53659ab06ddc986428d3a9dcc95f6fa6705a"
@@ -879,12 +900,6 @@ deps = ["Test"]
 git-tree-sha1 = "098e4d2c533924c921f9f9847274f2ad89e018b8"
 uuid = "83e8ac13-25f8-5344-8a64-a9f2b223428f"
 version = "0.5.0"
-
-[[deps.InlineStrings]]
-deps = ["Parsers"]
-git-tree-sha1 = "ca99cac337f8e0561c6a6edeeae5bf6966a78d21"
-uuid = "842dd82b-1e85-43dc-bf29-5d0ee9dffc48"
-version = "1.1.0"
 
 [[deps.IntelOpenMP_jll]]
 deps = ["Artifacts", "JLLWrappers", "Libdl", "Pkg"]
@@ -919,9 +934,9 @@ uuid = "92d709cd-6900-40b7-9082-c6be49f344b6"
 version = "0.1.1"
 
 [[deps.IterTools]]
-git-tree-sha1 = "05110a2ab1fc5f932622ffea2a003221f4782c18"
+git-tree-sha1 = "fa6287a4469f5e048d763df38279ee729fbd44e5"
 uuid = "c8e1da08-722c-5040-9ed9-7db0dc04731e"
-version = "1.3.0"
+version = "1.4.0"
 
 [[deps.IteratorInterfaceExtensions]]
 git-tree-sha1 = "a3f24677c21f5bbe9d2a714f95dcd58337fb2856"
@@ -1184,9 +1199,9 @@ version = "0.11.5"
 
 [[deps.Parsers]]
 deps = ["Dates"]
-git-tree-sha1 = "ae4bbcadb2906ccc085cf52ac286dc1377dceccc"
+git-tree-sha1 = "bfd7d8c7fd87f04543810d9cbd3995972236ba1b"
 uuid = "69de0a69-1ddd-5017-9359-2bf0b02dc9f0"
-version = "2.1.2"
+version = "1.1.2"
 
 [[deps.Pixman_jll]]
 deps = ["Artifacts", "JLLWrappers", "Libdl", "Pkg"]
@@ -1212,15 +1227,15 @@ version = "1.0.15"
 
 [[deps.Plots]]
 deps = ["Base64", "Contour", "Dates", "Downloads", "FFMPEG", "FixedPointNumbers", "GR", "GeometryBasics", "JSON", "Latexify", "LinearAlgebra", "Measures", "NaNMath", "PlotThemes", "PlotUtils", "Printf", "REPL", "Random", "RecipesBase", "RecipesPipeline", "Reexport", "Requires", "Scratch", "Showoff", "SparseArrays", "Statistics", "StatsBase", "UUIDs", "UnicodeFun"]
-git-tree-sha1 = "8789439a899b77f4fbb4d7298500a6a5781205bc"
+git-tree-sha1 = "65ebc27d8c00c84276f14aaf4ff63cbe12016c70"
 uuid = "91a5bcdd-55d7-5caf-9e0b-520d859cae80"
-version = "1.25.0"
+version = "1.25.2"
 
 [[deps.PlutoUI]]
 deps = ["AbstractPlutoDingetjes", "Base64", "Dates", "Hyperscript", "HypertextLiteral", "IOCapture", "InteractiveUtils", "JSON", "Logging", "Markdown", "Random", "Reexport", "UUIDs"]
-git-tree-sha1 = "b68904528fd538f1cb6a3fbc44d2abdc498f9e8e"
+git-tree-sha1 = "565564f615ba8c4e4f40f5d29784aa50a8f7bbaf"
 uuid = "7f904dfe-b85e-4ff6-b463-dae2292396a8"
-version = "0.7.21"
+version = "0.7.22"
 
 [[deps.PooledArrays]]
 deps = ["DataAPI", "Future"]
@@ -1310,6 +1325,12 @@ git-tree-sha1 = "68db32dff12bb6127bac73c209881191bf0efbb7"
 uuid = "f50d1b31-88e8-58de-be2c-1cc44531875f"
 version = "0.3.0+0"
 
+[[deps.Roots]]
+deps = ["CommonSolve", "Printf", "Setfield"]
+git-tree-sha1 = "51ee572776905ee34c0568f5efe035d44bf59f74"
+uuid = "f2b01f46-fcfa-551c-844a-d8ac1e96c665"
+version = "1.3.11"
+
 [[deps.SHA]]
 uuid = "ea8e919c-243c-51af-8825-aaa63cd721ce"
 
@@ -1327,6 +1348,12 @@ version = "1.3.8"
 
 [[deps.Serialization]]
 uuid = "9e88b42a-f829-5b0c-bbe9-9e923198166b"
+
+[[deps.Setfield]]
+deps = ["ConstructionBase", "Future", "MacroTools", "Requires"]
+git-tree-sha1 = "0afd9e6c623e379f593da01f20590bacc26d1d14"
+uuid = "efcf1570-3423-57d1-acb7-fd33fddbac46"
+version = "0.8.1"
 
 [[deps.SharedArrays]]
 deps = ["Distributed", "Mmap", "Random", "Serialization"]
@@ -1430,12 +1457,6 @@ uuid = "a4e569a6-e804-4fa4-b0f3-eef7a1d5b13e"
 deps = ["InteractiveUtils", "Logging", "Random", "Serialization"]
 uuid = "8dfed614-e22c-5e08-85e1-65c5234f0b40"
 
-[[deps.TranscodingStreams]]
-deps = ["Random", "Test"]
-git-tree-sha1 = "216b95ea110b5972db65aa90f88d8d89dcb8851c"
-uuid = "3bb67fe8-82b1-5028-8e26-92a6c54297fa"
-version = "0.9.6"
-
 [[deps.URIs]]
 git-tree-sha1 = "97bbe755a53fe859669cd907f2d96aee8d2c1355"
 uuid = "5c2747f8-b7ea-4ff2-ba2e-563bfd36b1d4"
@@ -1465,12 +1486,6 @@ deps = ["Artifacts", "JLLWrappers", "Libdl", "Pkg"]
 git-tree-sha1 = "66d72dc6fcc86352f01676e8f0f698562e60510f"
 uuid = "2381bf8a-dfd0-557d-9999-79630e7b1b91"
 version = "1.23.0+0"
-
-[[deps.WeakRefStrings]]
-deps = ["DataAPI", "InlineStrings", "Parsers"]
-git-tree-sha1 = "c69f9da3ff2f4f02e811c3323c22e5dfcb584cfa"
-uuid = "ea10d353-3f73-51f8-a26c-33c1cb351aa5"
-version = "1.4.1"
 
 [[deps.Widgets]]
 deps = ["Colors", "Dates", "Observables", "OrderedCollections"]
@@ -1690,7 +1705,7 @@ version = "0.9.1+5"
 # ╔═╡ Cell order:
 # ╟─2bb52ee4-1c6f-46b6-b105-86827ada0f75
 # ╟─2f499c95-38cf-4856-b199-6c9aac44237a
-# ╠═34bf07e8-5c47-4aa8-aa2c-161709c158be
+# ╟─34bf07e8-5c47-4aa8-aa2c-161709c158be
 # ╟─9943d000-83d0-413d-a231-0295fb19df71
 # ╟─f66a480b-3f0c-4ebf-a8b8-e0f91dff851d
 # ╠═54efa70c-bac6-4d7c-93df-0dfd1b89769d
@@ -1703,7 +1718,9 @@ version = "0.9.1+5"
 # ╟─edfbf364-e126-4e95-93d2-a6adfb340045
 # ╟─a3d29aa3-96ca-4681-960c-3b4b04b1e40d
 # ╟─6bf06c12-cf25-43c4-81f3-b1d79d13fc94
-# ╟─5a3500c2-4f82-43e9-a31b-d530f56fdbe9
+# ╟─1d72b291-24b7-4ec6-8307-1da0bc4a9183
+# ╠═039be00b-490e-4d41-92a1-fa8e4fac9517
+# ╠═5a3500c2-4f82-43e9-a31b-d530f56fdbe9
 # ╟─a1e1d5f8-e06e-4682-ab54-a9454a8e3b30
 # ╟─e36979d5-c1b6-4c17-a65a-d8de8e6bd8d0
 # ╠═aeafe1ed-f217-48fd-9624-add5f6f791e6

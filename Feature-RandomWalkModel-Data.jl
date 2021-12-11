@@ -109,15 +109,15 @@ md"""
 # ╔═╡ f66a480b-3f0c-4ebf-a8b8-e0f91dff851d
 md"""
 ###### Download historical price data from the [Alphavantage.co](https://www.alphavantage.co) financial data application programming interface (API)
-We specify a list of ticker symbols that we want to model. Next, we check to see if we have price data already saved locally in the `data` subdirectory for each ticker. 
+We specify a list of ticker symbols that we want to model. Next, we check to see if we have price data already saved locally for each ticker. 
 * If yes, then we load the saved file as a [DataFrame](https://dataframes.juliadata.org/stable/) and store it in the `price_data_dictionary` where the keys are the ticker strings e.g., MSFT, etc. 
 * if no, we download new data from [Alphavantage.co](https://www.alphavantage.co), save this data locally as a `CSV` file (<ticker>.csv), and finally we store the price data as a DataFrame in the `price_data_dictionary` where the keys are the ticker symbols.
 The parameters for the [Alphavantage.co](https://www.alphavantage.co) API call are stored in the `query_parameters` dictionary. For estimating a SIM, we use the daily close price for the last 100 trading days for each ticker. 
 """
 
 # ╔═╡ 54efa70c-bac6-4d7c-93df-0dfd1b89769d
-# which tickers do we want to look at -
-ticker_symbol_array = sort(["MSFT", "ALLY", "MET", "AAPL", "GM", "PFE", "JNJ", "ACI", "TGT", 
+# Pooksoft Industrial Average (PSIA) -> the DJIA + some stuff
+ticker_symbol_array = sort(["MSFT", "ALLY", "MET", "AAPL", "GM", "PFE", "JNJ", "TGT", "WFC", "AIG", "F", "GE", "AMD",
 	"MMM", "AXP", "AMGN", "BA", "CAT", "CVX", "CSCO", "KO", "DIS","DOW", "GS", "HD", "IBM", "HON", "INTC", "JNJ", "JPM", 
 	"MCD", "MRK", "NKE", "PG", "CRM", "TRV", "UNH", "VZ", "V", "WBA", "WMT"
 ]);
@@ -129,7 +129,8 @@ md"""
 
 # ╔═╡ a39b90ec-a4c5-472f-b00e-c81ee9c5576f
 md"""
-__Fig. 1__: Histogram of the adjusted daily returns computed using the `stephist` routine of the [StatsPlots.jl](https://github.com/JuliaPlots/StatsPlots.jl) package for the ticker symbols in `ticker_symbols_array`. The number of bins was set to be 10% of the number of records for `AAPL` (shown in red) and was constant for each ticker. The returns were calculated using between approximately 10 and 20 years of historical daily adjusted close price data.  
+__Fig. 1__: Histogram of the adjusted daily returns computed using the `stephist` routine of the [StatsPlots.jl](https://github.com/JuliaPlots/StatsPlots.jl) package for the ticker symbols in the PSIA. The number of bins was set to be 10% of the number of records for `AAPL` (shown in red) and was constant for each ticker. The returns were calculated using approximately 10 to 20 years of historical daily adjusted close price data (depending upon the ticker symbol) 
+downloaded from [Alphavantage.co](https://www.alphavantage.co) application programing interface. 
 """
 
 # ╔═╡ edfbf364-e126-4e95-93d2-a6adfb340045
@@ -238,8 +239,12 @@ begin
 
 	# compute -
 	for ticker_symbol in ticker_symbol_array
+
+		with_terminal() do
+			println(ticker_symbol)
+		end
 		
-		# the compute_return_array function is provided by Serenity -> computes the log return given a DataFrame, returns a DataFrame
+		# compute_return_array function is provided by Serenity -> computes the log return given a DataFrame, returns a DataFrame
 		return_data_dictionary[ticker_symbol] = compute_return_array(price_data_dictionary[ticker_symbol], 
 			:timestamp => :adjusted_close; β = (1.0/1.0))
 	end
@@ -257,19 +262,24 @@ begin
 
 	# number of tickers -
 	number_of_ticker_symbols = length(ticker_symbol_array)
-	for ticker_index = 1:number_of_ticker_symbols
+	for ticker_index = number_of_ticker_symbols:-1:1
 		local_ticker_symbol = ticker_symbol_array[ticker_index]
 		
-		if (ticker_index == 1)
+		if (ticker_index == number_of_ticker_symbols)
 			
 			# make the first plot -
 			stephist(return_data_dictionary[local_ticker_symbol][!,:μ], bins=number_of_bins, normed=:true, 
 				background_color = background_color, background_color_outside = background_color_outside,
 				foreground_color_minor_grid = RGB(1.0,1.0,1.0),
-				lw=4, c=CB_RED, label="$(local_ticker_symbol)", foreground_color_legend = nothing)
-		else
+				lw=1, c=CB_GRAY,  foreground_color_legend = nothing, label="")
+			
+		elseif (ticker_index != 1 && ticker_index != number_of_ticker_symbols)
+			
 			stephist!(return_data_dictionary[local_ticker_symbol][!,:μ], bins=number_of_bins, normed=:true, lw=1, 
-				c=CB_GRAY, label="$(local_ticker_symbol)")
+					c=CB_GRAY, label="")
+		else
+			stephist!(return_data_dictionary[local_ticker_symbol][!,:μ], bins=number_of_bins, normed=:true, lw=2, 
+					c=CB_RED, label="$(local_ticker_symbol)")	
 		end
 	end
 	
@@ -1682,7 +1692,7 @@ version = "0.9.1+5"
 # ╟─61ab2949-d72f-4d80-a717-4b6a9227de0e
 # ╠═34b06415-21c1-4904-97f0-ab614447355c
 # ╟─a39b90ec-a4c5-472f-b00e-c81ee9c5576f
-# ╟─cbbd8670-49ab-4601-b8d7-9f3f456752e8
+# ╠═cbbd8670-49ab-4601-b8d7-9f3f456752e8
 # ╟─edfbf364-e126-4e95-93d2-a6adfb340045
 # ╠═a786ca10-06d2-4b76-97a9-2bcf879ea6cb
 # ╟─a3d29aa3-96ca-4681-960c-3b4b04b1e40d

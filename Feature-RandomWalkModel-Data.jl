@@ -117,7 +117,7 @@ The parameters for the [Alphavantage.co](https://www.alphavantage.co) API call a
 
 # ╔═╡ 54efa70c-bac6-4d7c-93df-0dfd1b89769d
 # Pooksoft Industrial Average (PSIA) -> the DJIA + some stuff
-ticker_symbol_array = sort(["MSFT", "ALLY", "MET", "AAPL", "GM", "PFE", "JNJ", "TGT", "WFC", "AIG", "F", "GE", "AMD",
+ticker_symbol_array = sort(["MSFT", "ALLY", "MET", "AAPL", "GM", "PFE", "TGT", "WFC", "AIG", "F", "GE", "AMD",
     "MMM", "AXP", "AMGN", "BA", "CAT", "CVX", "CSCO", "KO", "DIS", "DOW", "GS", "HD", "IBM", "HON", "INTC", "JNJ", "JPM",
     "MCD", "MRK", "NKE", "PG", "CRM", "TRV", "UNH", "VZ", "V", "WBA", "WMT"
 ]);
@@ -141,7 +141,7 @@ The [Serenity library](https://github.com/Pooksoft/Serenity.git) provides a meth
 
 # ╔═╡ a39b90ec-a4c5-472f-b00e-c81ee9c5576f
 md"""
-__Fig. 1__: Histogram of the adjusted daily returns computed using the `stephist` routine of the [StatsPlots.jl](https://github.com/JuliaPlots/StatsPlots.jl) package for the N = 40 ticker symbols in the PSIA. The number of bins was set to be 10% of the number of historical records for `AAPL` (shown in red) and was constant for each ticker. The returns were calculated using approximately 10 to 20 years of historical daily adjusted close price data (depending upon the ticker symbol) 
+__Fig. 1__: Histogram of the adjusted daily returns computed using the `stephist` routine of the [StatsPlots.jl](https://github.com/JuliaPlots/StatsPlots.jl) package for the 𝒫 = 40 ticker symbols in the PSIA. The number of bins was set to be 10% of the number of historical records for `AAPL` (shown in red) and was constant for each ticker. The returns were calculated using approximately 10 to 20 years of historical daily adjusted close price data (depending upon the ticker symbol) 
 downloaded from using [Alphavantage.co](https://www.alphavantage.co) application programming interface. 
 """
 
@@ -348,7 +348,7 @@ begin
     
 	# how many steps, sample paths etc -
     number_of_days = 21
-    number_of_sample_paths = 50000
+    number_of_sample_paths = 25000
 	monte_carlo_simulation_dictionary = Dict{String,Array{Float64,2}}()
 
 	for ticker_symbol ∈ ticker_symbol_array
@@ -370,12 +370,12 @@ end
 
 # ╔═╡ a1e1d5f8-e06e-4682-ab54-a9454a8e3b30
 md"""
-__Fig XX__: In sample random walk simulation (N = $(number_of_sample_paths) sample paths) of ticker $(single_asset_ticker_symbol) for T = $(number_of_days) days. Gray lines denotes simulated sample paths. Red line denotes actual price trajectory for ticker $(single_asset_ticker_symbol).
+__Fig XX__: In sample random walk simulation of ticker = $(single_asset_ticker_symbol) for 𝒯 = $(number_of_days) days. Blue lines denotes simulated sample paths while the red line denotes actual price trajectory for ticker $(single_asset_ticker_symbol). The simulation consisted on N = $(number_of_sample_paths) sample paths.
 """
 
 # ╔═╡ b547311c-ddf0-4053-9de4-f0e85b861e63
 md"""
-__Table XX__: Monte carlo simulation for a 𝒯 = $(number_of_days) day prediction horizon.
+__Table XX__: Comparison of the actual close price versus the Monte Carlo simulated close price for a 𝒯 = $(number_of_days) day prediction horizon for each ticker in the PSIA (𝒫 = 40). Each ticker was classified into class c ∈ {-1,0,1} where: +1 overbought, 0 in-range, or -1 oversold. The classification was made based upon whether the actual close price Pₐ ∈ Pₑ ± σ, where Pₐ denotes the actual close price (units: USD/share), Pₑ denotes the mean simulated close price (units: USD/share), and σ denotes the standard deviation of the simulated close price (units: USD/share) computed over the family Monte Carlo trajectories (N = $(number_of_sample_paths)).
 """
 
 # ╔═╡ 849f69b0-07af-40ab-8295-c0b80a26a2d5
@@ -442,7 +442,7 @@ with_terminal() do
 	number_of_ticker_symbols = length(ticker_symbol_array)
 
 	# initialize some storage -
-	state_table = Array{Any,2}(undef, number_of_ticker_symbols, 7)
+	state_table = Array{Any,2}(undef, number_of_ticker_symbols, 8)
 	
 	for ticker_symbol_index ∈ 1:number_of_ticker_symbols 
 
@@ -465,21 +465,24 @@ with_terminal() do
 		state_table[ticker_symbol_index,4] = LB
 		state_table[ticker_symbol_index,5] = UB
 		
-        DL = round(price_actual - LB, sigdigits = 4)
-        Δ = round(UB - LB, sigdigits = 4)
-		state_table[ticker_symbol_index,6] = DL/Δ
-		
-		if ((DL/Δ) <= 1.0 && (DL/Δ)>=0.0)
-			state_table[ticker_symbol_index,7] = true
-		else
-			state_table[ticker_symbol_index,7] = false
+        δL = max(0,round(LB - price_actual, sigdigits = 4))
+        δU = max(0,round(price_actual - UB, sigdigits = 4))
+		state_table[ticker_symbol_index,6] = δL
+		state_table[ticker_symbol_index,7] = δU	
+
+		if (δL == 0.0 && δU == 0.0)
+			state_table[ticker_symbol_index,8] = 0 	# exepcted
+		elseif (δL>0.0 && δU == 0.0)
+			state_table[ticker_symbol_index,8] = -1 # oversold
+		elseif (δL == 0.0 && δU > 0.0)
+			state_table[ticker_symbol_index,8] = 1 # overbought
 		end
-		
 	end
 
 	table_header = (
-		["ticker", "actual Pₐ", "estimate Pₑ", "ℒ = (Pₑ - σ)", "𝒰 = (Pₑ + σ)", "θ", "Pₐ ∈ Pₑ ± σ"],
-		["", "USD/share", "USD/share", "USD/share", "", "", "USD/share"]
+		["ticker", "actual Pₐ", "estimate Pₑ", "ℒ = (Pₑ - σ)", "𝒰 = (Pₑ + σ)", "δL = max(0, ℒ - Pₐ)", 
+			"δU = max(0, Pₐ - 𝒰)", "class c"],
+		["", "USD/share", "USD/share", "USD/share", "", "USD/share", "USD/share","c ∈ {-1,0,1}"]
 	)
 	
 	pretty_table(state_table, header=table_header)
@@ -1805,7 +1808,7 @@ version = "0.9.1+5"
 # ╠═5a3500c2-4f82-43e9-a31b-d530f56fdbe9
 # ╟─a1e1d5f8-e06e-4682-ab54-a9454a8e3b30
 # ╟─e36979d5-c1b6-4c17-a65a-d8de8e6bd8d0
-# ╠═aeafe1ed-f217-48fd-9624-add5f6f791e6
+# ╟─aeafe1ed-f217-48fd-9624-add5f6f791e6
 # ╟─b547311c-ddf0-4053-9de4-f0e85b861e63
 # ╟─2ed2f3c3-619b-4aed-b88b-b92a43578d84
 # ╟─849f69b0-07af-40ab-8295-c0b80a26a2d5

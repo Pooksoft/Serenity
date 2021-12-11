@@ -79,7 +79,7 @@ md"""
 md"""
 ### Materials and Methods
 
-###### Random Walk Models (RWMs)
+##### Random Walk Models (RWMs)
 [Random walk models](https://en.wikipedia.org/wiki/Random_walk) are tools for computing the time evolution of the prices of risky assets, for example, the price of a stock with the ticker symbol `XYZ`. Let the price of `XYZ` at time $j$ be given by $P_{j}$ (units: USD/share). Then during the next time period (index $j+1$) the `XYZ` share price will be given by:
 
 $$P_{j+1} = P_{j}\exp\left(\mu_{j\rightarrow{j+1}}\Delta{t}\right)$$
@@ -92,12 +92,10 @@ where $p_{\star}$ denotes the log of the price at time $\star$ (units: dimension
 $\mu_{j\rightarrow{j+1}}$ because the values for $\mu_{j\rightarrow{j+1}}$ are [time-dependent random variables](https://en.wikipedia.org/wiki/Stochastic_process) which are [distributed](https://en.wikipedia.org/wiki/Probability_distribution) in some unknown way. However, if we had a value for $\mu_{j\rightarrow{j+1}}$ (or at least a model to estimate a value for it, denoted as $\hat{\mu}_{j\rightarrow{j+1}}$), we could 
 simulate the price of `XYZ` during the next time period $j+1$ given knowledge of the price now (time period $j$). For example, given a value for the close price of `XYZ` on Monday, we could estimate a value for the close price of `XYZ` on Tuesday if we had a model for the daily growth rate.
 
-###### Estimating models for the growth rate $\mu$ from historical data
+##### Estimating models for the growth rate $\mu$ from historical data
 Suppose values the growth rate were governed by some [probability distribution](https://en.wikipedia.org/wiki/Probability_distribution) $\mathcal{D}\left(\bar{m},\sigma\right)$ where $\bar{m}$ 
 denotes the [mean value](https://en.wikipedia.org/wiki/Mean) and $\sigma$ denotes the [standard deviation](https://en.wikipedia.org/wiki/Standard_deviation) of the growth rate $\mu_{j\rightarrow{j+1}}$. Of course, we do not know the actual values for 
-$\left(\bar{m},\sigma\right)$, but we can estimate them from historial price data. Nor do we know the form of $\mathcal{D}\left(\bar{m},\sigma\right)$, but we can pick several different forms and see if they match the historical return data.
-An even better way to learn $\mathcal{D}\left(\bar{m},\sigma\right)$ would be to estimate the form of the distribution from the data itself using a technique such as [Kernel Density Estimation](https://en.wikipedia.org/wiki/Kernel_density_estimation) or KDE. However, KDE is a little advanced for now, maybe later. 
-
+$\left(\bar{m},\sigma\right)$, nor do we know the form of $\mathcal{D}\left(\bar{m},\sigma\right)$, but we can estimate them from historial price data. An even better way to learn $\mathcal{D}\left(\bar{m},\sigma\right)$ would be to estimate the form of the distribution from the data itself using a technique such as [Kernel Density Estimation](https://en.wikipedia.org/wiki/Kernel_density_estimation) or KDE. However, KDE is a little advanced for now, maybe later. 
 
 """
 
@@ -108,7 +106,7 @@ md"""
 
 # ╔═╡ f66a480b-3f0c-4ebf-a8b8-e0f91dff851d
 md"""
-###### Download historical price data from the [Alphavantage.co](https://www.alphavantage.co) financial data application programming interface (API)
+##### Download historical price data from the [Alphavantage.co](https://www.alphavantage.co) financial data application programming interface (API)
 We specify a list of ticker symbols that we want to model. Next, we check to see if we have price data already saved locally for each ticker. 
 * If yes, then we load the saved file as a [DataFrame](https://dataframes.juliadata.org/stable/) and store it in the `price_data_dictionary` where the keys are the ticker strings e.g., MSFT, etc. 
 * if no, we download new data from [Alphavantage.co](https://www.alphavantage.co), save this data locally as a `CSV` file (<ticker>.csv), and finally we store the price data as a DataFrame in the `price_data_dictionary` where the keys are the ticker symbols.
@@ -124,25 +122,37 @@ ticker_symbol_array = sort(["MSFT", "ALLY", "MET", "AAPL", "GM", "PFE", "JNJ", "
 
 # ╔═╡ 61ab2949-d72f-4d80-a717-4b6a9227de0e
 md"""
-###### Compute the growth rate $\mu_{j\rightarrow{j+1}}$ from historical data
+##### Estimate the growth rate distributions from historical data
+
+To estimate a model for the return $\mathcal{D}\left(\bar{m},\sigma\right)$, we first compute the historical return for a ticker. 
+The [Serenity library](https://github.com/Pooksoft/Serenity.git) provides a method to compute the [log return](https://en.wikipedia.org/wiki/Rate_of_return) from historical data (contained in a DataFrame):
+
+	compute_log_return_array(data::DataFrame,map::Pair{Symbol,Symbol}; Δt::Float64 = 1.0) -> DataFrame
+
+	Computes μ of historical price data. 
+	
+	Arguments:
+	data  	DataFrame that holds historical price data where each row is a record
+	map 	Different APIs return data with different field names. The map arg connects the time and price fields
+	Δt 		Time step size. Default is 1.0 in the units you want the μ to be calculated in
 """
 
 # ╔═╡ a39b90ec-a4c5-472f-b00e-c81ee9c5576f
 md"""
-__Fig. 1__: Histogram of the adjusted daily returns computed using the `stephist` routine of the [StatsPlots.jl](https://github.com/JuliaPlots/StatsPlots.jl) package for the ticker symbols in the PSIA. The number of bins was set to be 10% of the number of records for `AAPL` (shown in red) and was constant for each ticker. The returns were calculated using approximately 10 to 20 years of historical daily adjusted close price data (depending upon the ticker symbol) 
-downloaded from [Alphavantage.co](https://www.alphavantage.co) application programing interface. 
+__Fig. 1__: Histogram of the adjusted daily returns computed using the `stephist` routine of the [StatsPlots.jl](https://github.com/JuliaPlots/StatsPlots.jl) package for the N = 40 ticker symbols in the PSIA. The number of bins was set to be 10% of the number of historical records for `AAPL` (shown in red) and was constant for each ticker. The returns were calculated using approximately 10 to 20 years of historical daily adjusted close price data (depending upon the ticker symbol) 
+downloaded from using [Alphavantage.co](https://www.alphavantage.co) application programming interface. 
 """
+
+# ╔═╡ a786ca10-06d2-4b76-97a9-2bcf879ea6cb
+# fit a distribution to a ticker -
+single_asset_ticker_symbol = "CSCO";
 
 # ╔═╡ edfbf364-e126-4e95-93d2-a6adfb340045
 md"""
 ###### The daily return of individual ticker symbols is not normally distributed
 
-A key assumption often made in mathematical finance is that the growth rate $\mu_{j\rightarrow{j+1}}$ (returns) computed using the log of the prices is normally distributed. However, a closer examination of the $\mu_{j\rightarrow{j+1}}$ values computed from historical data suggests this is not true. 
+A key assumption often made in mathematical finance is that the growth rate $\mu_{j\rightarrow{j+1}}$ (return) computed using the log of the prices is normally distributed. However, a closer examination of the $\mu_{j\rightarrow{j+1}}$ values computed from historical data suggests this is not true (Fig. 2). Visual inspection of the histograms computed using a [Laplace distribution](https://en.wikipedia.org/wiki/Laplace_distribution) (Fig 2, dark blue) for the returns appear to be closer to the historical data (Fig 2, red) compared to a [Normal distribution](https://en.wikipedia.org/wiki/Normal_distribution) (Fig 2, light blue).
 """
-
-# ╔═╡ a786ca10-06d2-4b76-97a9-2bcf879ea6cb
-# fit a Laplace distribution to a ticker -
-single_asset_ticker_symbol = "JNJ";
 
 # ╔═╡ a3d29aa3-96ca-4681-960c-3b4b04b1e40d
 md"""
@@ -238,15 +248,11 @@ begin
 	return_data_dictionary = Dict{String,DataFrame}()
 
 	# compute -
-	for ticker_symbol in ticker_symbol_array
-
-		with_terminal() do
-			println(ticker_symbol)
-		end
+	for ticker_symbol ∈ ticker_symbol_array
 		
 		# compute_return_array function is provided by Serenity -> computes the log return given a DataFrame, returns a DataFrame
-		return_data_dictionary[ticker_symbol] = compute_return_array(price_data_dictionary[ticker_symbol], 
-			:timestamp => :adjusted_close; β = (1.0/1.0))
+		return_data_dictionary[ticker_symbol] = compute_log_return_array(price_data_dictionary[ticker_symbol], 
+			:timestamp => :adjusted_close; Δt = (1.0/1.0))
 	end
 end
 
@@ -350,11 +356,11 @@ __Fig XX__: In sample random walk simulation (N = $(number_of_sample_paths) samp
 begin
 
 	# plot -
-	plot(simulated_price_trajectory[:,plot_index_array],c=RGB(0.64,0.64,0.64), legend=false, label="", lw=1, 
+	plot(simulated_price_trajectory[:,plot_index_array],c=CB_LBLUE, legend=false, label="", lw=1, 
 		background_color = background_color, background_color_outside = background_color_outside)
 
 	if (show_real_traj == true)
-		plot!(actual_price_data[1:end],c=:red, lw=3, legend = :topleft, label="$(single_asset_ticker_symbol) actual")
+		plot!(actual_price_data[1:end],c=CB_RED, lw=3, legend = :topleft, label="$(single_asset_ticker_symbol) actual")
 	end
 
 	xlabel!("Time step index (day)", fontsize=18)
@@ -448,7 +454,7 @@ html"""
 	// initialize -
 	var section = 0;
 	var subsection = 0;
-	var headers = document.querySelectorAll('h3, h4');
+	var headers = document.querySelectorAll('h3, h5');
 	
 	// main loop -
 	for (var i=0; i < headers.length; i++) {
@@ -473,7 +479,7 @@ html"""
 	            numbering = section + ".";
 	            subsection = 0;
 	            break;
-	        case 'H4':
+	        case 'H5':
 	            subsection += 1;
 	            numbering = section + "." + subsection;
 	            break;
@@ -1684,7 +1690,7 @@ version = "0.9.1+5"
 # ╔═╡ Cell order:
 # ╟─2bb52ee4-1c6f-46b6-b105-86827ada0f75
 # ╟─2f499c95-38cf-4856-b199-6c9aac44237a
-# ╟─34bf07e8-5c47-4aa8-aa2c-161709c158be
+# ╠═34bf07e8-5c47-4aa8-aa2c-161709c158be
 # ╟─9943d000-83d0-413d-a231-0295fb19df71
 # ╟─f66a480b-3f0c-4ebf-a8b8-e0f91dff851d
 # ╠═54efa70c-bac6-4d7c-93df-0dfd1b89769d
@@ -1692,9 +1698,9 @@ version = "0.9.1+5"
 # ╟─61ab2949-d72f-4d80-a717-4b6a9227de0e
 # ╠═34b06415-21c1-4904-97f0-ab614447355c
 # ╟─a39b90ec-a4c5-472f-b00e-c81ee9c5576f
-# ╠═cbbd8670-49ab-4601-b8d7-9f3f456752e8
-# ╟─edfbf364-e126-4e95-93d2-a6adfb340045
+# ╟─cbbd8670-49ab-4601-b8d7-9f3f456752e8
 # ╠═a786ca10-06d2-4b76-97a9-2bcf879ea6cb
+# ╟─edfbf364-e126-4e95-93d2-a6adfb340045
 # ╟─a3d29aa3-96ca-4681-960c-3b4b04b1e40d
 # ╟─6bf06c12-cf25-43c4-81f3-b1d79d13fc94
 # ╟─5a3500c2-4f82-43e9-a31b-d530f56fdbe9
@@ -1708,7 +1714,7 @@ version = "0.9.1+5"
 # ╟─f1a71f47-fb19-4988-a439-2ff8d38be5b7
 # ╠═a6c4e663-f1e3-4e0c-a8bf-7c13fcb076f0
 # ╠═f9e5092b-a158-48cb-a919-96f30ec51038
-# ╟─c8c3fe32-560d-11ec-0617-2dc33608384a
-# ╟─5394b13a-e629-47c8-902d-685c061b37ae
+# ╠═c8c3fe32-560d-11ec-0617-2dc33608384a
+# ╠═5394b13a-e629-47c8-902d-685c061b37ae
 # ╟─00000000-0000-0000-0000-000000000001
 # ╟─00000000-0000-0000-0000-000000000002

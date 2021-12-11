@@ -1,4 +1,14 @@
-function compute_return_array(data_table::DataFrame, key::Pair{Symbol,Symbol}; β = (1.0 / 365.0))
+# ------------------------------------------------------------------------------------------------------------------------------- #
+# compute_log_return_array(data::DataFrame,map::Pair{Symbol,Symbol}; Δt::Float64 = 1.0) -> DataFrame
+
+# Computes μ of historical price data. 
+
+# # Arguments:
+# data_table  	DataFrame holding the historical price data
+# map 	        Different data APIs return data with different field names. The map arg connects the time field to price field
+# Δt 		    Time step size. Default is 1.0 in the units you want the μ to be calculated in
+# ------------------------------------------------------------------------------------------------------------------------------ #
+function compute_log_return_array(data_table::DataFrame, map::Pair{Symbol,Symbol}; Δt = (1.0 / 365.0))
 
     # initialize -
     (number_of_rows, _) = size(data_table)
@@ -8,17 +18,17 @@ function compute_return_array(data_table::DataFrame, key::Pair{Symbol,Symbol}; �
     for row_index = 2:number_of_rows
 
         # grab the date -
-        tmp_date = data_table[row_index, key.first]
+        tmp_date = data_table[row_index, map.first]
 
         # grab the price data -
-        yesterday_close_price = data_table[row_index-1, key.second]
-        today_close_price = data_table[row_index, key.second]
+        yesterday_close_price = data_table[row_index-1, map.second]
+        today_close_price = data_table[row_index, map.second]
 
         # compute the diff -
-        Δ = (1 / β) * log(today_close_price / yesterday_close_price)
+        μ = (1 / Δt) * log(today_close_price / yesterday_close_price)
 
         # push! -
-        push!(return_table, (tmp_date, today_close_price, Δ))
+        push!(return_table, (tmp_date, today_close_price, μ))
     end
 
     # return -

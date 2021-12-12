@@ -145,16 +145,16 @@ __Fig. 1__: Histogram of the adjusted daily returns computed using the `stephist
 downloaded from using [Alphavantage.co](https://www.alphavantage.co) application programming interface. 
 """
 
-# ╔═╡ a786ca10-06d2-4b76-97a9-2bcf879ea6cb
-# fit a distribution to a ticker -
-single_asset_ticker_symbol = "MCD";
-
 # ╔═╡ edfbf364-e126-4e95-93d2-a6adfb340045
 md"""
 ###### The daily return of individual ticker symbols is not normally distributed
 
 A key assumption often made in mathematical finance is that the growth rate $\mu_{j\rightarrow{j+1}}$ (return) computed using the log of the prices is normally distributed. However, a closer examination of the $\mu_{j\rightarrow{j+1}}$ values computed from historical data suggests this is not true (Fig. 2). Visual inspection of the histograms computed using a [Laplace distribution](https://en.wikipedia.org/wiki/Laplace_distribution) (Fig 2, dark blue) for the returns appear to be closer to the historical data (Fig 2, red) compared to a [Normal distribution](https://en.wikipedia.org/wiki/Normal_distribution) (Fig 2, light blue). 
 """
+
+# ╔═╡ a786ca10-06d2-4b76-97a9-2bcf879ea6cb
+# fit a distribution to a ticker -
+single_asset_ticker_symbol = "GS";
 
 # ╔═╡ a3d29aa3-96ca-4681-960c-3b4b04b1e40d
 md"""
@@ -163,7 +163,17 @@ __Fig 2__: Comparison of the actual (red line) and estimated histogram for the a
 
 # ╔═╡ 1d72b291-24b7-4ec6-8307-1da0bc4a9183
 md"""
-To further explore the question of normality, we performed the [Kolmogorov–Smirnov (KS) test](https://en.wikipedia.org/wiki/Kolmogorov–Smirnov_test), using the KS test implementation in the [HypothesisTests.jl](https://juliastats.org/HypothesisTests.jl/latest/nonparametric/#Kolmogorov-Smirnov-test-1) package, to test if the historical return data were normally distributed. Let's consider ticker = $(single_asset_ticker_symbol).
+To further explore the question of a Normal versus Laplace return distribution, we constructed [QQ-Plots](https://en.wikipedia.org/wiki/Q–Q_plot) to visualize the historical return data versus a Laplace distribution (Fig. 3), and performed the [Kolmogorov–Smirnov (KS) test](https://en.wikipedia.org/wiki/Kolmogorov–Smirnov_test), using the KS test implementation in the [HypothesisTests.jl](https://juliastats.org/HypothesisTests.jl/latest/nonparametric/#Kolmogorov-Smirnov-test-1) package, to test whether the historical return data were Normally or Laplace distributed (Table 1). 
+"""
+
+# ╔═╡ 1867ecec-3c3d-4b2b-9036-1488e2184c40
+md"""
+__Fig 3__: Comparison of the actual (red line) and estimated histogram for the adjusted daily returns for ticker = $(single_asset_ticker_symbol) using a [Laplace distribution](https://en.wikipedia.org/wiki/Laplace_distribution) for the return model (blue line) and a [Normal distribution](https://en.wikipedia.org/wiki/Normal_distribution) for the return model (light blue line). The return model distributions were estimated using the `fit` routine of the [Distributions.jl](https://github.com/JuliaStats/Distributions.jl) package. The `fit` routine uses multiple approaches to estimate the parameters in the distribution including [Maximum Likelihood Estimation (MLE)](https://en.wikipedia.org/wiki/Maximum_likelihood_estimation). 
+"""
+
+# ╔═╡ 379373b1-e563-4341-9978-5b35c768b5c7
+md"""
+__Table 1__: [Kolmogorov–Smirnov (KS)](https://en.wikipedia.org/wiki/Kolmogorov–Smirnov_test) test results for Normal and Laplace distribution for stocks in the PSIA (𝒫 = 40). The historical return values for all tickers in PSIA were not Normally distributed. However, the returns for 23 of the 40 members of the PSIA were governed by a Laplace distribution. On the other hand, 17 tickers failed the KS test. Thus, the returns for these tickers were not governed by a Normal or Laplace distributions.   
 """
 
 # ╔═╡ 10fa507e-1429-4eb0-b74c-1e6638725690
@@ -340,6 +350,15 @@ begin
     xlims!((-100.0 * μ_avg, 100.0 * μ_avg))
 end
 
+# ╔═╡ 0e09d312-2ddf-4d1f-8ad5-a50fb48ca4dd
+begin
+	qqplot(Laplace, μ_vector, label="QQPlot $(single_asset_ticker_symbol)", legend=:topleft, 
+		foreground_color_legend = nothing, c=CB_LBLUE, markerstrokecolor=CB_BLUE, lw=2, 
+		background_color = background_color, background_color_outside = background_color_outside)
+	xlabel!("Theoretical Quantiles", fontsize=18)
+	ylabel!("Sample Quantiles", fontsize=18)
+end
+
 # ╔═╡ f0ee3633-1d28-4344-9b85-f5433679582a
 test_result = HypothesisTests.ExactOneSampleKSTest(unique(μ_vector), LAPLACE)
 
@@ -356,6 +375,7 @@ with_terminal() do
 		NORMAL = fit(Normal, μ_vector)
 		test_result_laplace = HypothesisTests.ExactOneSampleKSTest(unique(μ_vector), LAPLACE)
 		test_result_normal = HypothesisTests.ExactOneSampleKSTest(unique(μ_vector), NORMAL)
+		
 		state_table[ticker_index,1] = my_ticker_symbol
 		state_table[ticker_index,2] = pvalue(test_result_normal)
 		state_table[ticker_index,3] = pvalue(test_result_normal)≥0.05 ? true : false
@@ -398,17 +418,17 @@ end
 
 # ╔═╡ a1e1d5f8-e06e-4682-ab54-a9454a8e3b30
 md"""
-__Fig XX__: In sample random walk simulation of ticker = $(single_asset_ticker_symbol) for 𝒯 = $(number_of_days) days. Blue lines denotes simulated sample paths while the red line denotes actual price trajectory for ticker $(single_asset_ticker_symbol). The simulation consisted on N = $(number_of_sample_paths) sample paths.
+__Fig 4__: In sample random walk simulation of ticker = $(single_asset_ticker_symbol) for 𝒯 = $(number_of_days) days. Blue lines denotes simulated sample paths while the red line denotes actual price trajectory for ticker $(single_asset_ticker_symbol). The simulation consisted on N = $(number_of_sample_paths) sample paths.
 """
 
 # ╔═╡ b547311c-ddf0-4053-9de4-f0e85b861e63
 md"""
-__Table XX__: Comparison of the actual close price versus the Monte Carlo simulated close price for a 𝒯 = $(number_of_days) day prediction horizon for each ticker in the PSIA (𝒫 = 40). Each ticker was classified into class c ∈ {-1,0,1} where: +1 overbought, 0 in-range, or -1 oversold. The classification was based upon whether the actual close price Pₐ ∈ Pₑ ± σ, where Pₐ denotes the actual close price (units: USD/share), Pₑ denotes the mean simulated close price (units: USD/share), and σ denotes the standard deviation of the simulated close price (units: USD/share) computed over the family Monte Carlo trajectories (N = $(number_of_sample_paths)).
+__Table 2__: Comparison of the actual close price versus the Monte Carlo simulated close price for a 𝒯 = $(number_of_days) day prediction horizon for each ticker in the PSIA (𝒫 = 40). Each ticker was classified into class c ∈ {-1,0,1} where: +1 overbought, 0 in-range, or -1 oversold. The classification was based upon whether the actual close price Pₐ ∈ Pₑ ± σ, where Pₐ denotes the actual close price (units: USD/share), Pₑ denotes the mean simulated close price (units: USD/share), and σ denotes the standard deviation of the simulated close price (units: USD/share) computed over the family Monte Carlo trajectories (N = $(number_of_sample_paths)).
 """
 
 # ╔═╡ 849f69b0-07af-40ab-8295-c0b80a26a2d5
 md"""
-__Fig XX__: In sample random walk simulation (N = $(number_of_sample_paths) sample paths) of ticker $(single_asset_ticker_symbol) for T = $(number_of_days) days. Gray lines denotes simulated sample paths. Red line denotes actual price trajectory for ticker $(single_asset_ticker_symbol).
+__Fig 5__: In sample random walk simulation (N = $(number_of_sample_paths) sample paths) of ticker $(single_asset_ticker_symbol) for T = $(number_of_days) days. Gray lines denotes simulated sample paths. Red line denotes actual price trajectory for ticker $(single_asset_ticker_symbol).
 """
 
 # ╔═╡ aeafe1ed-f217-48fd-9624-add5f6f791e6
@@ -1826,13 +1846,16 @@ version = "0.9.1+5"
 # ╠═34b06415-21c1-4904-97f0-ab614447355c
 # ╟─a39b90ec-a4c5-472f-b00e-c81ee9c5576f
 # ╟─cbbd8670-49ab-4601-b8d7-9f3f456752e8
-# ╠═a786ca10-06d2-4b76-97a9-2bcf879ea6cb
 # ╟─edfbf364-e126-4e95-93d2-a6adfb340045
+# ╠═a786ca10-06d2-4b76-97a9-2bcf879ea6cb
 # ╟─a3d29aa3-96ca-4681-960c-3b4b04b1e40d
 # ╟─6bf06c12-cf25-43c4-81f3-b1d79d13fc94
-# ╟─1d72b291-24b7-4ec6-8307-1da0bc4a9183
+# ╠═1d72b291-24b7-4ec6-8307-1da0bc4a9183
+# ╟─1867ecec-3c3d-4b2b-9036-1488e2184c40
+# ╟─0e09d312-2ddf-4d1f-8ad5-a50fb48ca4dd
 # ╠═f0ee3633-1d28-4344-9b85-f5433679582a
-# ╠═8b2725a2-8007-46b8-a160-75042562794d
+# ╟─379373b1-e563-4341-9978-5b35c768b5c7
+# ╟─8b2725a2-8007-46b8-a160-75042562794d
 # ╟─10fa507e-1429-4eb0-b74c-1e6638725690
 # ╠═5a3500c2-4f82-43e9-a31b-d530f56fdbe9
 # ╟─a1e1d5f8-e06e-4682-ab54-a9454a8e3b30
@@ -1841,8 +1864,8 @@ version = "0.9.1+5"
 # ╟─b547311c-ddf0-4053-9de4-f0e85b861e63
 # ╟─2ed2f3c3-619b-4aed-b88b-b92a43578d84
 # ╟─849f69b0-07af-40ab-8295-c0b80a26a2d5
-# ╠═36372d31-215d-4299-b4f1-49e42d8b0dbd
-# ╠═c32725a4-e276-4372-8d06-d40ba52c9f09
+# ╟─36372d31-215d-4299-b4f1-49e42d8b0dbd
+# ╟─c32725a4-e276-4372-8d06-d40ba52c9f09
 # ╟─f1a71f47-fb19-4988-a439-2ff8d38be5b7
 # ╠═a6c4e663-f1e3-4e0c-a8bf-7c13fcb076f0
 # ╠═f9e5092b-a158-48cb-a919-96f30ec51038

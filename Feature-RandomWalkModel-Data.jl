@@ -147,7 +147,7 @@ downloaded from using [Alphavantage.co](https://www.alphavantage.co) application
 
 # ╔═╡ a786ca10-06d2-4b76-97a9-2bcf879ea6cb
 # fit a distribution to a ticker -
-single_asset_ticker_symbol = "DIS";
+single_asset_ticker_symbol = "MCD";
 
 # ╔═╡ edfbf364-e126-4e95-93d2-a6adfb340045
 md"""
@@ -163,17 +163,12 @@ __Fig 2__: Comparison of the actual (red line) and estimated histogram for the a
 
 # ╔═╡ 1d72b291-24b7-4ec6-8307-1da0bc4a9183
 md"""
-To further explore the question of normality, we performed the [Kolmogorov–Smirnov (KS) test](https://en.wikipedia.org/wiki/Kolmogorov–Smirnov_test), using the KS test implementation in the [HypothesisTests.jl](https://juliastats.org/HypothesisTests.jl/latest/nonparametric/#Kolmogorov-Smirnov-test-1) package, to test if the historical return data were normally distributed (Table XX).
-"""
-
-# ╔═╡ 17722a2e-ea9c-4278-951c-cba014810d01
-md"""
-Table goes here with the p-values for the NORMAL and LAPLACE for all ticker symbols
+To further explore the question of normality, we performed the [Kolmogorov–Smirnov (KS) test](https://en.wikipedia.org/wiki/Kolmogorov–Smirnov_test), using the KS test implementation in the [HypothesisTests.jl](https://juliastats.org/HypothesisTests.jl/latest/nonparametric/#Kolmogorov-Smirnov-test-1) package, to test if the historical return data were normally distributed. Let's consider ticker = $(single_asset_ticker_symbol).
 """
 
 # ╔═╡ 10fa507e-1429-4eb0-b74c-1e6638725690
 md"""
-##### Monte Carlo simulations of the daily close price using the Laplace RWM
+##### Monte Carlo simulations of the daily close price using a random walk model
 
 A basic explain of Monte Carlo simulations goes here
 """
@@ -325,8 +320,8 @@ begin
     LAPLACE = fit(Laplace, μ_vector)
 
     # generate 10_000 samples
-    S = rand(LAPLACE, 5000)
-    SN = rand(NORMAL, 5000)
+    S = rand(LAPLACE, 20000)
+    SN = rand(NORMAL, 20000)
 
     # plot against actual -
     stephist(return_data_dictionary[single_asset_ticker_symbol][!, :μ], bins = number_of_bins, normed = :true, 
@@ -345,8 +340,36 @@ begin
     xlims!((-100.0 * μ_avg, 100.0 * μ_avg))
 end
 
-# ╔═╡ 039be00b-490e-4d41-92a1-fa8e4fac9517
-ks_test_result = HypothesisTests.ExactOneSampleKSTest(unique(μ_vector), LAPLACE)
+# ╔═╡ f0ee3633-1d28-4344-9b85-f5433679582a
+test_result = HypothesisTests.ExactOneSampleKSTest(unique(μ_vector), LAPLACE)
+
+# ╔═╡ 8b2725a2-8007-46b8-a160-75042562794d
+with_terminal() do
+
+	number_of_ticker_symbols = length(ticker_symbol_array)
+	state_table = Array{Any,2}(undef, number_of_ticker_symbols, 5)
+	for ticker_index ∈ 1:number_of_ticker_symbols
+
+		my_ticker_symbol = ticker_symbol_array[ticker_index]
+		μ_vector = return_data_dictionary[my_ticker_symbol][!, :μ]
+		LAPLACE = fit(Laplace, μ_vector)
+		NORMAL = fit(Normal, μ_vector)
+		test_result_laplace = HypothesisTests.ExactOneSampleKSTest(unique(μ_vector), LAPLACE)
+		test_result_normal = HypothesisTests.ExactOneSampleKSTest(unique(μ_vector), NORMAL)
+		state_table[ticker_index,1] = my_ticker_symbol
+		state_table[ticker_index,2] = pvalue(test_result_normal)
+		state_table[ticker_index,3] = pvalue(test_result_normal)≥0.05 ? true : false
+		state_table[ticker_index,4] = pvalue(test_result_laplace)
+		state_table[ticker_index,5] = pvalue(test_result_laplace)≥0.05 ? true : false
+	end
+
+	table_header = (
+		["ticker", "Normal", "pₙ ≥ 0.05", "Laplace", "pₗ ≥ 0.05"],
+		["", "p-value", "95% CI", "p-value", "95% CI"]
+	)
+	pretty_table(state_table, header=table_header)
+	
+end
 
 # ╔═╡ 5a3500c2-4f82-43e9-a31b-d530f56fdbe9
 begin
@@ -1808,8 +1831,8 @@ version = "0.9.1+5"
 # ╟─a3d29aa3-96ca-4681-960c-3b4b04b1e40d
 # ╟─6bf06c12-cf25-43c4-81f3-b1d79d13fc94
 # ╟─1d72b291-24b7-4ec6-8307-1da0bc4a9183
-# ╠═039be00b-490e-4d41-92a1-fa8e4fac9517
-# ╟─17722a2e-ea9c-4278-951c-cba014810d01
+# ╠═f0ee3633-1d28-4344-9b85-f5433679582a
+# ╠═8b2725a2-8007-46b8-a160-75042562794d
 # ╟─10fa507e-1429-4eb0-b74c-1e6638725690
 # ╠═5a3500c2-4f82-43e9-a31b-d530f56fdbe9
 # ╟─a1e1d5f8-e06e-4682-ab54-a9454a8e3b30

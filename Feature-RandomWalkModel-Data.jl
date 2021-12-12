@@ -163,12 +163,12 @@ __Fig 2__: Comparison of the actual (red line) and estimated histogram for the a
 
 # ╔═╡ 1d72b291-24b7-4ec6-8307-1da0bc4a9183
 md"""
-To further explore the question of a Normal versus Laplace return distribution, we constructed [QQ-Plots](https://en.wikipedia.org/wiki/Q–Q_plot) to visualize the historical return data versus a Laplace distribution (Fig. 3), and performed the [Kolmogorov–Smirnov (KS) test](https://en.wikipedia.org/wiki/Kolmogorov–Smirnov_test), using the KS test implementation in the [HypothesisTests.jl](https://juliastats.org/HypothesisTests.jl/latest/nonparametric/#Kolmogorov-Smirnov-test-1) package, to test whether the historical return data were Normally or Laplace distributed (Table 1). 
+To further explore the question of a Normal versus Laplace return distribution, we constructed [QQplots](https://en.wikipedia.org/wiki/Q–Q_plot) to visualize the historical return data versus a Laplace distribution (Fig. 3), and performed the [Kolmogorov–Smirnov (KS) test](https://en.wikipedia.org/wiki/Kolmogorov–Smirnov_test), using the KS test implementation in the [HypothesisTests.jl](https://juliastats.org/HypothesisTests.jl/latest/nonparametric/#Kolmogorov-Smirnov-test-1) package, to test whether the historical return data were Normally or Laplace distributed (Table 1). 
 """
 
 # ╔═╡ 1867ecec-3c3d-4b2b-9036-1488e2184c40
 md"""
-__Fig 3__: Comparison of the actual (red line) and estimated histogram for the adjusted daily returns for ticker = $(single_asset_ticker_symbol) using a [Laplace distribution](https://en.wikipedia.org/wiki/Laplace_distribution) for the return model (blue line) and a [Normal distribution](https://en.wikipedia.org/wiki/Normal_distribution) for the return model (light blue line). The return model distributions were estimated using the `fit` routine of the [Distributions.jl](https://github.com/JuliaStats/Distributions.jl) package. The `fit` routine uses multiple approaches to estimate the parameters in the distribution including [Maximum Likelihood Estimation (MLE)](https://en.wikipedia.org/wiki/Maximum_likelihood_estimation). 
+__Fig 3__: Quantile-Quantile plot (QQplot) for historical $(single_asset_ticker_symbol) return data versus theoretical data generated using a Laplace distribution. If the historical data were governed by a Laplace distribution, the points would lie along the equality line. 
 """
 
 # ╔═╡ 379373b1-e563-4341-9978-5b35c768b5c7
@@ -355,7 +355,7 @@ begin
 	qqplot(Laplace, μ_vector, label="QQPlot $(single_asset_ticker_symbol)", legend=:topleft, 
 		foreground_color_legend = nothing, c=CB_LBLUE, markerstrokecolor=CB_BLUE, lw=2, 
 		background_color = background_color, background_color_outside = background_color_outside)
-	xlabel!("Theoretical Quantiles", fontsize=18)
+	xlabel!("Theoretical Laplace Quantiles", fontsize=18)
 	ylabel!("Sample Quantiles", fontsize=18)
 end
 
@@ -418,7 +418,7 @@ end
 
 # ╔═╡ a1e1d5f8-e06e-4682-ab54-a9454a8e3b30
 md"""
-__Fig 4__: In sample random walk simulation of ticker = $(single_asset_ticker_symbol) for 𝒯 = $(number_of_days) days. Blue lines denotes simulated sample paths while the red line denotes actual price trajectory for ticker $(single_asset_ticker_symbol). The simulation consisted on N = $(number_of_sample_paths) sample paths.
+__Fig 4__: In sample random walk simulation of ticker = $(single_asset_ticker_symbol) for a 𝒯 = $(number_of_days) day prediction horizon. Blue lines denotes simulated sample paths while the red line denotes the actual price trajectory for ticker $(single_asset_ticker_symbol). The simulation consisted of N = $(number_of_sample_paths) sample paths.
 """
 
 # ╔═╡ b547311c-ddf0-4053-9de4-f0e85b861e63
@@ -1850,7 +1850,7 @@ version = "0.9.1+5"
 # ╠═a786ca10-06d2-4b76-97a9-2bcf879ea6cb
 # ╟─a3d29aa3-96ca-4681-960c-3b4b04b1e40d
 # ╟─6bf06c12-cf25-43c4-81f3-b1d79d13fc94
-# ╠═1d72b291-24b7-4ec6-8307-1da0bc4a9183
+# ╟─1d72b291-24b7-4ec6-8307-1da0bc4a9183
 # ╟─1867ecec-3c3d-4b2b-9036-1488e2184c40
 # ╟─0e09d312-2ddf-4d1f-8ad5-a50fb48ca4dd
 # ╠═f0ee3633-1d28-4344-9b85-f5433679582a

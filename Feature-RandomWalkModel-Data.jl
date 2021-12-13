@@ -75,6 +75,9 @@ md"""
 # ╔═╡ 2f499c95-38cf-4856-b199-6c9aac44237a
 md"""
 ### Introduction
+
+[A Random Walk Down Wall Street](https://en.wikipedia.org/wiki/A_Random_Walk_Down_Wall_Street) written by [Princeton University professor Burton Malkiel](https://dof.princeton.edu/about/clerk-faculty/emeritus/burton-gordon-malkiel) popularized the [efficient market hypothesis (EMH)](https://en.wikipedia.org/wiki/Efficient-market_hypothesis), which hypothesizes that stock prices fully reflect all available information and expectations, so current prices are the best approximation of a company’s intrinsic value. 
+
 """
 
 # ╔═╡ 34bf07e8-5c47-4aa8-aa2c-161709c158be

@@ -69,14 +69,17 @@ end
 
 # ╔═╡ 2bb52ee4-1c6f-46b6-b105-86827ada0f75
 md"""
-# Random Walk Simulation of Risky Asset Prices 
+# Random Walk Simulation and The Efficient Market Hypothesis 
 """
 
 # ╔═╡ 2f499c95-38cf-4856-b199-6c9aac44237a
 md"""
 ### Introduction
 
-[A Random Walk Down Wall Street](https://en.wikipedia.org/wiki/A_Random_Walk_Down_Wall_Street) written by [Princeton University professor Burton Malkiel](https://dof.princeton.edu/about/clerk-faculty/emeritus/burton-gordon-malkiel) popularized the [efficient market hypothesis (EMH)](https://en.wikipedia.org/wiki/Efficient-market_hypothesis), which hypothesizes that stock prices fully reflect all available information and expectations, so current prices are the best approximation of a company’s intrinsic value. 
+[A Random Walk Down Wall Street](https://en.wikipedia.org/wiki/A_Random_Walk_Down_Wall_Street) written by [Princeton University professor Burton Malkiel](https://dof.princeton.edu/about/clerk-faculty/emeritus/burton-gordon-malkiel) popularized the [efficient market hypothesis (EMH)](https://en.wikipedia.org/wiki/Efficient-market_hypothesis), which hypothesizes that stock prices fully reflect all available information and expectations. A key citation in the history of efficient market hypothesis: 
+
+* [Fama, E. F. (1970). Efficient Capital Markets: A Review of Theory and Empirical Work. The Journal of Finance, 25(2), 383–417. 	https://doi.org/10.2307/2325486](https://www.jstor.org/stable/2325486)
+
 
 """
 
@@ -97,7 +100,7 @@ where $p_{\star}$ denotes the log of the price at time $\star$ (units: dimension
 $\mu_{j\rightarrow{j+1}}$ because the values for $\mu_{j\rightarrow{j+1}}$ are [time-dependent random variables](https://en.wikipedia.org/wiki/Stochastic_process) which are [distributed](https://en.wikipedia.org/wiki/Probability_distribution) in some unknown way. However, if we had a value for $\mu_{j\rightarrow{j+1}}$ (or at least a model to estimate a value for it, denoted as $\hat{\mu}_{j\rightarrow{j+1}}$), we could 
 simulate the price of `XYZ` during the next time period $j+1$ given knowledge of the price now (time period $j$). For example, given a value for the close price of `XYZ` on Monday, we could estimate a value for the close price of `XYZ` on Tuesday if we had a model for the daily growth rate.
 
-##### Estimating models for the growth rate $\mu$ from historical data
+##### Estimating models for the growth rate from historical data
 Suppose values the growth rate were governed by some [probability distribution](https://en.wikipedia.org/wiki/Probability_distribution) $\mathcal{D}\left(\bar{m},\sigma\right)$ where $\bar{m}$ 
 denotes the [mean value](https://en.wikipedia.org/wiki/Mean) and $\sigma$ denotes the [standard deviation](https://en.wikipedia.org/wiki/Standard_deviation) of the growth rate $\mu_{j\rightarrow{j+1}}$. Of course, we do not know the actual values for 
 $\left(\bar{m},\sigma\right)$, nor do we know the form of $\mathcal{D}\left(\bar{m},\sigma\right)$, but we can estimate them from historial price data. An even better way to learn $\mathcal{D}\left(\bar{m},\sigma\right)$ would be to estimate the form of the distribution from the data itself using a technique such as [Kernel Density Estimation](https://en.wikipedia.org/wiki/Kernel_density_estimation) or KDE. However, KDE is a little advanced for now, maybe later. 
@@ -398,7 +401,7 @@ end
 begin
     
 	# how many steps, sample paths etc -
-    number_of_days = 21
+    number_of_days = 14
     number_of_sample_paths = 25000
 	monte_carlo_simulation_dictionary = Dict{String,Array{Float64,2}}()
 
@@ -426,7 +429,7 @@ __Fig 4__: In sample random walk simulation of ticker = $(single_asset_ticker_sy
 
 # ╔═╡ b547311c-ddf0-4053-9de4-f0e85b861e63
 md"""
-__Table 2__: Comparison of the actual close price versus the Monte Carlo simulated close price for a 𝒯 = $(number_of_days) day prediction horizon for each ticker in the PSIA (𝒫 = 40). Each ticker was classified into class c ∈ {-1,0,1} where: +1 overbought, 0 in-range, or -1 oversold. The classification was based upon whether the actual close price Pₐ ∈ Pₑ ± σ, where Pₐ denotes the actual close price (units: USD/share), Pₑ denotes the mean simulated close price (units: USD/share), and σ denotes the standard deviation of the simulated close price (units: USD/share) computed over the family Monte Carlo trajectories (N = $(number_of_sample_paths)).
+__Table 2__: Comparison of the actual close price versus the Monte Carlo simulated close price for a 𝒯 = $(number_of_days) day prediction horizon for each ticker in the PSIA (𝒫 = 40). Each ticker was classified into class c ∈ {-1,0,1} where: +1 HIGH, 0 INSIDE, or -1 LOW. The classification was based upon whether the actual close price Pₐ ∈ Pₑ ± σ, where Pₐ denotes the actual close price (units: USD/share), Pₑ denotes the mean simulated close price (units: USD/share), and σ denotes the standard deviation of the simulated close price (units: USD/share) computed over the family Monte Carlo trajectories (N = $(number_of_sample_paths)).
 """
 
 # ╔═╡ 849f69b0-07af-40ab-8295-c0b80a26a2d5
@@ -487,13 +490,10 @@ begin
 end
 
 # ╔═╡ 2ed2f3c3-619b-4aed-b88b-b92a43578d84
-with_terminal() do
-
-	# how many tickers do we have?
-	number_of_ticker_symbols = length(ticker_symbol_array)
+begin
 
 	# initialize some storage -
-	state_table = Array{Any,2}(undef, number_of_ticker_symbols, 8)
+	price_state_table = Array{Any,2}(undef, number_of_ticker_symbols, 9)
 	
 	for ticker_symbol_index ∈ 1:number_of_ticker_symbols 
 
@@ -506,38 +506,51 @@ with_terminal() do
     	std_estimated_price = round(std(simulated_price_trajectory[end, :]), sigdigits = 4)
 		actual_price_data = price_data_dictionary[ticker_symbol][end-number_of_days:end, :adjusted_close]
     	price_actual = actual_price_data[end]
-		LB = estimated_mean_price - std_estimated_price
-        UB = estimated_mean_price + std_estimated_price
+		tmp_LB = estimated_mean_price - 1*std_estimated_price
+        tmp_UB = estimated_mean_price + 1*std_estimated_price
 		
 		# populate state table -
-		state_table[ticker_symbol_index,1] = ticker_symbol
-		state_table[ticker_symbol_index,2] = price_actual
-		state_table[ticker_symbol_index,3] = estimated_mean_price
-		state_table[ticker_symbol_index,4] = LB
-		state_table[ticker_symbol_index,5] = UB
+		price_state_table[ticker_symbol_index,1] = ticker_symbol
+		price_state_table[ticker_symbol_index,2] = price_actual
+		price_state_table[ticker_symbol_index,3] = estimated_mean_price
+		price_state_table[ticker_symbol_index,4] = (price_actual - estimated_mean_price)
+		price_state_table[ticker_symbol_index,5] = tmp_LB
+		price_state_table[ticker_symbol_index,6] = tmp_UB
 		
-        δL = max(0,round(LB - price_actual, sigdigits = 4))
-        δU = max(0,round(price_actual - UB, sigdigits = 4))
-		state_table[ticker_symbol_index,6] = δL
-		state_table[ticker_symbol_index,7] = δU	
+        δL = max(0,round(tmp_LB - price_actual, sigdigits = 4))
+        δU = max(0,round(price_actual - tmp_UB, sigdigits = 4))
+		price_state_table[ticker_symbol_index,7] = δL
+		price_state_table[ticker_symbol_index,8] = δU	
 
 		if (δL == 0.0 && δU == 0.0)
-			state_table[ticker_symbol_index,8] = 0 	# exepcted
+			price_state_table[ticker_symbol_index,9] = 0 	# exepcted
 		elseif (δL>0.0 && δU == 0.0)
-			state_table[ticker_symbol_index,8] = -1 # oversold
+			price_state_table[ticker_symbol_index,9] = -1 # oversold
 		elseif (δL == 0.0 && δU > 0.0)
-			state_table[ticker_symbol_index,8] = 1 # overbought
+			price_state_table[ticker_symbol_index,9] = 1 # overbought
 		end
 	end
 
-	table_header = (
-		["ticker", "actual Pₐ", "estimate Pₑ", "ℒ = (Pₑ - σ)", "𝒰 = (Pₑ + σ)", "δL = max(0, ℒ - Pₐ)", 
-			"δU = max(0, Pₐ - 𝒰)", "class c"],
-		["", "USD/share", "USD/share", "USD/share", "", "USD/share", "USD/share","c ∈ {-1,0,1}"]
-	)
+	with_terminal() do
+		price_table_header = (
+			["ticker", "actual Pₐ", "estimate Pₑ", "excess price", "ℒ = (Pₑ - σ)", "𝒰 = (Pₑ + σ)", "δL = max(0, ℒ - Pₐ)", 
+				"δU = max(0, Pₐ - 𝒰)", "class c"],
+			["", "USD/share", "USD/share", "USD/share", "USD/share", "", "USD/share", "USD/share","c ∈ {-1,0,1}"]
+		)
 	
-	pretty_table(state_table, header=table_header)
-	
+		pretty_table(price_state_table, header=price_table_header)
+	end
+end
+
+# ╔═╡ f239c879-81f2-456f-80b1-5b0129e893dd
+begin
+
+	# what is the average excess price?
+	expected_excess_price = sum(price_state_table[:,4])
+
+	with_terminal() do
+		println("Expected excess price for PSIA (𝒫 = 40) at 𝒯 = $(number_of_days) days: $(round(expected_excess_price, sigdigits=4)) USD/share")
+	end
 end
 
 # ╔═╡ c8c3fe32-560d-11ec-0617-2dc33608384a
@@ -1865,7 +1878,8 @@ version = "0.9.1+5"
 # ╟─e36979d5-c1b6-4c17-a65a-d8de8e6bd8d0
 # ╟─aeafe1ed-f217-48fd-9624-add5f6f791e6
 # ╟─b547311c-ddf0-4053-9de4-f0e85b861e63
-# ╟─2ed2f3c3-619b-4aed-b88b-b92a43578d84
+# ╠═2ed2f3c3-619b-4aed-b88b-b92a43578d84
+# ╟─f239c879-81f2-456f-80b1-5b0129e893dd
 # ╟─849f69b0-07af-40ab-8295-c0b80a26a2d5
 # ╟─36372d31-215d-4299-b4f1-49e42d8b0dbd
 # ╟─c32725a4-e276-4372-8d06-d40ba52c9f09

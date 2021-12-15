@@ -88,15 +88,16 @@ end
 # ╔═╡ 8ab78f88-ffa6-4fa2-94d5-d9e502be1a1c
 begin
 
-	μ_vector = return_table[!,:μ]
+	μ_market = return_table[!,:μ]
 	
 	# number of bins - 10% of the length of a test ticker
     number_of_bins = convert(Int64, (floor(0.1 * length(return_table[!, :μ]))))
-	stephist(μ_vector, bins = number_of_bins, normed = :true, lw=2)
+	stephist(μ_market, bins = number_of_bins, normed = :true, lw=2)
 
-	LAPLACE = fit(Laplace, μ_vector)
+	LAPLACE = fit(Laplace, μ_market)
 	S = rand(LAPLACE, 20000)
 	stephist!(S, bins = number_of_bins, normed = :true, lw=2)
+	xlims!((-0.06, 0.06))
 	
 end
 

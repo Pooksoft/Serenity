@@ -44,15 +44,7 @@ begin
 
     # get some stuff from the configuration dictionary -
     ALPHAVANTAGE_API_KEY = configuration_dictionary["API"]["alphavantage_api_key"]
-
-    # background color plots -
-    background_color_outside = RGB(1.0, 1.0, 1.0)
-    background_color = RGB(0.99, 0.98, 0.96)
-    CB_BLUE = RGB(68 / 255, 119 / 255, 170 / 255)
-    CB_LBLUE = RGB(102 / 255, 204 / 255, 238 / 255)
-    CB_GRAY = RGB(187 / 255, 187 / 255, 187 / 255)
-    CB_RED = RGB(238 / 255, 102 / 255, 119 / 255)
-
+    
     # show -
     nothing
 end
@@ -89,17 +81,32 @@ end
 begin
 
 	μ_market = return_table[!,:μ]
+	LAPLACE_MARKET = fit(Laplace, μ_market)
 	
 	# number of bins - 10% of the length of a test ticker
     number_of_bins = convert(Int64, (floor(0.1 * length(return_table[!, :μ]))))
-	stephist(μ_market, bins = number_of_bins, normed = :true, lw=2)
-
-	LAPLACE = fit(Laplace, μ_market)
-	S = rand(LAPLACE, 20000)
-	stephist!(S, bins = number_of_bins, normed = :true, lw=2)
-	xlims!((-0.06, 0.06))
 	
+	# plot -
+	stephist(μ_market, bins = number_of_bins, normed = :true, lw=2, label="Return data", 
+		background_color = BACKGROUND, background_color_outside = WHITE, c=LBLUE, foreground_color_legend = nothing)
+	stephist!(rand(LAPLACE_MARKET, 20000), bins = number_of_bins, normed = :true, lw=2, 
+		label="Return Laplace model", c=RED)
+
+	# setup the axes -
+	xlims!((-0.06, 0.06))
+	xlabel!("Daily return S&P500 (1/day)", fontsize=18)
+	ylabel!("Frequency (N=$(number_of_bins); dimensionless)")
 end
+
+# ╔═╡ 779f010f-27cc-4ba8-bde1-4e4bf9ff608e
+# Pooksoft Industrial Average (PSIA) -> the DJIA + some stuff
+psia_ticker_symbol_array = sort(["MSFT", "ALLY", "MET", "AAPL", "GM", "PFE", "TGT", "WFC", "AIG", "F", "GE", "AMD",
+    "MMM", "AXP", "AMGN", "BA", "CAT", "CVX", "CSCO", "KO", "DIS", "DOW", "GS", "HD", "IBM", "HON", "INTC", "JNJ", "JPM",
+    "MCD", "MRK", "NKE", "PG", "CRM", "TRV", "UNH", "VZ", "V", "WBA", "WMT"
+]);
+
+# ╔═╡ 327efc85-e82b-40cc-b887-60c52fc486f7
+
 
 # ╔═╡ 4be380a2-23b1-4749-a829-e80e27280b41
 md"""
@@ -173,6 +180,15 @@ function download_ticker_data(ticker_symbol_array::Array{String,1})::Dict{String
     # show -
     return price_data_dictionary
 end
+
+# ╔═╡ 1b45b534-27a1-4162-b66c-5222286ad376
+# load the historical price data from disk (if not saved, then download new data)
+historical_price_dictionary = download_ticker_data(psia_ticker_symbol_array);
+
+# ╔═╡ b25f2b2e-8f64-4e07-93f6-6ed6e27e6e3c
+# compute the dictionary of historical return tables -
+historical_return_dictionary = compute_log_return_array(psia_ticker_symbol_array,historical_price_dictionary, 
+	:timestamp=>:adjusted_close; Δt = 1.0);
 
 # ╔═╡ eb48351c-5d34-11ec-10a8-cd0cd5826fc5
 html"""
@@ -348,9 +364,9 @@ version = "0.2.0"
 
 [[deps.Compat]]
 deps = ["Base64", "Dates", "DelimitedFiles", "Distributed", "InteractiveUtils", "LibGit2", "Libdl", "LinearAlgebra", "Markdown", "Mmap", "Pkg", "Printf", "REPL", "Random", "SHA", "Serialization", "SharedArrays", "Sockets", "SparseArrays", "Statistics", "Test", "UUIDs", "Unicode"]
-git-tree-sha1 = "44c37b4636bc54afac5c574d2d02b625349d6582"
+git-tree-sha1 = "dce3e3fea680869eaa0b774b2e8343e9ff442313"
 uuid = "34da2185-b29b-5c13-b0c7-acf172513d20"
-version = "3.41.0"
+version = "3.40.0"
 
 [[deps.CompilerSupportLibraries_jll]]
 deps = ["Artifacts", "Libdl"]
@@ -629,9 +645,9 @@ uuid = "b77e0a4c-d291-57a0-90e8-8db25a27a240"
 
 [[deps.Interpolations]]
 deps = ["AxisAlgorithms", "ChainRulesCore", "LinearAlgebra", "OffsetArrays", "Random", "Ratios", "Requires", "SharedArrays", "SparseArrays", "StaticArrays", "WoodburyMatrices"]
-git-tree-sha1 = "b15fc0a95c564ca2e0a7ae12c1f095ca848ceb31"
+git-tree-sha1 = "61aa005707ea2cebf47c8d780da8dc9bc4e0c512"
 uuid = "a98d9a8b-a2ab-59e6-89dd-64a1c18fca59"
-version = "0.13.5"
+version = "0.13.4"
 
 [[deps.InverseFunctions]]
 deps = ["Test"]
@@ -937,9 +953,9 @@ version = "2.0.1"
 
 [[deps.PlotUtils]]
 deps = ["ColorSchemes", "Colors", "Dates", "Printf", "Random", "Reexport", "Statistics"]
-git-tree-sha1 = "e4fe0b50af3130ddd25e793b471cb43d5279e3e6"
+git-tree-sha1 = "b084324b4af5a438cd63619fd006614b3b20b87b"
 uuid = "995b91a9-d308-5afd-9ec6-746e21dbc043"
-version = "1.1.1"
+version = "1.0.15"
 
 [[deps.Plots]]
 deps = ["Base64", "Contour", "Dates", "Downloads", "FFMPEG", "FixedPointNumbers", "GR", "GeometryBasics", "JSON", "Latexify", "LinearAlgebra", "Measures", "NaNMath", "PlotThemes", "PlotUtils", "Printf", "REPL", "Random", "RecipesBase", "RecipesPipeline", "Reexport", "Requires", "Scratch", "Showoff", "SparseArrays", "Statistics", "StatsBase", "UUIDs", "UnicodeFun"]
@@ -1025,9 +1041,9 @@ version = "1.2.2"
 
 [[deps.Requires]]
 deps = ["UUIDs"]
-git-tree-sha1 = "8f82019e525f4d5c669692772a6f4b0a58b06a6a"
+git-tree-sha1 = "4036a3bd08ac7e968e27c203d45f5fff15020621"
 uuid = "ae029012-a4dd-5104-9daa-d747884805df"
-version = "1.2.0"
+version = "1.1.3"
 
 [[deps.Rmath]]
 deps = ["Random", "Rmath_jll"]
@@ -1058,9 +1074,9 @@ version = "1.1.0"
 
 [[deps.SentinelArrays]]
 deps = ["Dates", "Random"]
-git-tree-sha1 = "244586bc07462d22aed0113af9c731f2a518c93e"
+git-tree-sha1 = "f45b34656397a1f6e729901dc9ef679610bd12b5"
 uuid = "91c51154-3ec4-41a3-a24f-3f23e20d615c"
-version = "1.3.10"
+version = "1.3.8"
 
 [[deps.Serialization]]
 uuid = "9e88b42a-f829-5b0c-bbe9-9e923198166b"
@@ -1161,9 +1177,9 @@ version = "1.0.1"
 
 [[deps.Tables]]
 deps = ["DataAPI", "DataValueInterfaces", "IteratorInterfaceExtensions", "LinearAlgebra", "TableTraits", "Test"]
-git-tree-sha1 = "bb1064c9a84c52e277f1096cf41434b675cd368b"
+git-tree-sha1 = "fed34d0e71b91734bf0a7e10eb1bb05296ddbcd0"
 uuid = "bd369af6-aec1-5ad0-b16a-f7cc5008161c"
-version = "1.6.1"
+version = "1.6.0"
 
 [[deps.Tar]]
 deps = ["ArgTools", "SHA"]
@@ -1435,7 +1451,11 @@ version = "0.9.1+5"
 # ╟─98628de6-c9e1-4c32-97f6-e5179639d8cc
 # ╟─eeed18ba-548d-415a-a85f-31aedf0e111d
 # ╠═bedc21aa-1ee8-4371-bcc3-b0ae70f48bbd
-# ╠═8ab78f88-ffa6-4fa2-94d5-d9e502be1a1c
+# ╟─8ab78f88-ffa6-4fa2-94d5-d9e502be1a1c
+# ╠═779f010f-27cc-4ba8-bde1-4e4bf9ff608e
+# ╠═1b45b534-27a1-4162-b66c-5222286ad376
+# ╠═b25f2b2e-8f64-4e07-93f6-6ed6e27e6e3c
+# ╠═327efc85-e82b-40cc-b887-60c52fc486f7
 # ╟─4be380a2-23b1-4749-a829-e80e27280b41
 # ╟─ffe10048-3d4b-4c91-be63-b3de2fe17a0c
 # ╠═02505beb-6846-4935-967e-d44162f33856

@@ -12,7 +12,7 @@ function compute_log_return_array(data_table::DataFrame, map::Pair{Symbol,Symbol
 
     # initialize -
     (number_of_rows, _) = size(data_table)
-    return_table = DataFrame(timestep = Date[], P = Float64[], μ = Float64[])
+    return_table = DataFrame(timestep = Date[], P1 = Float64[], P2 = Float64[], μ = Float64[])
 
     # main loop -
     for row_index = 2:number_of_rows
@@ -28,11 +28,35 @@ function compute_log_return_array(data_table::DataFrame, map::Pair{Symbol,Symbol
         μ = (1 / Δt) * log(today_close_price / yesterday_close_price)
 
         # push! -
-        push!(return_table, (tmp_date, today_close_price, μ))
+        push!(return_table, (tmp_date, yesterday_close_price, today_close_price, μ))
     end
 
     # return -
     return return_table
+end
+
+function compute_log_return_array(ticker_symbol_array::Array{String,1}, data_tables::Dict{String,DataFrame}, map::Pair{Symbol,Symbol};
+    Δt = (1.0 / 365.0))
+
+    # initialize -
+    number_of_ticker_symbols = length(ticker_symbol_array)
+    data_dictionary = Dict{String,DataFrame}()
+
+    # process -
+    for ticker_symbol_index ∈ 1:number_of_ticker_symbols
+
+        # get the ticker symbol for this index -
+        ticker_symbol = ticker_symbol_array[ticker_symbol_index]
+
+        # get the data frame for this index -
+        df = data_tables[ticker_symbol]
+
+        # compute the return -
+        data_dictionary[ticker_symbol] = compute_log_return_array(df, map; Δt = Δt)
+    end
+
+    # return -
+    return data_dictionary
 end
 
 function compute_random_walk_model_trajectory(model::Distribution, initial_price::Float64,

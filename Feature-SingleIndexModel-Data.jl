@@ -84,7 +84,7 @@ begin
 	LAPLACE_MARKET = fit(Laplace, μ_market)
 	
 	# number of bins - 10% of the length of a test ticker
-    number_of_bins = convert(Int64, (floor(0.1 * length(return_table[!, :μ]))))
+    number_of_bins = convert(Int64, (floor(0.05 * length(return_table[!, :μ]))))
 	
 	# plot -
 	stephist(μ_market, bins = number_of_bins, normed = :true, lw=2, label="Return data", 
@@ -105,7 +105,7 @@ psia_ticker_symbol_array = sort(["MSFT", "ALLY", "MET", "AAPL", "GM", "PFE", "TG
     "MCD", "MRK", "NKE", "PG", "CRM", "TRV", "UNH", "VZ", "V", "WBA", "WMT"
 ]);
 
-# ╔═╡ 327efc85-e82b-40cc-b887-60c52fc486f7
+# ╔═╡ 84ca266f-01cc-43c5-846b-7e2ce2324397
 
 
 # ╔═╡ 4be380a2-23b1-4749-a829-e80e27280b41
@@ -189,6 +189,23 @@ historical_price_dictionary = download_ticker_data(psia_ticker_symbol_array);
 # compute the dictionary of historical return tables -
 historical_return_dictionary = compute_log_return_array(psia_ticker_symbol_array,historical_price_dictionary, 
 	:timestamp=>:adjusted_close; Δt = 1.0);
+
+# ╔═╡ 327efc85-e82b-40cc-b887-60c52fc486f7
+begin
+
+	# initialize -
+	return_distribution_dictionary = Dict{String,Distribution}()
+
+	# main loop -
+	for (ticker, df) ∈ historical_return_dictionary
+
+		# process the df -
+		local_distribution = fit(Laplace, df[!, :μ])
+
+		# grab -
+		return_distribution_dictionary[ticker] = local_distribution
+	end
+end
 
 # ╔═╡ eb48351c-5d34-11ec-10a8-cd0cd5826fc5
 html"""
@@ -1451,11 +1468,12 @@ version = "0.9.1+5"
 # ╟─98628de6-c9e1-4c32-97f6-e5179639d8cc
 # ╟─eeed18ba-548d-415a-a85f-31aedf0e111d
 # ╠═bedc21aa-1ee8-4371-bcc3-b0ae70f48bbd
-# ╟─8ab78f88-ffa6-4fa2-94d5-d9e502be1a1c
+# ╠═8ab78f88-ffa6-4fa2-94d5-d9e502be1a1c
 # ╠═779f010f-27cc-4ba8-bde1-4e4bf9ff608e
 # ╠═1b45b534-27a1-4162-b66c-5222286ad376
 # ╠═b25f2b2e-8f64-4e07-93f6-6ed6e27e6e3c
 # ╠═327efc85-e82b-40cc-b887-60c52fc486f7
+# ╠═84ca266f-01cc-43c5-846b-7e2ce2324397
 # ╟─4be380a2-23b1-4749-a829-e80e27280b41
 # ╟─ffe10048-3d4b-4c91-be63-b3de2fe17a0c
 # ╠═02505beb-6846-4935-967e-d44162f33856

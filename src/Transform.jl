@@ -36,3 +36,34 @@ function transform_date_fields(data_frame::DataFrame, col_key::Symbol)
     select!(data_frame, Not(col_key))
     insertcols!(data_frame, col_key => tmp_array)
 end
+
+function extract_data_block_for_date_range(data_table::DataFrame, start_date::Date, end_date::Date)::DataFrame
+
+    # find the range -
+    idx_range = findall(x->(x>=start_date && x<=end_date), data_table[!,:timestamp]) |> collect
+
+    # extract the range -
+    data_block = data_table[idx_range,:]
+
+    # return -
+    return data_block
+end
+
+function reverse_row_order_in_table(table::DataFrame)
+
+    # how many rows do we have?
+    (number_of_rows, _) = size(table);
+
+    # create a data array -
+    tmp_date_array = Array{Date,1}()
+    for row_index ∈ 1:number_of_rows
+    end
+
+    df_tmp = DataFrame()
+    for row_index ∈ number_of_rows:-1:1
+        df_row = table[row_index,:]
+        push!(df_tmp, df_row)
+    end
+
+    return df_tmp
+end

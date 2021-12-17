@@ -25,7 +25,7 @@ function build_single_index_model(market::DataFrame, firm::DataFrame;
 
     # compute the var of the market -
     β = cov(Y,M)/var(M)
-    α = mean(Y) - mean(M)
+    α = mean(Y) - (β)*mean(M)
     θ = [α,β]
 
 	# compute the residuals -

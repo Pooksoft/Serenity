@@ -85,9 +85,6 @@ md"""
 ### Conclusions
 """
 
-# ╔═╡ 17b00fee-a3c4-4787-8d6a-8c1eb225bdd5
-
-
 # ╔═╡ 2ca1705e-5344-41ea-9543-5858f718e6e8
 function ingredients(path::String)
 	
@@ -113,20 +110,13 @@ end
 begin
 
 	# load the SP500 data -
-	df_SP = CSV.read(joinpath(_PATH_TO_DATA,"2019-12-26-.INX.csv"), DataFrame)
 	df_SP_nasdaq = CSV.read(joinpath(_PATH_TO_DATA,"SP500-Daily-close-10y-Nasdaq.csv"), DataFrame)
-	df_SP_dc = Serenity.transform_date_fields(df_SP_nasdaq,:timestamp)
-
+	df_SP_dc = Serenity.transform_date_fields(df_SP_nasdaq,:timestamp) # changed Date and Close by hand
 	df_SP_dc_rev = Serenity.reverse_row_order_in_table(df_SP_dc);
 	
-	
 	# compute the return vector -
-	market_return_table = Serenity.compute_fractional_return_array(df_SP,:timestamp=>:adjusted_close; multiplier=1.0)
-	market_return_table_nasdaq = Serenity.compute_fractional_return_array(df_SP_dc_rev,:timestamp=>:adjusted_close; multiplier=1.0)
+	market_return_table = Serenity.compute_fractional_return_array(df_SP_dc_rev,:timestamp=>:adjusted_close; multiplier=1.0)
 end
-
-# ╔═╡ c28c765d-8ff1-4823-a9e4-461b8f64d387
-df_SP_dc_rev
 
 # ╔═╡ 8ab78f88-ffa6-4fa2-94d5-d9e502be1a1c
 begin
@@ -221,9 +211,6 @@ historical_price_dictionary = download_ticker_data(psia_ticker_symbol_array);
 historical_return_dictionary = Serenity.compute_fractional_return_array(psia_ticker_symbol_array, historical_price_dictionary, 
 	:timestamp=>:adjusted_close; multiplier=1.0);
 
-# ╔═╡ 4144e1cf-5c35-4792-a0c1-f996d7972ac1
-historical_return_dictionary["MET"]
-
 # ╔═╡ 327efc85-e82b-40cc-b887-60c52fc486f7
 begin
 
@@ -247,11 +234,14 @@ begin
 	risk_free_rate = (1+0.0185)^(1/365) - 1
 	
 	# Start and end dates -> use the last three years of data
-	start_date = Date(2017,12,13)
+	start_date = Date(2016,12,12)
 	stop_date = Date(2021,12,12)
 
-	asset_df = Serenity.extract_data_block_for_date_range(historical_return_dictionary["AAPL"], start_date, stop_date)
-	market_df = Serenity.extract_data_block_for_date_range(market_return_table_nasdaq, start_date, stop_date)
+	# asset_df = Serenity.extract_data_block_for_date_range(historical_return_dictionary["AAPL"], start_date, stop_date)
+	# market_df = Serenity.extract_data_block_for_date_range(market_return_table, start_date, stop_date)
+
+	model_dict = Serenity.build_single_index_model(market_return_table, historical_return_dictionary,
+		psia_ticker_symbol_array, start_date, stop_date; risk_free_rate=risk_free_rate)
 end
 
 # ╔═╡ 84824b4a-6bb6-47bb-acb4-6d08073b145c
@@ -1606,12 +1596,10 @@ version = "0.9.1+5"
 # ╟─98628de6-c9e1-4c32-97f6-e5179639d8cc
 # ╟─eeed18ba-548d-415a-a85f-31aedf0e111d
 # ╠═bedc21aa-1ee8-4371-bcc3-b0ae70f48bbd
-# ╠═c28c765d-8ff1-4823-a9e4-461b8f64d387
 # ╠═8ab78f88-ffa6-4fa2-94d5-d9e502be1a1c
 # ╠═779f010f-27cc-4ba8-bde1-4e4bf9ff608e
 # ╠═1b45b534-27a1-4162-b66c-5222286ad376
 # ╠═b25f2b2e-8f64-4e07-93f6-6ed6e27e6e3c
-# ╠═4144e1cf-5c35-4792-a0c1-f996d7972ac1
 # ╠═327efc85-e82b-40cc-b887-60c52fc486f7
 # ╠═e7f9f63c-34d0-4b7d-a8c7-8c720735f33f
 # ╠═84824b4a-6bb6-47bb-acb4-6d08073b145c
@@ -1620,7 +1608,6 @@ version = "0.9.1+5"
 # ╟─ffe10048-3d4b-4c91-be63-b3de2fe17a0c
 # ╠═02505beb-6846-4935-967e-d44162f33856
 # ╠═29fad20b-77f8-4da3-b1f6-337bb15ef391
-# ╠═17b00fee-a3c4-4787-8d6a-8c1eb225bdd5
 # ╠═2ca1705e-5344-41ea-9543-5858f718e6e8
 # ╠═10a567fa-d21a-41f3-b638-840b3f66cbd8
 # ╟─eb48351c-5d34-11ec-10a8-cd0cd5826fc5

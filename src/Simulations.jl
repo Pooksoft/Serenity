@@ -42,11 +42,38 @@ end
 
 function simulate_insample_portfolio_allocation(tickers::Array{String,1}, 
     return_dictionary::Dict{String,DataFrame}, ω::Array{Float64,1}, initial_budget::Float64, 
-    start::Date, stop::Date)
+    start::Date, stop::Date; multiplier::Float64 = 1.0)
 
+    # initialize -
+    df = extract_data_block_for_date_range(return_dictionary[tickers[1]], start, stop);
+    number_of_timesteps = nrow(df)
+    number_of_tickers = length(tickers)
+    wealth_array = Array{Float64,2}(undef, number_of_timesteps, number_of_tickers)
     
+    # initialize the wealth array -
+    for ticker_index ∈ 1:number_of_tickers
+        wealth_array[1,ticker_index] = ω[ticker_index]*initial_budget
+    end
 
+    for (index, ticker) ∈ enumerate(tickers)
 
+        # grab -
+        df = extract_data_block_for_date_range(return_dictionary[ticker], start, stop);
+
+        for time_index ∈ 2:number_of_timesteps
+            
+            # get the return -
+            r = multiplier*df[time_index, :μ];
+
+            # compute the wealth -
+            old_wealth = wealth_array[time_index-1,index]
+            new_wealth = (1+r)*old_wealth
+            wealth_array[time_index,index] = new_wealth
+        end
+    end
+
+    # return the wealth_array -
+    return wealth_array
 end
 
 # short cut methods -

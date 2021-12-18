@@ -83,9 +83,6 @@ ticker_symbol_array = [
 # what is my budget?
 budget_total = 2750.0; # USD
 
-# ╔═╡ 1b43142b-de39-43d4-aeea-e9fd4a9f7a6c
-
-
 # ╔═╡ 7cc32583-0ece-4319-b0b1-33583ceae14b
 md"""
 ### Conclusions
@@ -226,6 +223,9 @@ end
 # compute the minvar portfolio -
 result = Serenity.compute_minvar_portfolio_allocation(average_return_array,Σ, 0.05; w_lower=0.06,w_upper=1.0);
 
+# ╔═╡ 99055948-b794-4f05-a31d-b3a2875ac857
+ω = result[2]
+
 # ╔═╡ 1204dfc0-5e46-4c72-bafe-f126c9a2365f
 expected_return = (1+(result[4]/100))^(252) - 1
 
@@ -306,6 +306,25 @@ d = sum(average_return_array.*u_var)
 
 # ╔═╡ f5e691fc-d764-4e1c-b97f-457773f54e17
 cyr = (1+(d/100))^(252)
+
+# ╔═╡ 1b43142b-de39-43d4-aeea-e9fd4a9f7a6c
+WA_cybernetic = Serenity.simulate_insample_portfolio_allocation(ticker_symbol_array,historical_return_dictionary, u_var, 
+	budget_total, start, stop; multiplier=(1.0/100.0));
+
+# ╔═╡ 78d3ee2e-46af-4d65-91c8-8cf55c749d94
+WA_sum_cybernetic = sum(WA_cybernetic,dims=2)
+
+# ╔═╡ 8cc221da-cb6b-4897-97a5-5376df98342e
+WA_markowitz = Serenity.simulate_insample_portfolio_allocation(ticker_symbol_array,historical_return_dictionary, ω, 
+	budget_total, start, stop; multiplier=(1.0/100.0));
+
+# ╔═╡ 3459367f-24e1-46b0-89b6-5165d5ebc00d
+begin
+	plot(WA_sum_cybernetic, legend=false, c=RED, lw=2)
+	plot!(sum(WA_markowitz,dims=2),lw=2,c=BLUE)
+	xlabel!("Time step index (AU)", fontsize=18)
+	ylabel!("Wealth (USD)", fontsize=18)
+end
 
 # ╔═╡ 1d6818a0-5ffe-11ec-393e-5bcad6dcfdab
 html"""
@@ -1732,6 +1751,7 @@ version = "0.9.1+5"
 # ╠═64e55d33-b24b-4447-8148-1554efd34f33
 # ╠═b11ff814-ecde-4a5c-b185-a8abd87a49fc
 # ╠═96fb3275-7be3-4611-96ab-46b805477ad4
+# ╠═99055948-b794-4f05-a31d-b3a2875ac857
 # ╠═1204dfc0-5e46-4c72-bafe-f126c9a2365f
 # ╟─6b7af0b9-65a4-4dc3-a4a4-ef165dcb3959
 # ╠═fdc668ac-ece6-4edb-aba8-77a2a51e6817
@@ -1742,6 +1762,9 @@ version = "0.9.1+5"
 # ╠═f5e691fc-d764-4e1c-b97f-457773f54e17
 # ╠═6a33c450-4430-440b-b612-5f9ee5a0dbe2
 # ╠═1b43142b-de39-43d4-aeea-e9fd4a9f7a6c
+# ╠═8cc221da-cb6b-4897-97a5-5376df98342e
+# ╠═78d3ee2e-46af-4d65-91c8-8cf55c749d94
+# ╠═3459367f-24e1-46b0-89b6-5165d5ebc00d
 # ╟─7cc32583-0ece-4319-b0b1-33583ceae14b
 # ╠═2f67f6bf-832e-4bb7-bdda-576ea37e98c8
 # ╠═d8309e86-d613-4987-a87b-0314a7f4ddad

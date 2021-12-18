@@ -16,6 +16,10 @@ end
 function build_single_index_model(market::DataFrame, firm::DataFrame;
     risk_free_rate::Float64 = 5.15e-5)::SingleIndexModel
 
+    # check: do we have the same number of rows in the two df?
+    if (nrow(market) != nrow(firm))
+        return nothing
+    end 
 
     # firm risk premimum -
     Y = (firm[!,:μ]) .- risk_free_rate
@@ -46,8 +50,28 @@ function build_single_index_model(market::DataFrame, firm::DataFrame;
     return model
 end
 
+function build_single_index_model(market::DataFrame, firm::DataFrame, 
+    start::Date, stop::Date; risk_free_rate::Float64 = 5.15e-5)::SingleIndexModel
+
+    # extract out the date range from the market -
+    market_df = extract_data_block_for_date_range(market, start, stop);
+    
+    # extract out the firm df -
+    firm_df = extract_data_block_for_date_range(firm, start, stop);
+
+    # check: if we don't have the same number of rows, then return nothing
+    if (nrow(market_df) != nrow(firm_df))
+        return nothing
+    end
+
+    # return -
+    return build_single_index_model(market_df, firm_df; risk_free_rate = risk_free_rate);
+end
+
+
 function build_single_index_model(market::DataFrame, firms::Dict{String,DataFrame}, 
-    ticker_symbol_array::Array{String,1}, start::Date, stop::Date; risk_free_rate::Float64 = 5.15e-5)
+    ticker_symbol_array::Array{String,1}, start::Date, stop::Date; 
+        risk_free_rate::Float64 = 5.15e-5)
 
     # initialize -
     model_dictionary = Dict{String, SingleIndexModel}()

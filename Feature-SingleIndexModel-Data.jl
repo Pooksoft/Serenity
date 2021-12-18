@@ -75,6 +75,9 @@ psia_ticker_symbol_array = sort(["MSFT", "ALLY", "MET", "AAPL", "GM", "PFE", "TG
     "MCD", "MRK", "NKE", "PG", "CRM", "TRV", "UNH", "VZ", "V", "WBA", "WMT"
 ]);
 
+# ╔═╡ 14553057-37e8-4404-b7c2-235812db662a
+ticker_symbol = "NKE"
+
 # ╔═╡ 4be380a2-23b1-4749-a829-e80e27280b41
 md"""
 ### Results and Discussion
@@ -111,11 +114,11 @@ begin
 
 	# load the SP500 data -
 	df_SP_nasdaq = CSV.read(joinpath(_PATH_TO_DATA,"SP500-Daily-close-10y-Nasdaq.csv"), DataFrame)
-	df_SP_dc = Serenity.transform_date_fields(df_SP_nasdaq,:timestamp) # changed Date and Close by hand
-	df_SP_dc_rev = Serenity.reverse_row_order_in_table(df_SP_dc);
-	
+	df_SP_dc = Serenity.transform_date_fields(df_SP_nasdaq,:timestamp) |> Serenity.reverse_row_order_in_table;
+
 	# compute the return vector -
-	market_return_table = Serenity.compute_fractional_return_array(df_SP_dc_rev,:timestamp=>:adjusted_close; multiplier=1.0)
+	market_return_table = Serenity.compute_fractional_return_array(df_SP_dc,:timestamp=>:adjusted_close; 
+		multiplier=1.0)
 end
 
 # ╔═╡ 8ab78f88-ffa6-4fa2-94d5-d9e502be1a1c
@@ -125,7 +128,7 @@ begin
 	LAPLACE_MARKET = fit(Laplace, μ_market)
 	
 	# number of bins - 10% of the length of a test ticker
-    number_of_bins = convert(Int64, (floor(0.1 * length(market_return_table[!, :μ]))))
+    number_of_bins = convert(Int64, (floor(0.05 * length(market_return_table[!, :μ]))))
 	
 	# plot -
 	stephist(μ_market, bins = number_of_bins, normed = :true, lw=2, label="Historical return (10 yrs)", 
@@ -231,17 +234,72 @@ end
 # ╔═╡ e7f9f63c-34d0-4b7d-a8c7-8c720735f33f
 begin
 
-	risk_free_rate = (1+0.0185)^(1/365) - 1
+	# what is the risk free rate?
+	risk_free_rate = (1+0.0185)^(1/365) - 1 # r = 1.85 per year
 	
-	# Start and end dates -> use the last three years of data
+	# Start and end dates -> use the last * years of data -
 	start_date = Date(2016,12,12)
 	stop_date = Date(2021,12,12)
 
-	# asset_df = Serenity.extract_data_block_for_date_range(historical_return_dictionary["AAPL"], start_date, stop_date)
-	# market_df = Serenity.extract_data_block_for_date_range(market_return_table, start_date, stop_date)
+	# compute a sim model for the ticker symbols that we have enough data for -
+	sim_dict = Serenity.build_single_index_model(market_return_table, historical_return_dictionary,
+		psia_ticker_symbol_array, start_date, stop_date; risk_free_rate=risk_free_rate);
 
-	model_dict = Serenity.build_single_index_model(market_return_table, historical_return_dictionary,
-		psia_ticker_symbol_array, start_date, stop_date; risk_free_rate=risk_free_rate)
+	# show -
+	nothing
+end
+
+# ╔═╡ 667773c0-f748-4ad7-bec8-86ea7599cc76
+begin
+
+	# what date range?
+	sim_start_date = Date(2021,11,01)
+	sim_stop_date = Date(2021,12,12)
+	N = 20000 # number of paths
+	
+	# what model do we want to look at?
+	sim_model = sim_dict[ticker_symbol]
+	historical_price_df = Serenity.extract_data_block_for_date_range(historical_price_dictionary[ticker_symbol], 
+		sim_start_date, sim_stop_date)
+
+	# setup simulation -
+	initial_price = 1.0 # assume we start from a scaled price -
+
+	# get the market return -
+	market_df = Serenity.extract_data_block_for_date_range(market_return_table, sim_start_date, sim_stop_date);
+
+	# generate market return array -
+	market_return_array = Array{Float64,1}()
+	number_of_steps = length(market_df[!,:μ]);
+	for step_index ∈ 1:number_of_steps
+		value = market_df[step_index,:μ]
+		push!(market_return_array,value)
+	end
+
+	# simulate a random walk using the single index model -
+	simulated_price_array = Serenity.simulate_sim_random_walk(sim_model, initial_price, market_return_array; N = N)
+
+	# show -
+	nothing
+end
+
+# ╔═╡ 9550f4f8-e526-452b-8fd8-23aa0c411000
+begin
+
+	# what is my skip factor?
+	skip_range = range(1,stop = N, step=100)
+	
+	# plot simulated trajectories -
+	plot(simulated_price_array[:, skip_range], label="",c=GRAY, lw=1)
+
+	# generate actual price -
+	actual_initial_price = historical_price_df[1,:adjusted_close]
+	actual_price_traj = (1/actual_initial_price)*historical_price_df[!,:adjusted_close]
+	plot!(actual_price_traj, c=RED,lw=4,label="$(ticker_symbol) actual")
+
+	# label the axis -
+	xlabel!("Time step index (AU)", fontsize=18)
+	ylabel!("Scaled Price P/Pₒ (AU)", fontsize=18)
 end
 
 # ╔═╡ eb48351c-5d34-11ec-10a8-cd0cd5826fc5
@@ -1595,7 +1653,10 @@ version = "0.9.1+5"
 # ╠═b25f2b2e-8f64-4e07-93f6-6ed6e27e6e3c
 # ╠═327efc85-e82b-40cc-b887-60c52fc486f7
 # ╠═e7f9f63c-34d0-4b7d-a8c7-8c720735f33f
+# ╠═14553057-37e8-4404-b7c2-235812db662a
+# ╠═667773c0-f748-4ad7-bec8-86ea7599cc76
 # ╟─4be380a2-23b1-4749-a829-e80e27280b41
+# ╠═9550f4f8-e526-452b-8fd8-23aa0c411000
 # ╟─ffe10048-3d4b-4c91-be63-b3de2fe17a0c
 # ╠═02505beb-6846-4935-967e-d44162f33856
 # ╠═29fad20b-77f8-4da3-b1f6-337bb15ef391

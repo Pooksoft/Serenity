@@ -28,6 +28,7 @@ begin
 	using Optim
 	using Convex
 	using SCS
+	using MathOptInterface
 	
     # alias the AlphaVantage URL -
     DATASTORE_URL_STRING = "https://www.alphavantage.co/query?"
@@ -75,8 +76,12 @@ md"""
 
 # ╔═╡ 9bc330e1-0353-44f2-967a-2f825fb11eae
 ticker_symbol_array = [
-	"SPY", "SPYD", "SPYG", "SPYV", "SPYX", "SPYC", "VOO", "VTI", "VEA", "VWO", "VNQ", "VGK"
+	"SPY", "SPYD", "SPYG", "SPYV", "SPYX", "VOO", "VTI", "VEA", "VWO", "VNQ", "VGK"
 ];
+
+# ╔═╡ 96fb3275-7be3-4611-96ab-46b805477ad4
+# what is my budget?
+budget_total = 2750.0; # USD
 
 # ╔═╡ 7cc32583-0ece-4319-b0b1-33583ceae14b
 md"""
@@ -216,10 +221,42 @@ end
 
 # ╔═╡ b11ff814-ecde-4a5c-b185-a8abd87a49fc
 # compute the minvar portfolio -
-result = Serenity.compute_minvar_portfolio_allocation(average_return_array,Σ, 0.10; w_lower=0.0,w_upper=1.0);
+result = Serenity.compute_minvar_portfolio_allocation(average_return_array,Σ, 0.05; w_lower=0.06,w_upper=1.0);
+
+# ╔═╡ 1204dfc0-5e46-4c72-bafe-f126c9a2365f
+expected_return = (1+(result[4]/100))^(252) - 1
+
+# ╔═╡ 6b7af0b9-65a4-4dc3-a4a4-ef165dcb3959
+md"""
+__Table XX__: Markowitz allocation table for 𝒫 = $(𝒫) assets in the ticker array (a mixture of different ETFs).
+This allocation has variance = $(round(result[3], sigdigits=4)) with a projected daily return = $(round(result[4], sigdigits=2))% (or $(round(expected_return*100,sigdigits=4))% return per year).
+"""
 
 # ╔═╡ fdc668ac-ece6-4edb-aba8-77a2a51e6817
-result
+with_terminal() do
+
+	# make a table with the allocation -
+	optimal_flag = result[1] # type MathOptInterface
+	w = result[2]
+
+	if (optimal_flag == MathOptInterface.OPTIMAL)
+		
+		state_table = Array{Any,2}(undef, 𝒫, 3)
+		for (index, ticker) ∈ enumerate(ticker_symbol_array)
+			state_table[index,1] = ticker
+			state_table[index,2] = abs(w[index]) < 1e-4 ? 0.0 : round(w[index],sigdigits=2)
+			state_table[index,3] = budget_total*state_table[index,2]
+		end
+
+		state_table_header = (
+			["ticker","wᵢ","USD"],["","","USD"]
+		)
+
+		pretty_table(state_table, header=state_table_header)
+	else 
+		println("No optimal solution found. Solver returned: $(optimal_flag)")
+	end
+end
 
 # ╔═╡ 1d6818a0-5ffe-11ec-393e-5bcad6dcfdab
 html"""
@@ -252,6 +289,7 @@ Dates = "ade2ca70-3891-5945-98fb-dc099432e06a"
 Distributions = "31c24e10-a181-5473-b8eb-7969acd0382f"
 HTTP = "cd3eb016-35fb-5094-929b-558a96fad6f3"
 HypothesisTests = "09f84164-cd44-5f33-b23f-e6b0d136a0d5"
+MathOptInterface = "b8f27783-ece8-5eb3-8dc8-9495eed66fee"
 Optim = "429524aa-4258-5aef-a3af-852621145aeb"
 PlutoUI = "7f904dfe-b85e-4ff6-b463-dae2292396a8"
 PrettyTables = "08abe8d2-0d0c-5749-adfa-8a2ac140af0d"
@@ -268,6 +306,7 @@ DataFrames = "~1.3.0"
 Distributions = "~0.25.36"
 HTTP = "~0.9.17"
 HypothesisTests = "~0.10.6"
+MathOptInterface = "~0.10.6"
 Optim = "~1.5.0"
 PlutoUI = "~0.7.24"
 PrettyTables = "~1.2.3"
@@ -1643,7 +1682,10 @@ version = "0.9.1+5"
 # ╠═0b85225d-e6f1-4f68-94ac-76e8a79a1a02
 # ╠═64e55d33-b24b-4447-8148-1554efd34f33
 # ╠═b11ff814-ecde-4a5c-b185-a8abd87a49fc
-# ╠═fdc668ac-ece6-4edb-aba8-77a2a51e6817
+# ╠═96fb3275-7be3-4611-96ab-46b805477ad4
+# ╠═1204dfc0-5e46-4c72-bafe-f126c9a2365f
+# ╟─6b7af0b9-65a4-4dc3-a4a4-ef165dcb3959
+# ╟─fdc668ac-ece6-4edb-aba8-77a2a51e6817
 # ╟─7cc32583-0ece-4319-b0b1-33583ceae14b
 # ╠═2f67f6bf-832e-4bb7-bdda-576ea37e98c8
 # ╠═d8309e86-d613-4987-a87b-0314a7f4ddad

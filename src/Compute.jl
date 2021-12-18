@@ -192,7 +192,7 @@ function compute_minvar_portfolio_allocation(μ,Σ,target_return::Float64;
 
     # setup problem -
     p = minimize(risk)
-    p.constraints += [sum(w)==1.0, w_lower <= w, w <= w_upper, ret == target_return]
+    p.constraints += [sum(w)==1.0, w_lower <= w, w <= w_upper, ret >= target_return]
     Convex.solve!(p, SCS.Optimizer(verbose = false))
 
     # return -

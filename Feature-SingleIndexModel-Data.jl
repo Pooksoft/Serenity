@@ -61,6 +61,8 @@ md"""
 # ╔═╡ 98628de6-c9e1-4c32-97f6-e5179639d8cc
 md"""
 ### Introduction
+
+Talk about the Single Index Model - reference Sharpe
 """
 
 # ╔═╡ eeed18ba-548d-415a-a85f-31aedf0e111d
@@ -70,18 +72,21 @@ md"""
 
 # ╔═╡ 779f010f-27cc-4ba8-bde1-4e4bf9ff608e
 # Pooksoft Industrial Average (PSIA) -> the DJIA + some stuff
-psia_ticker_symbol_array = sort(["MSFT", "ALLY", "MET", "AAPL", "GM", "PFE", "TGT", "WFC", "AIG", "F", "GE", "AMD",
+psia_ticker_symbol_array = sort(["SPYD", "MSFT", "ALLY", "MET", "AAPL", "GM", "PFE", "TGT", "WFC", "AIG", "F", "GE", "AMD",
     "MMM", "AXP", "AMGN", "BA", "CAT", "CVX", "CSCO", "KO", "DIS", "DOW", "GS", "HD", "IBM", "HON", "INTC", "JNJ", "JPM",
     "MCD", "MRK", "NKE", "PG", "CRM", "TRV", "UNH", "VZ", "V", "WBA", "WMT"
 ]);
 
 # ╔═╡ 14553057-37e8-4404-b7c2-235812db662a
-ticker_symbol = "AMGN";
+ticker_symbol = "SPYD";
 
 # ╔═╡ 4be380a2-23b1-4749-a829-e80e27280b41
 md"""
 ### Results and Discussion
 """
+
+# ╔═╡ 7f6d43cc-5266-42d5-b8c4-55678b90d4e3
+
 
 # ╔═╡ ffe10048-3d4b-4c91-be63-b3de2fe17a0c
 md"""
@@ -119,6 +124,9 @@ begin
 	# compute the return vector -
 	market_return_table = Serenity.compute_fractional_return_array(df_SP_dc,:timestamp=>:adjusted_close; 
 		multiplier=1.0)
+
+	# show -
+	nothing
 end
 
 # ╔═╡ 8ab78f88-ffa6-4fa2-94d5-d9e502be1a1c
@@ -176,8 +184,8 @@ function download_ticker_data(ticker_symbol_array::Array{String,1})::Dict{String
             # We do NOT have this data file -> download from Alphavantage.co
             # execute API call -> check to see if error -> turn into DataFrame
             query_parameters["symbol"] = ticker_symbol
-            url_string = build_url_query_string(DATASTORE_URL_STRING, query_parameters)
-            data_table = http_get_call_with_url(url_string) |> Serenity.check |> Serenity.process_csv_api_data
+            url_string = Serenity.build_url_query_string(DATASTORE_URL_STRING, query_parameters)
+            data_table = Serenity.http_get_call_with_url(url_string) |> Serenity.check |> Serenity.process_csv_api_data
 
             # sleep -
             sleep(10) # to avoid issue w/API limits
@@ -1664,6 +1672,7 @@ version = "0.9.1+5"
 # ╟─4be380a2-23b1-4749-a829-e80e27280b41
 # ╟─95e1f114-edfc-4b32-99f5-e8ab628b628e
 # ╠═9550f4f8-e526-452b-8fd8-23aa0c411000
+# ╠═7f6d43cc-5266-42d5-b8c4-55678b90d4e3
 # ╟─ffe10048-3d4b-4c91-be63-b3de2fe17a0c
 # ╠═02505beb-6846-4935-967e-d44162f33856
 # ╠═29fad20b-77f8-4da3-b1f6-337bb15ef391

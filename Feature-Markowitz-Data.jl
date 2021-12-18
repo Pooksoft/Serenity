@@ -76,12 +76,15 @@ md"""
 
 # ╔═╡ 9bc330e1-0353-44f2-967a-2f825fb11eae
 ticker_symbol_array = [
-	"SPY", "SPYD", "SPYG", "SPYV", "SPYX", "VOO", "VTI", "VEA", "VWO", "VNQ", "VGK"
+	"SPY", "SPYD", "SPYG", "SPYV", "SPYX", "VOO", "VTI", "VEA", "VWO", "VNQ", "VGK", "AAPL", "ALLY"
 ];
 
 # ╔═╡ 96fb3275-7be3-4611-96ab-46b805477ad4
 # what is my budget?
 budget_total = 2750.0; # USD
+
+# ╔═╡ 1b43142b-de39-43d4-aeea-e9fd4a9f7a6c
+
 
 # ╔═╡ 7cc32583-0ece-4319-b0b1-33583ceae14b
 md"""
@@ -229,7 +232,7 @@ expected_return = (1+(result[4]/100))^(252) - 1
 # ╔═╡ 6b7af0b9-65a4-4dc3-a4a4-ef165dcb3959
 md"""
 __Table XX__: Markowitz allocation table for 𝒫 = $(𝒫) assets in the ticker array (a mixture of different ETFs).
-This allocation has variance = $(round(result[3], sigdigits=4)) with a projected daily return = $(round(result[4], sigdigits=2))% (or $(round(expected_return*100,sigdigits=4))% return per year).
+This allocation has variance = $(round(result[3], sigdigits=4)) with a projected daily return = $(round(result[4], sigdigits=2))% (or an $(round(expected_return*100,sigdigits=4))% average return per year).
 """
 
 # ╔═╡ fdc668ac-ece6-4edb-aba8-77a2a51e6817
@@ -257,6 +260,52 @@ with_terminal() do
 		println("No optimal solution found. Solver returned: $(optimal_flag)")
 	end
 end
+
+# ╔═╡ d6bd6eca-8093-40b3-a90a-40f8d91f1665
+begin
+
+	# just do giggles - what would a cybernetic allocation look like?
+	term_array = Array{Float64,1}(undef, 𝒫)
+	for term_index ∈ 1:𝒫
+
+		scaled_return_value = average_return_array[term_index]/Σ[term_index,term_index]
+		term_array[term_index] = scaled_return_value
+	end
+
+	𝒵 = sum(term_array)
+	u_var = (1/𝒵)*term_array
+
+	# show -
+	nothing
+end
+
+# ╔═╡ 2fd51fd4-fbf4-437e-b493-92392dddf617
+sum(u_var)
+
+# ╔═╡ 6a33c450-4430-440b-b612-5f9ee5a0dbe2
+transpose(u_var)*Σ*u_var
+
+# ╔═╡ 832354e4-52f8-4ba2-9086-80da857b82c3
+with_terminal() do
+	state_table = Array{Any,2}(undef, 𝒫, 3)
+	for (index, ticker) ∈ enumerate(ticker_symbol_array)
+		state_table[index,1] = ticker
+		state_table[index,2] = abs(u_var[index]) < 1e-4 ? 0.0 : round(u_var[index],sigdigits=2)
+		state_table[index,3] = budget_total*state_table[index,2]
+	end
+
+	state_table_header = (
+		["ticker","uᵢ","USD"],["","","USD"]
+	)
+
+	pretty_table(state_table, header=state_table_header)
+end
+
+# ╔═╡ 64925d9e-470a-4e0c-acd5-7ae787159e0d
+d = sum(average_return_array.*u_var)
+
+# ╔═╡ f5e691fc-d764-4e1c-b97f-457773f54e17
+cyr = (1+(d/100))^(252)
 
 # ╔═╡ 1d6818a0-5ffe-11ec-393e-5bcad6dcfdab
 html"""
@@ -1685,7 +1734,14 @@ version = "0.9.1+5"
 # ╠═96fb3275-7be3-4611-96ab-46b805477ad4
 # ╠═1204dfc0-5e46-4c72-bafe-f126c9a2365f
 # ╟─6b7af0b9-65a4-4dc3-a4a4-ef165dcb3959
-# ╟─fdc668ac-ece6-4edb-aba8-77a2a51e6817
+# ╠═fdc668ac-ece6-4edb-aba8-77a2a51e6817
+# ╠═d6bd6eca-8093-40b3-a90a-40f8d91f1665
+# ╠═2fd51fd4-fbf4-437e-b493-92392dddf617
+# ╟─832354e4-52f8-4ba2-9086-80da857b82c3
+# ╠═64925d9e-470a-4e0c-acd5-7ae787159e0d
+# ╠═f5e691fc-d764-4e1c-b97f-457773f54e17
+# ╠═6a33c450-4430-440b-b612-5f9ee5a0dbe2
+# ╠═1b43142b-de39-43d4-aeea-e9fd4a9f7a6c
 # ╟─7cc32583-0ece-4319-b0b1-33583ceae14b
 # ╠═2f67f6bf-832e-4bb7-bdda-576ea37e98c8
 # ╠═d8309e86-d613-4987-a87b-0314a7f4ddad

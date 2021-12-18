@@ -283,6 +283,11 @@ begin
 	nothing
 end
 
+# ╔═╡ 95e1f114-edfc-4b32-99f5-e8ab628b628e
+md"""
+__Fig XX:__ Random walk simulation of the scaled share price using a single index model (SIM) for the return of ticker symbol $(ticker_symbol). The gray lines denote simulated sample paths (N = $(N)) while the red line denotes the actual price $(ticker_symbol).
+"""
+
 # ╔═╡ 9550f4f8-e526-452b-8fd8-23aa0c411000
 begin
 
@@ -1657,6 +1662,7 @@ version = "0.9.1+5"
 # ╠═14553057-37e8-4404-b7c2-235812db662a
 # ╟─667773c0-f748-4ad7-bec8-86ea7599cc76
 # ╟─4be380a2-23b1-4749-a829-e80e27280b41
+# ╟─95e1f114-edfc-4b32-99f5-e8ab628b628e
 # ╠═9550f4f8-e526-452b-8fd8-23aa0c411000
 # ╟─ffe10048-3d4b-4c91-be63-b3de2fe17a0c
 # ╠═02505beb-6846-4935-967e-d44162f33856

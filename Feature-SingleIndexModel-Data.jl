@@ -76,7 +76,7 @@ psia_ticker_symbol_array = sort(["MSFT", "ALLY", "MET", "AAPL", "GM", "PFE", "TG
 ]);
 
 # ╔═╡ 14553057-37e8-4404-b7c2-235812db662a
-ticker_symbol = "NKE"
+ticker_symbol = "AMGN";
 
 # ╔═╡ 4be380a2-23b1-4749-a829-e80e27280b41
 md"""
@@ -290,12 +290,13 @@ begin
 	skip_range = range(1,stop = N, step=100)
 	
 	# plot simulated trajectories -
-	plot(simulated_price_array[:, skip_range], label="",c=GRAY, lw=1)
+	plot(simulated_price_array[:, skip_range], label="",c=GRAY, lw=1, 
+		background_color = BACKGROUND, background_color_outside = WHITE, foreground_color_legend = nothing)
 
 	# generate actual price -
 	actual_initial_price = historical_price_df[1,:adjusted_close]
 	actual_price_traj = (1/actual_initial_price)*historical_price_df[!,:adjusted_close]
-	plot!(actual_price_traj, c=RED,lw=4,label="$(ticker_symbol) actual")
+	plot!(actual_price_traj, c=RED,lw=4,label="$(ticker_symbol) actual", legend=:bottomleft)
 
 	# label the axis -
 	xlabel!("Time step index (AU)", fontsize=18)
@@ -1651,10 +1652,10 @@ version = "0.9.1+5"
 # ╠═779f010f-27cc-4ba8-bde1-4e4bf9ff608e
 # ╠═1b45b534-27a1-4162-b66c-5222286ad376
 # ╠═b25f2b2e-8f64-4e07-93f6-6ed6e27e6e3c
-# ╠═327efc85-e82b-40cc-b887-60c52fc486f7
+# ╟─327efc85-e82b-40cc-b887-60c52fc486f7
 # ╠═e7f9f63c-34d0-4b7d-a8c7-8c720735f33f
 # ╠═14553057-37e8-4404-b7c2-235812db662a
-# ╠═667773c0-f748-4ad7-bec8-86ea7599cc76
+# ╟─667773c0-f748-4ad7-bec8-86ea7599cc76
 # ╟─4be380a2-23b1-4749-a829-e80e27280b41
 # ╠═9550f4f8-e526-452b-8fd8-23aa0c411000
 # ╟─ffe10048-3d4b-4c91-be63-b3de2fe17a0c

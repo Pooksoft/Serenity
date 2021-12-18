@@ -311,16 +311,13 @@ cyr = (1+(d/100))^(252)
 WA_cybernetic = Serenity.simulate_insample_portfolio_allocation(ticker_symbol_array,historical_return_dictionary, u_var, 
 	budget_total, start, stop; multiplier=(1.0/100.0));
 
-# ╔═╡ 78d3ee2e-46af-4d65-91c8-8cf55c749d94
-WA_sum_cybernetic = sum(WA_cybernetic,dims=2)
-
 # ╔═╡ 8cc221da-cb6b-4897-97a5-5376df98342e
 WA_markowitz = Serenity.simulate_insample_portfolio_allocation(ticker_symbol_array,historical_return_dictionary, ω, 
 	budget_total, start, stop; multiplier=(1.0/100.0));
 
 # ╔═╡ 3459367f-24e1-46b0-89b6-5165d5ebc00d
 begin
-	plot(WA_sum_cybernetic, legend=false, c=RED, lw=2)
+	plot(sum(WA_cybernetic, dims=2), legend=false, c=RED, lw=2)
 	plot!(sum(WA_markowitz,dims=2),lw=2,c=BLUE)
 	xlabel!("Time step index (AU)", fontsize=18)
 	ylabel!("Wealth (USD)", fontsize=18)
@@ -1763,8 +1760,7 @@ version = "0.9.1+5"
 # ╠═6a33c450-4430-440b-b612-5f9ee5a0dbe2
 # ╠═1b43142b-de39-43d4-aeea-e9fd4a9f7a6c
 # ╠═8cc221da-cb6b-4897-97a5-5376df98342e
-# ╠═78d3ee2e-46af-4d65-91c8-8cf55c749d94
-# ╠═3459367f-24e1-46b0-89b6-5165d5ebc00d
+# ╟─3459367f-24e1-46b0-89b6-5165d5ebc00d
 # ╟─7cc32583-0ece-4319-b0b1-33583ceae14b
 # ╠═2f67f6bf-832e-4bb7-bdda-576ea37e98c8
 # ╠═d8309e86-d613-4987-a87b-0314a7f4ddad

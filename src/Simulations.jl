@@ -40,6 +40,15 @@ function simulate_sim_random_walk(model::SingleIndexModel, initial_price::Float6
     return simulated_price_array
 end
 
+function simulate_insample_portfolio_allocation(tickers::Array{String,1}, 
+    return_dictionary::Dict{String,DataFrame}, ω::Array{Float64,1}, initial_budget::Float64, 
+    start::Date, stop::Date)
+
+    
+
+
+end
+
 # short cut methods -
 (model::SingleIndexModel)(initial_price::Float64, market_return::Array{Float64,1}; Δt = 1.0) = 
     simulate_sim_random_walk(model, initial_price, market_return; Δt = Δt);

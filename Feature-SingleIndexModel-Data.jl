@@ -244,13 +244,6 @@ begin
 		psia_ticker_symbol_array, start_date, stop_date; risk_free_rate=risk_free_rate)
 end
 
-# ╔═╡ 84824b4a-6bb6-47bb-acb4-6d08073b145c
-# build a SIM -
-model = Serenity.build_single_index_model(market_df, asset_df; risk_free_rate = risk_free_rate);
-
-# ╔═╡ 232e59ca-f3a9-4a6c-bff6-beab8c844d7c
-model
-
 # ╔═╡ eb48351c-5d34-11ec-10a8-cd0cd5826fc5
 html"""
 <style>
@@ -1602,8 +1595,6 @@ version = "0.9.1+5"
 # ╠═b25f2b2e-8f64-4e07-93f6-6ed6e27e6e3c
 # ╠═327efc85-e82b-40cc-b887-60c52fc486f7
 # ╠═e7f9f63c-34d0-4b7d-a8c7-8c720735f33f
-# ╠═84824b4a-6bb6-47bb-acb4-6d08073b145c
-# ╠═232e59ca-f3a9-4a6c-bff6-beab8c844d7c
 # ╟─4be380a2-23b1-4749-a829-e80e27280b41
 # ╟─ffe10048-3d4b-4c91-be63-b3de2fe17a0c
 # ╠═02505beb-6846-4935-967e-d44162f33856

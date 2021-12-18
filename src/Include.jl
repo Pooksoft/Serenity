@@ -6,6 +6,8 @@ using Dates
 using Statistics
 using Distributions
 using Optim
+using Convex
+using SCS
 
 # load my codes -
 include("Types.jl")

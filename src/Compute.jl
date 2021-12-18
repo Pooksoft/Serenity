@@ -181,6 +181,24 @@ function compute_rwm_cumulative_probabilty(price_array::Array{Float64,1}, target
     return (number_of_larger_values / number_of_samples)
 end
 
+function compute_minvar_portfolio_allocation(μ,Σ,target_return::Float64; 
+    w_lower::Float64 = 0.0, w_upper::Float64 = 1.0)
+
+    # initialize -
+    number_of_assets = length(μ)
+    w = Variable(number_of_assets)
+    risk = quadform(w,Σ)
+    ret  = dot(w,μ)
+
+    # setup problem -
+    p = minimize(risk)
+    p.constraints += [sum(w)==1.0, w_lower <= w, w <= w_upper, ret == target_return]
+    Convex.solve!(p, SCS.Optimizer(verbose = false))
+
+    # return -
+    return (p.status, evaluate(w), p.optval, evaluate(ret))
+end
+
 # short cut method RWMC method -
 (model::Distribution)(initial_price::Float64, number_of_steps::Int64; number_of_sample_paths = 1) =
     compute_random_walk_model_trajectory(model, initial_price, number_of_steps;

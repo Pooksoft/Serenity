@@ -199,6 +199,61 @@ function compute_minvar_portfolio_allocation(μ,Σ,target_return::Float64;
     return (p.status, evaluate(w), p.optval, evaluate(ret))
 end
 
+function compute_cybernetic_portfolio_allocation(μ,Σ)
+
+    # how many assets do we have?
+    𝒫 = length(μ)
+
+    # initialize -
+	term_array = Array{Float64,1}(undef, 𝒫)
+	for term_index ∈ 1:𝒫
+		term_array[term_index] = max(0.0, μ[term_index]/Σ[term_index,term_index])
+	end
+
+    # compute the u-variable -
+	𝒵 = sum(term_array)
+	u_variable_array = (1/𝒵)*term_array
+
+    # return -
+    return u_variable_array
+end
+
+function compute_average_fractional_return_and_covariance(tickers::Array{String,1}, data::Dict{String,DataFrame}, 
+    start::Date, stop::Date)
+
+    # need to grab the number of time steps -
+    test_df = Serenity.extract_data_block_for_date_range(data[tickers[1]], start, stop)
+	number_of_time_steps = nrow(test_df)
+
+    # initialize -
+    μ_bar = Array{Float64,1}()
+    R_array = Array{Float64,2}(undef, number_of_time_steps, length(tickers))
+
+    # process each ticker -
+    for (ticker_index, ticker) ∈ enumerate(tickers)
+
+        # get the data for the data range -
+        df = data[ticker]
+        df_slice = extract_data_block_for_date_range(df,start,stop)
+
+        # compute the return -
+		avg_val = mean(df_slice[!,:μ])
+		push!(μ_bar, avg_val)
+
+        # build R_array -
+		for step_index = 1:number_of_time_steps
+			R_array[step_index, ticker_index] = df_slice[step_index,:μ]
+		end
+    end
+
+    # compute the covariance -
+    Σ = cov(R_array)
+
+    # return -
+    return (μ_bar,Σ)
+end
+
+
 # short cut method RWMC method -
 (model::Distribution)(initial_price::Float64, number_of_steps::Int64; number_of_sample_paths = 1) =
     compute_random_walk_model_trajectory(model, initial_price, number_of_steps;

@@ -79,6 +79,10 @@ ticker_symbol_array = [
 	"SPY", "SPYD", "SPYG", "SPYV", "SPYX", "VOO", "VTI", "VEA", "VWO", "VNQ", "VGK", "AAPL", "ALLY"
 ];
 
+# ╔═╡ 4c417596-f5c5-445b-9806-00ea4fbc4c9c
+# How many tickers do we have?
+𝒫 = length(ticker_symbol_array);
+
 # ╔═╡ 96fb3275-7be3-4611-96ab-46b805477ad4
 # what is my budget?
 budget_total = 2750.0; # USD
@@ -183,48 +187,23 @@ historical_return_dictionary = Serenity.compute_fractional_return_array(ticker_s
 begin
 
 	# what date range are we interested in?
-	start = Date(2020,12,17);
+	start = Date(2021,1,17);
 	stop = Date(2021,12,17);
 
-	# pull a test symbol so check the dimension -
-	test_df = Serenity.extract_data_block_for_date_range(historical_return_dictionary["SPY"], start, stop)
-	(number_of_time_steps, _) = size(test_df)
-	𝒫 = length(ticker_symbol_array)
-	
-	# initialize some space -
-	average_return_array = Array{Float64,1}()
-	R_array = Array{Float64,2}(undef, number_of_time_steps, 𝒫)
+	# compute the average return and Σ -
+	(μ_bar, Σ) = Serenity.compute_average_fractional_return_and_covariance(ticker_symbol_array, historical_return_dictionary, 
+		start, stop);
 
-	# extract the required date range, and then compute the average return array -
-	for ticker_index ∈ 1:𝒫
-
-		# get ticker, then df -
-		ticker_symbol = ticker_symbol_array[ticker_index]
-		df = historical_return_dictionary[ticker_symbol]
-
-		# extract the date range from df -
-		df_slice = Serenity.extract_data_block_for_date_range(df, start, stop);
-
-		# compute the mean value of the return -
-		avg_val = mean(df_slice[!,:μ])
-		push!(average_return_array, avg_val)
-
-		# build R_array -
-		for step_index = 1:number_of_time_steps
-			R_array[step_index, ticker_index] = df_slice[step_index,:μ]
-		end
-	end
+	# show -
+	nothing
 end
-
-# ╔═╡ 64e55d33-b24b-4447-8148-1554efd34f33
-Σ = cov(R_array);
 
 # ╔═╡ b11ff814-ecde-4a5c-b185-a8abd87a49fc
 # compute the minvar portfolio -
-result = Serenity.compute_minvar_portfolio_allocation(average_return_array,Σ, 0.1; w_lower=0.0,w_upper=1.0);
+result = Serenity.compute_minvar_portfolio_allocation(μ_bar,Σ, 0.01; w_lower=0.0,w_upper=1.0);
 
 # ╔═╡ 99055948-b794-4f05-a31d-b3a2875ac857
-ω = result[2]
+ω = max.(0.0,result[2])
 
 # ╔═╡ 1204dfc0-5e46-4c72-bafe-f126c9a2365f
 expected_return = (1+(result[4]/100))^(252) - 1
@@ -261,33 +240,16 @@ with_terminal() do
 	end
 end
 
-# ╔═╡ d6bd6eca-8093-40b3-a90a-40f8d91f1665
-begin
-
-	# just do giggles - what would a cybernetic allocation look like?
-	term_array = Array{Float64,1}(undef, 𝒫)
-	for term_index ∈ 1:𝒫
-
-		scaled_return_value = max(0.0,average_return_array[term_index])/Σ[term_index,term_index]
-		term_array[term_index] = scaled_return_value
-	end
-
-	𝒵 = sum(term_array)
-	u_var = (1/𝒵)*term_array
-
-	# show -
-	nothing
-end
-
-# ╔═╡ 6a33c450-4430-440b-b612-5f9ee5a0dbe2
-transpose(u_var)*Σ*u_var
+# ╔═╡ aea955b7-dd61-4056-8a24-bf973b841c00
+# compute the cybere
+u_variable = Serenity.compute_cybernetic_portfolio_allocation(μ_bar, Σ);
 
 # ╔═╡ 832354e4-52f8-4ba2-9086-80da857b82c3
 with_terminal() do
 	state_table = Array{Any,2}(undef, 𝒫, 3)
 	for (index, ticker) ∈ enumerate(ticker_symbol_array)
 		state_table[index,1] = ticker
-		state_table[index,2] = abs(u_var[index]) < 1e-4 ? 0.0 : round(u_var[index],sigdigits=2)
+		state_table[index,2] = abs(u_variable[index]) < 1e-4 ? 0.0 : round(u_variable[index],sigdigits=2)
 		state_table[index,3] = budget_total*state_table[index,2]
 	end
 
@@ -298,21 +260,12 @@ with_terminal() do
 	pretty_table(state_table, header=state_table_header)
 end
 
-# ╔═╡ 64925d9e-470a-4e0c-acd5-7ae787159e0d
-d = sum(average_return_array.*u_var)
-
-# ╔═╡ f5e691fc-d764-4e1c-b97f-457773f54e17
-cyr = (1+(d/100))^(252)
-
-# ╔═╡ 1dd1bd9e-f7a1-4eff-acae-2a1cc7d27679
-begin
-	u_tmp = zeros(𝒫)
-	u_tmp[2] = 1.0
-end
-
 # ╔═╡ 1b43142b-de39-43d4-aeea-e9fd4a9f7a6c
-WA_cybernetic = Serenity.simulate_insample_portfolio_allocation(ticker_symbol_array,historical_return_dictionary, u_var, 
+WA_cybernetic = Serenity.simulate_insample_portfolio_allocation(ticker_symbol_array,historical_return_dictionary, u_variable, 
 	budget_total, start, stop; multiplier=(1.0/100.0));
+
+# ╔═╡ b201179c-ff73-42cd-b54c-98c482908947
+sum(WA_cybernetic, dims=2)
 
 # ╔═╡ 8cc221da-cb6b-4897-97a5-5376df98342e
 WA_markowitz = Serenity.simulate_insample_portfolio_allocation(ticker_symbol_array,historical_return_dictionary, ω, 
@@ -324,6 +277,115 @@ begin
 	plot!(sum(WA_markowitz,dims=2),lw=2,c=BLUE, label="Markowitz")
 	xlabel!("Time step index (AU)", fontsize=18)
 	ylabel!("Wealth (USD)", fontsize=18)
+end
+
+# ╔═╡ c3647093-c7d8-4ce6-95f3-85d2517b4bfd
+begin
+
+	# monthly reallocation -
+	number_of_test_months = 12
+	wealth_array = Array{Array{Float64,2},1}()
+	b = 2750.0
+	UA = Array{Float64,2}(undef, number_of_test_months-1, 𝒫)
+	
+	for month_index ∈ 2:number_of_test_months
+
+		if (month_index > 2)
+			W = last(wealth_array)
+			b = last(sum(W,dims=2))
+		end
+
+		# what is the next month -
+		base_month = Date(2021,(month_index - 1),17);
+		next_month = Date(2021,month_index,17);
+
+		# compute the average return and cov for base -> next_month -
+		(μ_bar_month, Σ_month) = Serenity.compute_average_fractional_return_and_covariance(ticker_symbol_array,
+			historical_return_dictionary, base_month, next_month);
+
+		# compute u-var -
+		u_variable_month = Serenity.compute_cybernetic_portfolio_allocation(μ_bar_month, Σ_month);
+
+		# update UA -
+		for (i,u) ∈ enumerate(u_variable_month)
+			UA[month_index-1,i] = u
+		end
+
+		# compute cybernetic allocation -
+		WA_cybernetic_month = Serenity.simulate_insample_portfolio_allocation(ticker_symbol_array,historical_return_dictionary,
+				u_variable_month, b, base_month, next_month; multiplier=(1.0/100.0));
+
+		# grab this month -
+		push!(wealth_array,WA_cybernetic_month);
+	end
+end
+
+# ╔═╡ b4e20518-707f-405a-81ad-9d84d8bf6c5e
+UA
+
+# ╔═╡ 4ae85196-b25a-4dbf-b4ff-1c910d7ea392
+with_terminal() do
+
+	(nr,nc) = size(UA)
+	state_table = Array{Any,2}(undef,𝒫, nr+1)
+	for (index,ticker) ∈ enumerate(ticker_symbol_array)
+		state_table[index,1] = ticker
+
+		for tmp = 1:nr
+			state_table[index,tmp + 1] = UA[tmp,index] 
+		end
+	end
+
+	pretty_table(state_table)
+end
+
+# ╔═╡ 3f488680-fd2b-4d3d-9eac-e64ff6d725c7
+W = vcat(wealth_array...)
+
+# ╔═╡ 79e92731-b9e5-4518-a09a-2b0181a37359
+begin
+
+	# monthly reallocation -
+	wealth_array_m = Array{Array{Float64,2},1}()
+	total_row_count_m = 0
+	b_m = 2750.0
+	
+	for month_index ∈ 2:number_of_test_months
+
+		if (month_index > 2)
+			W = last(wealth_array_m)
+			b_m = last(sum(W,dims=2))
+		end
+
+		# what is the next month -
+		base_month = Date(2021,(month_index - 1),17);
+		next_month = Date(2021,month_index,17);
+
+		# compute the average return and cov for base -> next_month -
+		(μ_bar_month, Σ_month) = Serenity.compute_average_fractional_return_and_covariance(ticker_symbol_array,
+			historical_return_dictionary, base_month, next_month);
+
+		# compute u-var -
+		result = Serenity.compute_minvar_portfolio_allocation(μ_bar_month,Σ_month, 0.04; w_lower=0.0,w_upper=1.0);
+		ω_variable_month = max.(0.0,result[2])
+
+		# compute cybernetic allocation -
+		WA_markowitz_m = Serenity.simulate_insample_portfolio_allocation(ticker_symbol_array,historical_return_dictionary, 
+			ω_variable_month, b_m, base_month, next_month; multiplier=(1.0/100.0));
+
+		# grab this month -
+		push!(wealth_array_m,WA_markowitz_m);
+	end
+end
+
+# ╔═╡ 338c1f4d-a85c-4bf2-8bc0-f099fa345824
+WM = vcat(wealth_array_m...)
+
+# ╔═╡ 87913c8b-4cf5-4f92-9992-d5cc94cd138d
+begin
+	plot(sum(WA_cybernetic, dims=2))
+	plot!(sum(W,dims=2))
+	plot!(sum(WM,dims=2),lw=2,c=BLUE, label="Markowitz")
 end
 
 # ╔═╡ 1d6818a0-5ffe-11ec-393e-5bcad6dcfdab
@@ -1745,25 +1807,29 @@ version = "0.9.1+5"
 # ╟─68a3dce4-2a89-4cf4-ae3d-0230abe179fb
 # ╟─ee1a82c2-a485-4e9a-8b08-323f174bedd5
 # ╠═9bc330e1-0353-44f2-967a-2f825fb11eae
+# ╠═4c417596-f5c5-445b-9806-00ea4fbc4c9c
 # ╠═4975330e-565f-4419-9aa4-33bbd2ebdcbc
 # ╠═31740764-d1e0-4228-a045-ebf785987e71
 # ╠═0b85225d-e6f1-4f68-94ac-76e8a79a1a02
-# ╠═64e55d33-b24b-4447-8148-1554efd34f33
 # ╠═b11ff814-ecde-4a5c-b185-a8abd87a49fc
 # ╠═96fb3275-7be3-4611-96ab-46b805477ad4
 # ╠═99055948-b794-4f05-a31d-b3a2875ac857
 # ╠═1204dfc0-5e46-4c72-bafe-f126c9a2365f
 # ╟─6b7af0b9-65a4-4dc3-a4a4-ef165dcb3959
-# ╠═fdc668ac-ece6-4edb-aba8-77a2a51e6817
-# ╠═d6bd6eca-8093-40b3-a90a-40f8d91f1665
+# ╟─fdc668ac-ece6-4edb-aba8-77a2a51e6817
+# ╠═aea955b7-dd61-4056-8a24-bf973b841c00
 # ╟─832354e4-52f8-4ba2-9086-80da857b82c3
-# ╠═64925d9e-470a-4e0c-acd5-7ae787159e0d
-# ╠═f5e691fc-d764-4e1c-b97f-457773f54e17
-# ╠═6a33c450-4430-440b-b612-5f9ee5a0dbe2
-# ╠═1dd1bd9e-f7a1-4eff-acae-2a1cc7d27679
 # ╠═1b43142b-de39-43d4-aeea-e9fd4a9f7a6c
 # ╠═8cc221da-cb6b-4897-97a5-5376df98342e
 # ╠═3459367f-24e1-46b0-89b6-5165d5ebc00d
+# ╠═b201179c-ff73-42cd-b54c-98c482908947
+# ╠═c3647093-c7d8-4ce6-95f3-85d2517b4bfd
+# ╠═b4e20518-707f-405a-81ad-9d84d8bf6c5e
+# ╠═4ae85196-b25a-4dbf-b4ff-1c910d7ea392
+# ╠═79e92731-b9e5-4518-a09a-2b0181a37359
+# ╠═338c1f4d-a85c-4bf2-8bc0-f099fa345824
+# ╠═3f488680-fd2b-4d3d-9eac-e64ff6d725c7
+# ╠═87913c8b-4cf5-4f92-9992-d5cc94cd138d
 # ╟─7cc32583-0ece-4319-b0b1-33583ceae14b
 # ╠═2f67f6bf-832e-4bb7-bdda-576ea37e98c8
 # ╠═d8309e86-d613-4987-a87b-0314a7f4ddad

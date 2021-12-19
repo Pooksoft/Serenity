@@ -221,7 +221,7 @@ end
 
 # ╔═╡ b11ff814-ecde-4a5c-b185-a8abd87a49fc
 # compute the minvar portfolio -
-result = Serenity.compute_minvar_portfolio_allocation(average_return_array,Σ, 0.05; w_lower=0.06,w_upper=1.0);
+result = Serenity.compute_minvar_portfolio_allocation(average_return_array,Σ, 0.1; w_lower=0.0,w_upper=1.0);
 
 # ╔═╡ 99055948-b794-4f05-a31d-b3a2875ac857
 ω = result[2]
@@ -268,7 +268,7 @@ begin
 	term_array = Array{Float64,1}(undef, 𝒫)
 	for term_index ∈ 1:𝒫
 
-		scaled_return_value = average_return_array[term_index]/Σ[term_index,term_index]
+		scaled_return_value = max(0.0,average_return_array[term_index])/Σ[term_index,term_index]
 		term_array[term_index] = scaled_return_value
 	end
 
@@ -278,9 +278,6 @@ begin
 	# show -
 	nothing
 end
-
-# ╔═╡ 2fd51fd4-fbf4-437e-b493-92392dddf617
-sum(u_var)
 
 # ╔═╡ 6a33c450-4430-440b-b612-5f9ee5a0dbe2
 transpose(u_var)*Σ*u_var
@@ -307,6 +304,12 @@ d = sum(average_return_array.*u_var)
 # ╔═╡ f5e691fc-d764-4e1c-b97f-457773f54e17
 cyr = (1+(d/100))^(252)
 
+# ╔═╡ 1dd1bd9e-f7a1-4eff-acae-2a1cc7d27679
+begin
+	u_tmp = zeros(𝒫)
+	u_tmp[2] = 1.0
+end
+
 # ╔═╡ 1b43142b-de39-43d4-aeea-e9fd4a9f7a6c
 WA_cybernetic = Serenity.simulate_insample_portfolio_allocation(ticker_symbol_array,historical_return_dictionary, u_var, 
 	budget_total, start, stop; multiplier=(1.0/100.0));
@@ -317,8 +320,8 @@ WA_markowitz = Serenity.simulate_insample_portfolio_allocation(ticker_symbol_arr
 
 # ╔═╡ 3459367f-24e1-46b0-89b6-5165d5ebc00d
 begin
-	plot(sum(WA_cybernetic, dims=2), legend=false, c=RED, lw=2)
-	plot!(sum(WA_markowitz,dims=2),lw=2,c=BLUE)
+	plot(sum(WA_cybernetic, dims=2), legend=:topleft, c=RED, lw=2, label="Cybernetic")
+	plot!(sum(WA_markowitz,dims=2),lw=2,c=BLUE, label="Markowitz")
 	xlabel!("Time step index (AU)", fontsize=18)
 	ylabel!("Wealth (USD)", fontsize=18)
 end
@@ -1753,14 +1756,14 @@ version = "0.9.1+5"
 # ╟─6b7af0b9-65a4-4dc3-a4a4-ef165dcb3959
 # ╠═fdc668ac-ece6-4edb-aba8-77a2a51e6817
 # ╠═d6bd6eca-8093-40b3-a90a-40f8d91f1665
-# ╠═2fd51fd4-fbf4-437e-b493-92392dddf617
 # ╟─832354e4-52f8-4ba2-9086-80da857b82c3
 # ╠═64925d9e-470a-4e0c-acd5-7ae787159e0d
 # ╠═f5e691fc-d764-4e1c-b97f-457773f54e17
 # ╠═6a33c450-4430-440b-b612-5f9ee5a0dbe2
+# ╠═1dd1bd9e-f7a1-4eff-acae-2a1cc7d27679
 # ╠═1b43142b-de39-43d4-aeea-e9fd4a9f7a6c
 # ╠═8cc221da-cb6b-4897-97a5-5376df98342e
-# ╟─3459367f-24e1-46b0-89b6-5165d5ebc00d
+# ╠═3459367f-24e1-46b0-89b6-5165d5ebc00d
 # ╟─7cc32583-0ece-4319-b0b1-33583ceae14b
 # ╠═2f67f6bf-832e-4bb7-bdda-576ea37e98c8
 # ╠═d8309e86-d613-4987-a87b-0314a7f4ddad

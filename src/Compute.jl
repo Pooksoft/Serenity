@@ -212,7 +212,13 @@ function compute_cybernetic_portfolio_allocation(μ,Σ)
 
     # compute the u-variable -
 	𝒵 = sum(term_array)
-	u_variable_array = (1/𝒵)*term_array
+
+    # if we have no good options (all the returns are negative, then all allocations would be zero)
+    if (𝒵 == 0)
+        u_variable_array = zeros(𝒫)
+    else
+        u_variable_array = (1/𝒵)*term_array
+    end
 
     # return -
     return u_variable_array

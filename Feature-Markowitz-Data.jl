@@ -187,7 +187,7 @@ historical_return_dictionary = Serenity.compute_fractional_return_array(ticker_s
 begin
 
 	# what date range are we interested in?
-	start = Date(2021,1,17);
+	start = Date(2020,12,17);
 	stop = Date(2021,12,17);
 
 	# compute the average return and Σ -
@@ -262,14 +262,11 @@ end
 
 # ╔═╡ 1b43142b-de39-43d4-aeea-e9fd4a9f7a6c
 WA_cybernetic = Serenity.simulate_insample_portfolio_allocation(ticker_symbol_array,historical_return_dictionary, u_variable, 
-	budget_total, start, stop; multiplier=(1.0/100.0));
-
-# ╔═╡ b201179c-ff73-42cd-b54c-98c482908947
-sum(WA_cybernetic, dims=2)
+	budget_total, Date(2021,1,17), stop; multiplier=(1.0/100.0));
 
 # ╔═╡ 8cc221da-cb6b-4897-97a5-5376df98342e
 WA_markowitz = Serenity.simulate_insample_portfolio_allocation(ticker_symbol_array,historical_return_dictionary, ω, 
-	budget_total, start, stop; multiplier=(1.0/100.0));
+	budget_total, Date(2021,1,17), stop; multiplier=(1.0/100.0));
 
 # ╔═╡ 3459367f-24e1-46b0-89b6-5165d5ebc00d
 begin
@@ -287,6 +284,7 @@ begin
 	wealth_array = Array{Array{Float64,2},1}()
 	b = 2750.0
 	UA = Array{Float64,2}(undef, number_of_test_months-1, 𝒫)
+	base_month = Date(2020,12,17);
 	
 	for month_index ∈ 2:number_of_test_months
 
@@ -296,7 +294,7 @@ begin
 		end
 
 		# what is the next month -
-		base_month = Date(2021,(month_index - 1),17);
+		previous_month = Date(2021,(month_index - 1),17);
 		next_month = Date(2021,month_index,17);
 
 		# compute the average return and cov for base -> next_month -
@@ -313,15 +311,12 @@ begin
 
 		# compute cybernetic allocation -
 		WA_cybernetic_month = Serenity.simulate_insample_portfolio_allocation(ticker_symbol_array,historical_return_dictionary,
-				u_variable_month, b, base_month, next_month; multiplier=(1.0/100.0));
+				u_variable_month, b, previous_month, next_month; multiplier=(1.0/100.0));
 
 		# grab this month -
 		push!(wealth_array,WA_cybernetic_month);
 	end
 end
-
-# ╔═╡ b4e20518-707f-405a-81ad-9d84d8bf6c5e
-UA
 
 # ╔═╡ 4ae85196-b25a-4dbf-b4ff-1c910d7ea392
 with_terminal() do
@@ -340,7 +335,7 @@ with_terminal() do
 end
 
 # ╔═╡ 3f488680-fd2b-4d3d-9eac-e64ff6d725c7
-W = vcat(wealth_array...)
+WC = vcat(wealth_array...)
 
 # ╔═╡ 79e92731-b9e5-4518-a09a-2b0181a37359
 begin
@@ -358,7 +353,7 @@ begin
 		end
 
 		# what is the next month -
-		base_month = Date(2021,(month_index - 1),17);
+		previous_month = Date(2021,(month_index - 1),17);
 		next_month = Date(2021,month_index,17);
 
 		# compute the average return and cov for base -> next_month -
@@ -371,7 +366,7 @@ begin
 
 		# compute cybernetic allocation -
 		WA_markowitz_m = Serenity.simulate_insample_portfolio_allocation(ticker_symbol_array,historical_return_dictionary, 
-			ω_variable_month, b_m, base_month, next_month; multiplier=(1.0/100.0));
+			ω_variable_month, b_m, previous_month, next_month; multiplier=(1.0/100.0));
 
 		# grab this month -
 		push!(wealth_array_m,WA_markowitz_m);
@@ -383,8 +378,9 @@ WM = vcat(wealth_array_m...)
 
 # ╔═╡ 87913c8b-4cf5-4f92-9992-d5cc94cd138d
 begin
-	plot(sum(WA_cybernetic, dims=2))
-	plot!(sum(W,dims=2))
+	plot(sum(WA_cybernetic, dims=2), legend=:topleft, c=GRAY, label="Cybernetic (annual)")
+	plot!(sum(WA_markowitz, dims=2), legend=:topleft, c=LBLUE, label="Markowitz (annual)")
+	plot!(sum(WC,dims=2), c=RED, label="Cybernetic", lw=2)
 	plot!(sum(WM,dims=2),lw=2,c=BLUE, label="Markowitz")
 end
 
@@ -1822,9 +1818,7 @@ version = "0.9.1+5"
 # ╠═1b43142b-de39-43d4-aeea-e9fd4a9f7a6c
 # ╠═8cc221da-cb6b-4897-97a5-5376df98342e
 # ╠═3459367f-24e1-46b0-89b6-5165d5ebc00d
-# ╠═b201179c-ff73-42cd-b54c-98c482908947
 # ╠═c3647093-c7d8-4ce6-95f3-85d2517b4bfd
-# ╠═b4e20518-707f-405a-81ad-9d84d8bf6c5e
 # ╠═4ae85196-b25a-4dbf-b4ff-1c910d7ea392
 # ╠═79e92731-b9e5-4518-a09a-2b0181a37359
 # ╠═338c1f4d-a85c-4bf2-8bc0-f099fa345824

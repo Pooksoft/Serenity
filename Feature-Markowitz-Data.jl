@@ -56,18 +56,29 @@ end
 
 # ╔═╡ a0e130f0-fe63-4c2b-9250-3a22b1dd6be4
 md"""
-## Classical Portfolio Management: Markowitz Allocation 
+## Classical Portfolio Management: Markowitz Mean-Variance Portfolio Theory 
 """
 
 # ╔═╡ 530772fd-e03e-466f-a095-74e3ca89cef8
 md"""
 ### Introduction
+
+Portfolio allocation is a classic problem in mathematical finance. Suppose we have a basket of $i=1,2,\dots,\mathcal{P}$ risky assets e.g., individual stocks or exchange-traded funds (ETFs) and we must estimate the relative proportion $\omega_{i}$ of each asset in the basket so that we achieve some objective, for example, a specified minimum growth rate (return).  
+
+The [Markowitz Mean-Variance Portfolio Theory](https://en.wikipedia.org/wiki/Modern_portfolio_theory) is the classical approach for computing the portfolio asset allocations $\omega_{i},i=1,2,\dots\mathcal{P}$ first published in 1952:
+
+* [Markowitz, H. (1952). Portfolio Selection. The Journal of Finance, 7(1), 77–91. https://doi.org/10.2307/2975974](https://www.jstor.org/stable/2975974)
+
+Mean-variance portfolio theory assumes that investors are risk-averse. Thus, when given two portfolios that offer the same expected return, a _rational investor_ prefers the _less_ risky portfolio. Further, an investor will take on increased risk only if they are compensated by higher expected returns. On the other hand, investors who want higher expected returns must assume more risk to achieve the desired higher returns. Different investors evaluate the trade-off between risk and reward differently based upon their own individual risk aversion characteristics. 
 """
 
 # ╔═╡ 68a3dce4-2a89-4cf4-ae3d-0230abe179fb
 md"""
 ### Materials and Methods
 """
+
+# ╔═╡ c0b2f1ac-90a6-4d5a-ba55-2e679a1a982f
+
 
 # ╔═╡ ee1a82c2-a485-4e9a-8b08-323f174bedd5
 md"""
@@ -86,6 +97,9 @@ ticker_symbol_array = [
 # ╔═╡ 96fb3275-7be3-4611-96ab-46b805477ad4
 # what is my budget?
 budget_total = 2750.0; # USD
+
+# ╔═╡ 57e56bcf-59a1-4ef9-9394-636d4ecaac96
+
 
 # ╔═╡ 7cc32583-0ece-4319-b0b1-33583ceae14b
 md"""
@@ -1799,8 +1813,9 @@ version = "0.9.1+5"
 
 # ╔═╡ Cell order:
 # ╟─a0e130f0-fe63-4c2b-9250-3a22b1dd6be4
-# ╠═530772fd-e03e-466f-a095-74e3ca89cef8
+# ╟─530772fd-e03e-466f-a095-74e3ca89cef8
 # ╟─68a3dce4-2a89-4cf4-ae3d-0230abe179fb
+# ╠═c0b2f1ac-90a6-4d5a-ba55-2e679a1a982f
 # ╟─ee1a82c2-a485-4e9a-8b08-323f174bedd5
 # ╠═9bc330e1-0353-44f2-967a-2f825fb11eae
 # ╠═4c417596-f5c5-445b-9806-00ea4fbc4c9c
@@ -1814,9 +1829,10 @@ version = "0.9.1+5"
 # ╟─6b7af0b9-65a4-4dc3-a4a4-ef165dcb3959
 # ╟─fdc668ac-ece6-4edb-aba8-77a2a51e6817
 # ╠═aea955b7-dd61-4056-8a24-bf973b841c00
-# ╟─832354e4-52f8-4ba2-9086-80da857b82c3
+# ╠═832354e4-52f8-4ba2-9086-80da857b82c3
 # ╠═1b43142b-de39-43d4-aeea-e9fd4a9f7a6c
 # ╠═8cc221da-cb6b-4897-97a5-5376df98342e
+# ╠═57e56bcf-59a1-4ef9-9394-636d4ecaac96
 # ╠═3459367f-24e1-46b0-89b6-5165d5ebc00d
 # ╠═c3647093-c7d8-4ce6-95f3-85d2517b4bfd
 # ╠═4ae85196-b25a-4dbf-b4ff-1c910d7ea392

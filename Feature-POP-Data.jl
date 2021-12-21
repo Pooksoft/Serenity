@@ -4,7 +4,7 @@
 using Markdown
 using InteractiveUtils
 
-# ╔═╡ 2f67f6bf-832e-4bb7-bdda-576ea37e98c8
+# ╔═╡ acd0003d-e417-462e-8205-dbdbf1534834
 begin
 	# setup: we need to specify the paths where we can find our project resources
     _PATH_TO_ROOT = pwd()
@@ -54,59 +54,41 @@ begin
     nothing
 end
 
-# ╔═╡ a0e130f0-fe63-4c2b-9250-3a22b1dd6be4
+# ╔═╡ a9fab8eb-38e4-44b3-822d-e2ad4c2bf21b
 md"""
-## Classical Portfolio Management: Markowitz Mean-Variance Portfolio Theory 
+# Computing the Probability of Profit (POP) for Option Contracts
 """
 
-# ╔═╡ 530772fd-e03e-466f-a095-74e3ca89cef8
+# ╔═╡ 50f44e9d-c834-41f3-9c90-64fa349f4e2c
 md"""
 ### Introduction
 
-Portfolio allocation is a classic problem in mathematical finance. Suppose we have a basket of $i=1,2,\dots,\mathcal{P}$ risky assets e.g., individual stocks or exchange-traded funds (ETFs) and we must estimate the relative proportion $\omega_{i}$ of each asset in the basket so that we achieve some objective, for example, a specified minimum growth rate (return).  
-
-The [Markowitz Mean-Variance Portfolio Theory](https://en.wikipedia.org/wiki/Modern_portfolio_theory) is the classical approach for computing the portfolio asset allocations $\omega_{i},i=1,2,\dots\mathcal{P}$ first published in 1952:
-
-* [Markowitz, H. (1952). Portfolio Selection. The Journal of Finance, 7(1), 77–91. https://doi.org/10.2307/2975974](https://www.jstor.org/stable/2975974)
-
-Mean-variance portfolio theory assumes that investors are rational and risk-averse. Thus, when given two portfolios that offer the same expected return, a _rational investor_ prefers the _less risky_ portfolio. Further, an investor will take on increased risk only if they are compensated by higher expected returns. On the other hand, investors who want higher expected returns must assume more risk to achieve these desired returns. Individual investors evaluate the trade-off between risk and reward differently based upon their own risk aversion characteristics. 
+* Describe Call and Put contracts and why we care
 """
 
-# ╔═╡ 68a3dce4-2a89-4cf4-ae3d-0230abe179fb
+# ╔═╡ 49bc4d68-64c3-4a4e-8c69-677eddd2fdf4
 md"""
 ### Materials and Methods
+
+* Describe the PL functions for each type of contract, and the overall PL for an options position
+* Describe the simulation of the underlying asset price
+* Describe the computation of the probability of profit for a set of contracts
 """
 
-# ╔═╡ c0b2f1ac-90a6-4d5a-ba55-2e679a1a982f
-
-
-# ╔═╡ ee1a82c2-a485-4e9a-8b08-323f174bedd5
+# ╔═╡ 62a0f498-97f5-4a73-82db-9bb8b1a7bfb4
 md"""
 ### Results and Discussion
 """
 
-# ╔═╡ 9bc330e1-0353-44f2-967a-2f825fb11eae
-ticker_symbol_array = [
-	"SPY", "SPYD", "SPYG", "SPYV", "SPYX", "VOO", "VTI", "VEA", "VWO", "VNQ", "VGK", "AAPL", "ALLY"
-];
+# ╔═╡ 3a979000-4db9-42f4-91cd-0803d92e597e
+335/165
 
-# ╔═╡ 4c417596-f5c5-445b-9806-00ea4fbc4c9c
-# How many tickers do we have?
-𝒫 = length(ticker_symbol_array);
-
-# ╔═╡ 96fb3275-7be3-4611-96ab-46b805477ad4
-# what is my budget?
-budget_total = 2750.0; # USD
-
-# ╔═╡ 57e56bcf-59a1-4ef9-9394-636d4ecaac96
-
-
-# ╔═╡ 7cc32583-0ece-4319-b0b1-33583ceae14b
+# ╔═╡ dd4b19a1-5ece-4ed7-a087-b30df862b445
 md"""
 ### Conclusions
 """
 
-# ╔═╡ e7ef9b22-aee2-442d-9021-218e10cf9e30
+# ╔═╡ 85a950d5-1744-433d-82cd-f6cba1fe7f11
 function ingredients(path::String)
 	
 	# this is from the Julia source code (evalfile in base/loading.jl)
@@ -122,10 +104,50 @@ function ingredients(path::String)
 	m
 end
 
-# ╔═╡ d8309e86-d613-4987-a87b-0314a7f4ddad
+# ╔═╡ b7330499-43fe-4a5b-b8f3-a02ca76f751b
 Serenity = ingredients(joinpath(_PATH_TO_SRC, "Include.jl"));
 
-# ╔═╡ 49f6a628-a7cf-4f56-883f-0715f569abca
+# ╔═╡ f3f59321-2a70-473f-b4bc-6218dea8a46f
+begin
+
+	# initialize -
+	contract_array = Array{Serenity.AbstractAsset,1}()
+	
+	# construct a Put credit spread -
+	# Sell a 157.5 PUT on JNJ expiring in 30 days or so -
+	put_contract_1 = Serenity.PutContract()
+	put_contract_1.ticker = "JNJ"
+	put_contract_1.expiration = Date(2022,01,21)
+	put_contract_1.K = 167.5
+	put_contract_1.C = 3.40
+	put_contract_1.sense = :SELL
+
+	# Buy a 157.5 PUT on JNJ expiring in 30 days or so -
+	put_contract_2 = Serenity.PutContract()
+	put_contract_2.ticker = "JNJ"
+	put_contract_2.expiration = Date(2022,01,21)
+	put_contract_2.K = 162.5
+	put_contract_2.C = 1.75
+	put_contract_2.sense = :BUY
+
+	# cache -
+	push!(contract_array, put_contract_1)
+	push!(contract_array, put_contract_2)
+end
+
+# ╔═╡ 7bc7eb36-c606-41ab-8fc8-de243bbb2c07
+begin
+
+	# compute the PL table -
+	underlying_price_array = range(160.0,stop=175.0,step=0.1) |> collect
+	pl_table = Serenity.compute_profit_loss_at_expiration(contract_array, underlying_price_array)
+	
+end
+
+# ╔═╡ 7356d7b2-ecba-43f2-b468-d8e8a284ee94
+plot(underlying_price_array,pl_table[!,:Σ], legend=:topleft)
+
+# ╔═╡ ed47a8a4-e248-4892-9281-277180be794b
 function download_ticker_data(ticker_symbol_array::Array{String,1})::Dict{String,DataFrame}
 
     # initialize some storage -
@@ -189,221 +211,53 @@ function download_ticker_data(ticker_symbol_array::Array{String,1})::Dict{String
     return price_data_dictionary
 end
 
-# ╔═╡ 4975330e-565f-4419-9aa4-33bbd2ebdcbc
-# load the historical price data from disk (if not saved, then download new data)
-historical_price_dictionary = download_ticker_data(ticker_symbol_array);
-
-# ╔═╡ 31740764-d1e0-4228-a045-ebf785987e71
-historical_return_dictionary = Serenity.compute_fractional_return_array(ticker_symbol_array, 
-	historical_price_dictionary, :timestamp=>:adjusted_close, multiplier=100.0);
-
-# ╔═╡ 0b85225d-e6f1-4f68-94ac-76e8a79a1a02
-begin
-
-	# what date range are we interested in?
-	start = Date(2020,12,17);
-	stop = Date(2021,12,17);
-
-	# compute the average return and Σ -
-	(μ_bar, Σ) = Serenity.compute_average_fractional_return_and_covariance(ticker_symbol_array, historical_return_dictionary, 
-		start, stop);
-
-	# show -
-	nothing
-end
-
-# ╔═╡ b11ff814-ecde-4a5c-b185-a8abd87a49fc
-# compute the minvar portfolio -
-result = Serenity.compute_minvar_portfolio_allocation(μ_bar,Σ, 0.01; w_lower=0.0,w_upper=1.0);
-
-# ╔═╡ 99055948-b794-4f05-a31d-b3a2875ac857
-ω = max.(0.0,result[2])
-
-# ╔═╡ 1204dfc0-5e46-4c72-bafe-f126c9a2365f
-expected_return = (1+(result[4]/100))^(252) - 1
-
-# ╔═╡ 6b7af0b9-65a4-4dc3-a4a4-ef165dcb3959
-md"""
-__Table XX__: Markowitz allocation table for 𝒫 = $(𝒫) assets in the ticker array (a mixture of different ETFs).
-This allocation has variance = $(round(result[3], sigdigits=4)) with a projected daily return = $(round(result[4], sigdigits=2))% (or an $(round(expected_return*100,sigdigits=4))% average return per year).
-"""
-
-# ╔═╡ fdc668ac-ece6-4edb-aba8-77a2a51e6817
-with_terminal() do
-
-	# make a table with the allocation -
-	optimal_flag = result[1] # type MathOptInterface
-	w = result[2]
-
-	if (optimal_flag == MathOptInterface.OPTIMAL)
-		
-		state_table = Array{Any,2}(undef, 𝒫, 3)
-		for (index, ticker) ∈ enumerate(ticker_symbol_array)
-			state_table[index,1] = ticker
-			state_table[index,2] = abs(w[index]) < 1e-4 ? 0.0 : round(w[index],sigdigits=2)
-			state_table[index,3] = budget_total*state_table[index,2]
-		end
-
-		state_table_header = (
-			["ticker","wᵢ","USD"],["","","USD"]
-		)
-
-		pretty_table(state_table, header=state_table_header)
-	else 
-		println("No optimal solution found. Solver returned: $(optimal_flag)")
-	end
-end
-
-# ╔═╡ aea955b7-dd61-4056-8a24-bf973b841c00
-# compute the cybere
-u_variable = Serenity.compute_cybernetic_portfolio_allocation(μ_bar, Σ);
-
-# ╔═╡ 832354e4-52f8-4ba2-9086-80da857b82c3
-with_terminal() do
-	state_table = Array{Any,2}(undef, 𝒫, 3)
-	for (index, ticker) ∈ enumerate(ticker_symbol_array)
-		state_table[index,1] = ticker
-		state_table[index,2] = abs(u_variable[index]) < 1e-4 ? 0.0 : round(u_variable[index],sigdigits=2)
-		state_table[index,3] = budget_total*state_table[index,2]
-	end
-
-	state_table_header = (
-		["ticker","uᵢ","USD"],["","","USD"]
-	)
-
-	pretty_table(state_table, header=state_table_header)
-end
-
-# ╔═╡ 1b43142b-de39-43d4-aeea-e9fd4a9f7a6c
-WA_cybernetic = Serenity.simulate_insample_portfolio_allocation(ticker_symbol_array,historical_return_dictionary, u_variable, 
-	budget_total, Date(2021,1,17), stop; multiplier=(1.0/100.0));
-
-# ╔═╡ 8cc221da-cb6b-4897-97a5-5376df98342e
-WA_markowitz = Serenity.simulate_insample_portfolio_allocation(ticker_symbol_array,historical_return_dictionary, ω, 
-	budget_total, Date(2021,1,17), stop; multiplier=(1.0/100.0));
-
-# ╔═╡ 3459367f-24e1-46b0-89b6-5165d5ebc00d
-begin
-	plot(sum(WA_cybernetic, dims=2), legend=:topleft, c=RED, lw=2, label="Cybernetic")
-	plot!(sum(WA_markowitz,dims=2),lw=2,c=BLUE, label="Markowitz")
-	xlabel!("Time step index (AU)", fontsize=18)
-	ylabel!("Wealth (USD)", fontsize=18)
-end
-
-# ╔═╡ c3647093-c7d8-4ce6-95f3-85d2517b4bfd
-begin
-
-	# monthly reallocation -
-	number_of_test_months = 12
-	wealth_array = Array{Array{Float64,2},1}()
-	b = 2750.0
-	UA = Array{Float64,2}(undef, number_of_test_months-1, 𝒫)
-	base_month = Date(2020,12,17);
+# ╔═╡ 163679f6-ec63-4582-8b64-55dbdc65cc43
+html"""
+<script>
+	// initialize -
+	var section = 0;
+	var subsection = 0;
+	var headers = document.querySelectorAll('h3, h5');
 	
-	for month_index ∈ 2:number_of_test_months
-
-		if (month_index > 2)
-			W = last(wealth_array)
-			b = last(sum(W,dims=2))
-		end
-
-		# what is the next month -
-		previous_month = Date(2021,(month_index - 1),17);
-		next_month = Date(2021,month_index,17);
-
-		# compute the average return and cov for base -> next_month -
-		(μ_bar_month, Σ_month) = Serenity.compute_average_fractional_return_and_covariance(ticker_symbol_array,
-			historical_return_dictionary, base_month, next_month);
-
-		# compute u-var -
-		u_variable_month = Serenity.compute_cybernetic_portfolio_allocation(μ_bar_month, Σ_month);
-
-		# update UA -
-		for (i,u) ∈ enumerate(u_variable_month)
-			UA[month_index-1,i] = u
-		end
-
-		# compute cybernetic allocation -
-		WA_cybernetic_month = Serenity.simulate_insample_portfolio_allocation(ticker_symbol_array,historical_return_dictionary,
-				u_variable_month, b, previous_month, next_month; multiplier=(1.0/100.0));
-
-		# grab this month -
-		push!(wealth_array,WA_cybernetic_month);
-	end
-end
-
-# ╔═╡ 4ae85196-b25a-4dbf-b4ff-1c910d7ea392
-with_terminal() do
-
-	(nr,nc) = size(UA)
-	state_table = Array{Any,2}(undef,𝒫, nr+1)
-	for (index,ticker) ∈ enumerate(ticker_symbol_array)
-		state_table[index,1] = ticker
-
-		for tmp = 1:nr
-			state_table[index,tmp + 1] = UA[tmp,index] 
-		end
-	end
-
-	pretty_table(state_table)
-end
-
-# ╔═╡ 3f488680-fd2b-4d3d-9eac-e64ff6d725c7
-WC = vcat(wealth_array...)
-
-# ╔═╡ 79e92731-b9e5-4518-a09a-2b0181a37359
-begin
-
-	# monthly reallocation -
-	wealth_array_m = Array{Array{Float64,2},1}()
-	total_row_count_m = 0
-	b_m = 2750.0
+	// main loop -
+	for (var i=0; i < headers.length; i++) {
+	    
+		var header = headers[i];
+	    var text = header.innerText;
+	    var original = header.getAttribute("text-original");
+	    if (original === null) {
+	        
+			// Save original header text
+	        header.setAttribute("text-original", text);
+	    } else {
+	        
+			// Replace with original text before adding section number
+	        text = header.getAttribute("text-original");
+	    }
 	
-	for month_index ∈ 2:number_of_test_months
+	    var numbering = "";
+	    switch (header.tagName) {
+	        case 'H3':
+	            section += 1;
+	            numbering = section + ".";
+	            subsection = 0;
+	            break;
+	        case 'H5':
+	            subsection += 1;
+	            numbering = section + "." + subsection;
+	            break;
+	    }
+		// update the header text 
+		header.innerText = numbering + " " + text;
+	};
+</script>"""
 
-		if (month_index > 2)
-			W = last(wealth_array_m)
-			b_m = last(sum(W,dims=2))
-		end
-
-		# what is the next month -
-		previous_month = Date(2021,(month_index - 1),17);
-		next_month = Date(2021,month_index,17);
-
-		# compute the average return and cov for base -> next_month -
-		(μ_bar_month, Σ_month) = Serenity.compute_average_fractional_return_and_covariance(ticker_symbol_array,
-			historical_return_dictionary, base_month, next_month);
-
-		# compute u-var -
-		result = Serenity.compute_minvar_portfolio_allocation(μ_bar_month,Σ_month, 0.04; w_lower=0.0,w_upper=1.0);
-		ω_variable_month = max.(0.0,result[2])
-
-		# compute cybernetic allocation -
-		WA_markowitz_m = Serenity.simulate_insample_portfolio_allocation(ticker_symbol_array,historical_return_dictionary, 
-			ω_variable_month, b_m, previous_month, next_month; multiplier=(1.0/100.0));
-
-		# grab this month -
-		push!(wealth_array_m,WA_markowitz_m);
-	end
-end
-
-# ╔═╡ 338c1f4d-a85c-4bf2-8bc0-f099fa345824
-WM = vcat(wealth_array_m...)
-
-# ╔═╡ 87913c8b-4cf5-4f92-9992-d5cc94cd138d
-begin
-	plot(sum(WA_cybernetic, dims=2), legend=:topleft, c=GRAY, label="Cybernetic (annual)")
-	plot!(sum(WA_markowitz, dims=2), legend=:topleft, c=LBLUE, label="Markowitz (annual)")
-	plot!(sum(WC,dims=2), c=RED, label="Cybernetic", lw=2)
-	plot!(sum(WM,dims=2),lw=2,c=BLUE, label="Markowitz")
-end
-
-# ╔═╡ 1d6818a0-5ffe-11ec-393e-5bcad6dcfdab
+# ╔═╡ 5f68415e-6225-11ec-17a4-0dae8fcf1ae5
 html"""
 <style>
 main {
     max-width: 1200px;
-    width: 75%;
+    width: 85%;
     margin: auto;
     font-family: "Roboto, monospace";
 }
@@ -442,14 +296,14 @@ TOML = "fa267f1f-6049-4f14-aa54-33bafae1ed76"
 CSV = "~0.9.11"
 Colors = "~0.12.8"
 Convex = "~0.14.18"
-DataFrames = "~1.3.0"
-Distributions = "~0.25.36"
+DataFrames = "~1.3.1"
+Distributions = "~0.25.37"
 HTTP = "~0.9.17"
 HypothesisTests = "~0.10.6"
 MathOptInterface = "~0.10.6"
 Optim = "~1.5.0"
-PlutoUI = "~0.7.24"
-PrettyTables = "~1.2.3"
+PlutoUI = "~0.7.25"
+PrettyTables = "~1.3.1"
 SCS = "~0.8.1"
 StatsPlots = "~0.14.29"
 """
@@ -475,9 +329,9 @@ version = "1.0.1"
 
 [[deps.AbstractPlutoDingetjes]]
 deps = ["Pkg"]
-git-tree-sha1 = "abb72771fd8895a7ebd83d5632dc4b989b022b5b"
+git-tree-sha1 = "37b730f25b5662ac452f7bb2c50a0567cbb748d4"
 uuid = "6e696c72-6542-2067-7265-42206c756150"
-version = "1.1.2"
+version = "1.1.3"
 
 [[deps.AbstractTrees]]
 git-tree-sha1 = "03e0550477d86222521d254b741d470ba17ea0b5"
@@ -657,9 +511,9 @@ version = "1.9.0"
 
 [[deps.DataFrames]]
 deps = ["Compat", "DataAPI", "Future", "InvertedIndices", "IteratorInterfaceExtensions", "LinearAlgebra", "Markdown", "Missings", "PooledArrays", "PrettyTables", "Printf", "REPL", "Reexport", "SortingAlgorithms", "Statistics", "TableTraits", "Tables", "Unicode"]
-git-tree-sha1 = "2e993336a3f68216be91eb8ee4625ebbaba19147"
+git-tree-sha1 = "cfdfef912b7f93e4b848e80b9befdf9e331bc05a"
 uuid = "a93c6f00-e57d-5684-b7b6-d8193f3e46c0"
-version = "1.3.0"
+version = "1.3.1"
 
 [[deps.DataStructures]]
 deps = ["Compat", "InteractiveUtils", "OrderedCollections"]
@@ -716,9 +570,9 @@ uuid = "8ba89e20-285c-5b6f-9357-94700520ee1b"
 
 [[deps.Distributions]]
 deps = ["ChainRulesCore", "DensityInterface", "FillArrays", "LinearAlgebra", "PDMats", "Printf", "QuadGK", "Random", "SparseArrays", "SpecialFunctions", "Statistics", "StatsBase", "StatsFuns", "Test"]
-git-tree-sha1 = "c1724611e6ae29c6094c8d9850e3136297ba7fff"
+git-tree-sha1 = "6a8dc9f82e5ce28279b6e3e2cea9421154f5bd0d"
 uuid = "31c24e10-a181-5473-b8eb-7969acd0382f"
-version = "0.25.36"
+version = "0.25.37"
 
 [[deps.DocStringExtensions]]
 deps = ["LibGit2"]
@@ -1290,16 +1144,16 @@ uuid = "995b91a9-d308-5afd-9ec6-746e21dbc043"
 version = "1.1.1"
 
 [[deps.Plots]]
-deps = ["Base64", "Contour", "Dates", "Downloads", "FFMPEG", "FixedPointNumbers", "GR", "GeometryBasics", "JSON", "Latexify", "LinearAlgebra", "Measures", "NaNMath", "PlotThemes", "PlotUtils", "Printf", "REPL", "Random", "RecipesBase", "RecipesPipeline", "Reexport", "Requires", "Scratch", "Showoff", "SparseArrays", "Statistics", "StatsBase", "UUIDs", "UnicodeFun"]
-git-tree-sha1 = "65ebc27d8c00c84276f14aaf4ff63cbe12016c70"
+deps = ["Base64", "Contour", "Dates", "Downloads", "FFMPEG", "FixedPointNumbers", "GR", "GeometryBasics", "JSON", "Latexify", "LinearAlgebra", "Measures", "NaNMath", "PlotThemes", "PlotUtils", "Printf", "REPL", "Random", "RecipesBase", "RecipesPipeline", "Reexport", "Requires", "Scratch", "Showoff", "SparseArrays", "Statistics", "StatsBase", "UUIDs", "UnicodeFun", "Unzip"]
+git-tree-sha1 = "7eda8e2a61e35b7f553172ef3d9eaa5e4e76d92e"
 uuid = "91a5bcdd-55d7-5caf-9e0b-520d859cae80"
-version = "1.25.2"
+version = "1.25.3"
 
 [[deps.PlutoUI]]
 deps = ["AbstractPlutoDingetjes", "Base64", "ColorTypes", "Dates", "Hyperscript", "HypertextLiteral", "IOCapture", "InteractiveUtils", "JSON", "Logging", "Markdown", "Random", "Reexport", "UUIDs"]
-git-tree-sha1 = "6c9fa3e4880242c666dafa4901a34d8e1cd1b243"
+git-tree-sha1 = "93cf0910f09a9607add290a3a2585aa376b4feb6"
 uuid = "7f904dfe-b85e-4ff6-b463-dae2292396a8"
-version = "0.7.24"
+version = "0.7.25"
 
 [[deps.PooledArrays]]
 deps = ["DataAPI", "Future"]
@@ -1321,9 +1175,9 @@ version = "1.2.2"
 
 [[deps.PrettyTables]]
 deps = ["Crayons", "Formatting", "Markdown", "Reexport", "Tables"]
-git-tree-sha1 = "d940010be611ee9d67064fe559edbb305f8cc0eb"
+git-tree-sha1 = "dfb54c4e414caa595a1f2ed759b160f5a3ddcba5"
 uuid = "08abe8d2-0d0c-5749-adfa-8a2ac140af0d"
-version = "1.2.3"
+version = "1.3.1"
 
 [[deps.Printf]]
 deps = ["Unicode"]
@@ -1395,9 +1249,9 @@ version = "0.3.0+0"
 
 [[deps.Roots]]
 deps = ["CommonSolve", "Printf", "Setfield"]
-git-tree-sha1 = "5f69d1e2173de445c2f1c374dab9c6b3af5275a5"
+git-tree-sha1 = "ee885e0f773804f046fd43d0d4ace305b3d540e2"
 uuid = "f2b01f46-fcfa-551c-844a-d8ac1e96c665"
-version = "1.3.12"
+version = "1.3.13"
 
 [[deps.SCS]]
 deps = ["BinaryProvider", "Libdl", "LinearAlgebra", "MathOptInterface", "Requires", "SCS_GPU_jll", "SCS_jll", "SparseArrays"]
@@ -1577,6 +1431,11 @@ deps = ["REPL"]
 git-tree-sha1 = "53915e50200959667e78a92a418594b428dffddf"
 uuid = "1cfade01-22cf-5700-b092-accc4b62d6e1"
 version = "0.4.1"
+
+[[deps.Unzip]]
+git-tree-sha1 = "34db80951901073501137bdbc3d5a8e7bbd06670"
+uuid = "41fe7b60-77ed-43a1-b4f0-825fd5a5650d"
+version = "0.1.2"
 
 [[deps.Wayland_jll]]
 deps = ["Artifacts", "Expat_jll", "JLLWrappers", "Libdl", "Libffi_jll", "Pkg", "XML2_jll"]
@@ -1812,39 +1671,20 @@ version = "0.9.1+5"
 """
 
 # ╔═╡ Cell order:
-# ╟─a0e130f0-fe63-4c2b-9250-3a22b1dd6be4
-# ╟─530772fd-e03e-466f-a095-74e3ca89cef8
-# ╟─68a3dce4-2a89-4cf4-ae3d-0230abe179fb
-# ╠═c0b2f1ac-90a6-4d5a-ba55-2e679a1a982f
-# ╟─ee1a82c2-a485-4e9a-8b08-323f174bedd5
-# ╠═9bc330e1-0353-44f2-967a-2f825fb11eae
-# ╠═4c417596-f5c5-445b-9806-00ea4fbc4c9c
-# ╠═4975330e-565f-4419-9aa4-33bbd2ebdcbc
-# ╠═31740764-d1e0-4228-a045-ebf785987e71
-# ╠═0b85225d-e6f1-4f68-94ac-76e8a79a1a02
-# ╠═b11ff814-ecde-4a5c-b185-a8abd87a49fc
-# ╠═96fb3275-7be3-4611-96ab-46b805477ad4
-# ╠═99055948-b794-4f05-a31d-b3a2875ac857
-# ╠═1204dfc0-5e46-4c72-bafe-f126c9a2365f
-# ╟─6b7af0b9-65a4-4dc3-a4a4-ef165dcb3959
-# ╟─fdc668ac-ece6-4edb-aba8-77a2a51e6817
-# ╠═aea955b7-dd61-4056-8a24-bf973b841c00
-# ╠═832354e4-52f8-4ba2-9086-80da857b82c3
-# ╠═1b43142b-de39-43d4-aeea-e9fd4a9f7a6c
-# ╠═8cc221da-cb6b-4897-97a5-5376df98342e
-# ╠═57e56bcf-59a1-4ef9-9394-636d4ecaac96
-# ╠═3459367f-24e1-46b0-89b6-5165d5ebc00d
-# ╠═c3647093-c7d8-4ce6-95f3-85d2517b4bfd
-# ╠═4ae85196-b25a-4dbf-b4ff-1c910d7ea392
-# ╠═79e92731-b9e5-4518-a09a-2b0181a37359
-# ╠═338c1f4d-a85c-4bf2-8bc0-f099fa345824
-# ╠═3f488680-fd2b-4d3d-9eac-e64ff6d725c7
-# ╠═87913c8b-4cf5-4f92-9992-d5cc94cd138d
-# ╟─7cc32583-0ece-4319-b0b1-33583ceae14b
-# ╠═2f67f6bf-832e-4bb7-bdda-576ea37e98c8
-# ╠═d8309e86-d613-4987-a87b-0314a7f4ddad
-# ╠═49f6a628-a7cf-4f56-883f-0715f569abca
-# ╟─e7ef9b22-aee2-442d-9021-218e10cf9e30
-# ╟─1d6818a0-5ffe-11ec-393e-5bcad6dcfdab
+# ╟─a9fab8eb-38e4-44b3-822d-e2ad4c2bf21b
+# ╟─50f44e9d-c834-41f3-9c90-64fa349f4e2c
+# ╟─49bc4d68-64c3-4a4e-8c69-677eddd2fdf4
+# ╟─62a0f498-97f5-4a73-82db-9bb8b1a7bfb4
+# ╠═f3f59321-2a70-473f-b4bc-6218dea8a46f
+# ╠═7bc7eb36-c606-41ab-8fc8-de243bbb2c07
+# ╠═7356d7b2-ecba-43f2-b468-d8e8a284ee94
+# ╠═3a979000-4db9-42f4-91cd-0803d92e597e
+# ╟─dd4b19a1-5ece-4ed7-a087-b30df862b445
+# ╠═acd0003d-e417-462e-8205-dbdbf1534834
+# ╠═b7330499-43fe-4a5b-b8f3-a02ca76f751b
+# ╠═ed47a8a4-e248-4892-9281-277180be794b
+# ╠═85a950d5-1744-433d-82cd-f6cba1fe7f11
+# ╠═163679f6-ec63-4582-8b64-55dbdc65cc43
+# ╟─5f68415e-6225-11ec-17a4-0dae8fcf1ae5
 # ╟─00000000-0000-0000-0000-000000000001
 # ╟─00000000-0000-0000-0000-000000000002

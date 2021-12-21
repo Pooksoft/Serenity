@@ -9,3 +9,43 @@ mutable struct SingleIndexModel
     # constructor -
     SingleIndexModel() = new()
 end
+
+
+abstract type AbstractAsset end
+
+mutable struct CallContract <: AbstractAsset
+
+    # data -
+    ticker::String
+    expiration::Date
+    K::Float64
+    C::Float64
+    sense::Symbol
+    
+    # constructor
+    CallContract() = new()
+end
+
+mutable struct PutContract <: AbstractAsset
+
+    # data -
+    ticker::String
+    expiration::Date
+    K::Float64
+    C::Float64
+    sense::Symbol
+    
+    # constructor
+    PutContract() = new()
+end
+
+mutable struct Equity <: AbstractAsset
+
+    # data -
+    ticker::String
+    C::Float64
+    sense::Symbol
+    
+    # constructor
+    Equity() = new()
+end

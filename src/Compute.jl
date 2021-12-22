@@ -111,6 +111,49 @@ function compute_fractional_return_array(ticker_symbol_array::Array{String,1}, d
     return data_dictionary
 end
 
+function compute_analytical_geometric_brownian_motion_trajectory(model::GeometricBrownianMotionModel, 
+    initial_condition::Float64, number_of_steps::Int64; Δt::Float64 = 1.0, N::Int64 = 100)
+
+    # initialize -
+    state_array = Array{Float64,2}(undef, number_of_steps, N)
+    state_array[1,:] .= initial_condition
+
+    # get data from the model -
+    μ = model.μ
+    σ = model.σ
+
+    # calculate the random term -
+    d = Normal{Float64}(0.0, 1.0)
+
+    # calculate the drift term -
+    drift_term = μ*Δt
+
+    # main: sample paths -
+    for sample_path_index ∈ 1:N
+
+        # generate new sequence of steps for this sample path -
+        random_terms = σ*sqrt(Δt)*rand(d,number_of_steps)
+        
+        # solve the model -
+        for time_step_index ∈ 2:number_of_steps
+            
+            old_state = state_array[time_step_index-1,sample_path_index]
+            
+            # compute the price difference -
+            Δ = old_state*(drift_term+random_terms[time_step_index])
+
+            # compute the new state -
+            new_state = old_state+Δ
+
+            # capture -
+            state_array[time_step_index,sample_path_index] = new_state
+        end
+    end
+
+    # return -
+    return state_array
+end
+
 function compute_random_walk_model_trajectory(model::Distribution, initial_price::Float64,
     number_of_steps::Int64; number_of_sample_paths = 1)
 

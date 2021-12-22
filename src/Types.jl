@@ -11,6 +11,16 @@ mutable struct SingleIndexModel
 end
 
 
+mutable struct GeometricBrownianMotionModel
+
+    # model parameters -
+    μ::Float64
+    σ::Float64
+
+    GeometricBrownianMotionModel() = new()
+end
+
+
 abstract type AbstractAsset end
 
 mutable struct CallContract <: AbstractAsset

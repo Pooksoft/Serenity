@@ -80,8 +80,14 @@ md"""
 ### Results and Discussion
 """
 
-# ╔═╡ 3a979000-4db9-42f4-91cd-0803d92e597e
-335/165
+# ╔═╡ 5355841a-4e32-4545-822a-61fa2eaa6dd3
+# what ticker are we looking at?
+ticker_symbol = "JNJ"
+
+# ╔═╡ d019fc4f-90d9-4297-9527-f02f69372b5b
+md"""
+##### Compute the probability of $(ticker_symbol) reaching the break even and max profit points 
+"""
 
 # ╔═╡ dd4b19a1-5ece-4ed7-a087-b30df862b445
 md"""
@@ -116,7 +122,7 @@ begin
 	# construct a Put credit spread -
 	# Sell a 157.5 PUT on JNJ expiring in 30 days or so -
 	put_contract_1 = Serenity.PutContract()
-	put_contract_1.ticker = "JNJ"
+	put_contract_1.ticker = ticker_symbol
 	put_contract_1.expiration = Date(2022,01,21)
 	put_contract_1.K = 167.5
 	put_contract_1.C = 3.40
@@ -124,7 +130,7 @@ begin
 
 	# Buy a 157.5 PUT on JNJ expiring in 30 days or so -
 	put_contract_2 = Serenity.PutContract()
-	put_contract_2.ticker = "JNJ"
+	put_contract_2.ticker = ticker_symbol
 	put_contract_2.expiration = Date(2022,01,21)
 	put_contract_2.K = 162.5
 	put_contract_2.C = 1.75
@@ -141,14 +147,17 @@ begin
 	# compute the PL table -
 	underlying_price_array = range(160.0,stop=175.0,step=0.1) |> collect
 	pl_table = Serenity.compute_profit_loss_at_expiration(contract_array, underlying_price_array)
-	
+
+	# show -
+	nothing
 end
 
 # ╔═╡ 7356d7b2-ecba-43f2-b468-d8e8a284ee94
-plot(underlying_price_array,pl_table[!,:Σ], legend=:topleft)
+plot(underlying_price_array,pl_table[!,:Σ], legend=:topleft, lw=2, c=BLUE, label="Profit/Loss curve")
 
 # ╔═╡ ed47a8a4-e248-4892-9281-277180be794b
-function download_ticker_data(ticker_symbol_array::Array{String,1})::Dict{String,DataFrame}
+function download_ticker_data(ticker_symbol_array::Array{String,1}; 
+	training_prediction_flag = "training",  data_type_flag = "daily")::Dict{String,DataFrame}
 
     # initialize some storage -
     price_data_dictionary = Dict{String,DataFrame}() # Dict key => ticker symbol and value = price DataFrame
@@ -160,10 +169,6 @@ function download_ticker_data(ticker_symbol_array::Array{String,1})::Dict{String
     query_parameters["apikey"] = ALPHAVANTAGE_API_KEY # your alphavantage API key goes here (config block below)
     query_parameters["datatype"] = "csv" # download in CSV (the other option is JSON) format
     query_parameters["outputsize"] = "full" # compact -vs- full: last 100 trading days -vs- up to 20 years of data
-
-    # data type: sub dir where we save the data
-    data_type_flag = "daily"
-    training_prediction_flag = "training"
 
     # main download loop -
     for ticker_symbol in ticker_symbol_array
@@ -209,6 +214,99 @@ function download_ticker_data(ticker_symbol_array::Array{String,1})::Dict{String
 
     # show -
     return price_data_dictionary
+end
+
+# ╔═╡ 0a082ec5-f582-4780-807f-0be9bb81dfc2
+begin
+
+	# what ticker do we need data for?
+	ticker_symbol_array = [
+		ticker_symbol, "SPY"
+	]
+
+	# download historical data -
+	historical_price_dictionary = download_ticker_data(ticker_symbol_array; training_prediction_flag="option_pop_calc")
+
+	# show -
+	nothing
+end
+
+# ╔═╡ 9558561b-d8e5-4975-bcc4-3cae90637139
+# compute the returns -
+historical_return_dictionary = Serenity.compute_fractional_return_array(ticker_symbol_array, historical_price_dictionary, 
+	:timestamp=>:adjusted_close);
+
+# ╔═╡ 8a0a915d-04f5-4e12-a718-27ba55874751
+begin
+
+	# what date range do we want to look at?
+	start = Date(2016,12,20)
+	stop = Date(2021,12,20)
+
+	# market and firm -
+	market_df = historical_return_dictionary["SPY"]
+	firm_df = historical_return_dictionary[ticker_symbol]
+
+	# compute the single index model (sim) -
+	risk_free_rate = (1+0.018)^(1/365) - 1
+	sim = Serenity.build_single_index_model(market_df, firm_df, start, stop; 
+		risk_free_rate = risk_free_rate)
+end
+
+# ╔═╡ 7c50ed16-a3a2-40fe-8c10-1bc7e8508672
+begin
+
+	# what do the SPY returns look like?
+	# fit a distribution -
+	LAPLACE_MARKET = fit(Laplace,  market_df[!,:μ])
+end
+
+# ╔═╡ afd11181-d5f1-4060-991c-a76a59560f85
+begin
+
+	# visualize -
+	MEM = rand(LAPLACE_MARKET,25000)
+	stephist(market_df[!,:μ],normed = :true, lw=1)
+	stephist!(MEM,c=:RED,normed = :true, lw=1)
+end
+
+# ╔═╡ 75959d13-bfd0-4185-94d5-5b98842cdfbc
+begin
+
+	# assume a Pₒ = 1 -
+	Pₒ = 1.0 # 1 per share -
+
+	# Generate 𝒯 sample market returns -
+	𝒯 = 31 # simulate 31 days into the future -
+	MARKET = rand(LAPLACE_MARKET,𝒯)
+
+	# compute the simulated price array -
+	sim_price_array = Serenity.simulate_sim_random_walk(sim,Pₒ,MARKET; N = 250)
+
+end
+
+# ╔═╡ 49102b95-6e30-4613-a1df-be06f01c69e6
+begin
+
+	# build a GBM model for SPY -
+	gbm_model_spy = Serenity.build_geometric_brownian_motion_model(market_df[!,:μ])
+
+	# simulate SPY -
+	spy_sample_paths = Serenity.compute_analytical_geometric_brownian_motion_trajectory(gbm_model_spy, 1.0, 31)
+	
+end
+
+# ╔═╡ 3810ed6d-8784-4270-a108-395c38f381ab
+plot(spy_sample_paths, legend=:false, c=GRAY)
+
+# ╔═╡ 914a992d-6b99-4275-b7e7-ae480733c3ab
+begin
+
+	P = historical_price_dictionary[ticker_symbol][(end-𝒯):end,:adjusted_close]
+	
+	# visualize -
+	plot(P[1]*sim_price_array, legend=:false, c=GRAY)
+	plot!(P[1:end-1],c=RED,lw=2)
 end
 
 # ╔═╡ 163679f6-ec63-4582-8b64-55dbdc65cc43
@@ -1675,10 +1773,20 @@ version = "0.9.1+5"
 # ╟─50f44e9d-c834-41f3-9c90-64fa349f4e2c
 # ╟─49bc4d68-64c3-4a4e-8c69-677eddd2fdf4
 # ╟─62a0f498-97f5-4a73-82db-9bb8b1a7bfb4
+# ╠═5355841a-4e32-4545-822a-61fa2eaa6dd3
 # ╠═f3f59321-2a70-473f-b4bc-6218dea8a46f
 # ╠═7bc7eb36-c606-41ab-8fc8-de243bbb2c07
 # ╠═7356d7b2-ecba-43f2-b468-d8e8a284ee94
-# ╠═3a979000-4db9-42f4-91cd-0803d92e597e
+# ╟─d019fc4f-90d9-4297-9527-f02f69372b5b
+# ╠═0a082ec5-f582-4780-807f-0be9bb81dfc2
+# ╠═9558561b-d8e5-4975-bcc4-3cae90637139
+# ╠═8a0a915d-04f5-4e12-a718-27ba55874751
+# ╠═7c50ed16-a3a2-40fe-8c10-1bc7e8508672
+# ╠═afd11181-d5f1-4060-991c-a76a59560f85
+# ╠═75959d13-bfd0-4185-94d5-5b98842cdfbc
+# ╠═914a992d-6b99-4275-b7e7-ae480733c3ab
+# ╠═49102b95-6e30-4613-a1df-be06f01c69e6
+# ╠═3810ed6d-8784-4270-a108-395c38f381ab
 # ╟─dd4b19a1-5ece-4ed7-a087-b30df862b445
 # ╠═acd0003d-e417-462e-8205-dbdbf1534834
 # ╠═b7330499-43fe-4a5b-b8f3-a02ca76f751b

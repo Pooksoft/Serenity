@@ -95,3 +95,16 @@ function build_single_index_model(market::DataFrame, firms::Dict{String,DataFram
     # return -
     return model_dictionary
 end
+
+function build_geometric_brownian_motion_model(asset_return_array::Array{Float64,1})::GeometricBrownianMotionModel
+
+    # initialize -
+    gbm = GeometricBrownianMotionModel()
+    
+    # we need to estimate the mean and std from the return array -
+    gbm.μ = mean(asset_return_array)
+    gbm.σ = std(asset_return_array)
+
+    # build the model -
+    return gbm
+end

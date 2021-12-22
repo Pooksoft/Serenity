@@ -145,7 +145,7 @@ end
 begin
 
 	# compute the PL table -
-	underlying_price_array = range(160.0,stop=175.0,step=0.1) |> collect
+	underlying_price_array = range(160.0,stop=175.0,step=0.001) |> collect
 	pl_table = Serenity.compute_profit_loss_at_expiration(contract_array, underlying_price_array)
 
 	# show -
@@ -154,6 +154,14 @@ end
 
 # ╔═╡ 7356d7b2-ecba-43f2-b468-d8e8a284ee94
 plot(underlying_price_array,pl_table[!,:Σ], legend=:topleft, lw=2, c=BLUE, label="Profit/Loss curve")
+
+# ╔═╡ 21936c5f-4dac-4e52-ac57-ed572c3fb9a7
+begin
+
+	# where is the break even?
+	min_idx = argmin(abs.(pl_table[!,:Σ]))
+	breakeven = pl_table[min_idx,:P]
+end
 
 # ╔═╡ ed47a8a4-e248-4892-9281-277180be794b
 function download_ticker_data(ticker_symbol_array::Array{String,1}; 
@@ -239,7 +247,7 @@ historical_return_dictionary = Serenity.compute_fractional_return_array(ticker_s
 # ╔═╡ 8a0a915d-04f5-4e12-a718-27ba55874751
 begin
 
-	# what date range do we want to look at?
+	# what date range do we want to look at? = look at the last 5 years
 	start = Date(2016,12,20)
 	stop = Date(2021,12,20)
 
@@ -251,63 +259,103 @@ begin
 	risk_free_rate = (1+0.018)^(1/365) - 1
 	sim = Serenity.build_single_index_model(market_df, firm_df, start, stop; 
 		risk_free_rate = risk_free_rate)
-end
 
-# ╔═╡ 7c50ed16-a3a2-40fe-8c10-1bc7e8508672
-begin
-
-	# what do the SPY returns look like?
-	# fit a distribution -
-	LAPLACE_MARKET = fit(Laplace,  market_df[!,:μ])
-end
-
-# ╔═╡ afd11181-d5f1-4060-991c-a76a59560f85
-begin
-
-	# visualize -
-	MEM = rand(LAPLACE_MARKET,25000)
-	stephist(market_df[!,:μ],normed = :true, lw=1)
-	stephist!(MEM,c=:RED,normed = :true, lw=1)
-end
-
-# ╔═╡ 75959d13-bfd0-4185-94d5-5b98842cdfbc
-begin
-
-	# assume a Pₒ = 1 -
-	Pₒ = 1.0 # 1 per share -
-
-	# Generate 𝒯 sample market returns -
-	𝒯 = 31 # simulate 31 days into the future -
-	MARKET = rand(LAPLACE_MARKET,𝒯)
-
-	# compute the simulated price array -
-	sim_price_array = Serenity.simulate_sim_random_walk(sim,Pₒ,MARKET; N = 250)
-
+	# show -
+	nothing
 end
 
 # ╔═╡ 49102b95-6e30-4613-a1df-be06f01c69e6
 begin
 
+	# How many days forward or back are we looking at?
+	𝒯 = 31 # days
+
+	# What is the initial price -
+	P₀ = historical_price_dictionary["SPY"][end-𝒯,:adjusted_close]
+	
 	# build a GBM model for SPY -
 	gbm_model_spy = Serenity.build_geometric_brownian_motion_model(market_df[!,:μ])
 
 	# simulate SPY -
-	spy_sample_paths = Serenity.compute_analytical_geometric_brownian_motion_trajectory(gbm_model_spy, 1.0, 31)
-	
+	spy_sample_paths = Serenity.compute_discrete_geometric_brownian_motion_trajectory(gbm_model_spy, 1.0, 𝒯; N = 1000)
+
+	# compute the mean sample path -
+	μ_spy_sample_path = P₀*mean(spy_sample_paths,dims=2);
+
+	# compute the Δ for the mean spy sample path -
+	μ_Δ_spy_sample_path = Serenity.compute_fractional_return_array(μ_spy_sample_path);
 end
 
 # ╔═╡ 3810ed6d-8784-4270-a108-395c38f381ab
-plot(spy_sample_paths, legend=:false, c=GRAY)
-
-# ╔═╡ 914a992d-6b99-4275-b7e7-ae480733c3ab
 begin
 
-	P = historical_price_dictionary[ticker_symbol][(end-𝒯):end,:adjusted_close]
-	
-	# visualize -
-	plot(P[1]*sim_price_array, legend=:false, c=GRAY)
-	plot!(P[1:end-1],c=RED,lw=2)
+	SPY_actual = historical_price_dictionary["SPY"][(end-𝒯:end),:adjusted_close]
+	plot(P₀*spy_sample_paths, legend=:false, c=GRAY)
+	plot!(SPY_actual[1:end-1],c=RED,lw=4)
+
+	xlabel!("Time step index (AU)", fontsize=18)
+	ylabel!("Closing Share Price SPY (USD/share)", fontsize=18)
 end
+
+# ╔═╡ 2e2da255-c8ae-441f-a291-a8e356bc0c91
+begin
+
+	# what is my ticker initial price?
+	S₀ = historical_price_dictionary[ticker_symbol][end-𝒯,:adjusted_close]
+
+	# run a test simulation -
+	test_sim = Serenity.simulate_sim_random_walk(sim,S₀,μ_Δ_spy_sample_path[:,1], N = 1000)
+end
+
+# ╔═╡ a8dac997-08ed-47de-a8dd-af7e6ac45ba6
+begin
+
+	# Test simulation -
+	S_actual = historical_price_dictionary[ticker_symbol][(end-𝒯:end),:adjusted_close]
+	plot(test_sim, legend=:false,c=GRAY)
+	plot!(S_actual[1:end-2],c=RED,lw=4)
+
+	xlabel!("Time step index (AU)", fontsize=18)
+	ylabel!("Closing Share Price $(ticker_symbol) (USD/share)", fontsize=18)
+end
+
+# ╔═╡ 056bd629-800a-48ef-a2fd-8627ce971b3f
+begin
+
+	# forward simulation -
+	SPY₀ = historical_price_dictionary[ticker_symbol][end,:adjusted_close]
+
+	# compute the mean sample path -
+	μ_spy_sample_path_forward = SPY₀*mean(spy_sample_paths,dims=2);
+
+	# compute the Δ for the mean spy sample path -
+	μ_Δ_spy_sample_path_forward = Serenity.compute_fractional_return_array(μ_spy_sample_path_forward[:,1]);
+
+	# what is my ticker initial price?
+	TS₀ = historical_price_dictionary[ticker_symbol][end-𝒯,:adjusted_close]
+
+	# run a test simulation -
+	forward_sim = Serenity.simulate_sim_random_walk(sim,TS₀,μ_Δ_spy_sample_path_forward[:,1]; N = 1000)
+end
+
+# ╔═╡ 9a93a0ab-0d48-4320-b398-6047fa08326a
+begin
+
+	# what is the price range we care about?
+	price_range = range(140.0,stop=190.0,length=1000) |> collect
+	cprob = Array{Float64,1}()
+	
+	for price ∈ price_range
+        p = Serenity.compute_rwm_cumulative_probabilty(x -> (x <= price), forward_sim[end,:])
+        push!(cprob, p)
+    end	
+end
+
+# ╔═╡ 4adb03d2-5234-4d56-ab94-eb6a768712bc
+plot(price_range, cprob, legend=:topleft)
+
+# ╔═╡ 9d7afc36-1b00-423e-b226-e94019e95746
+POP = Serenity.compute_rwm_cumulative_probabilty(x -> (x >= breakeven), forward_sim[end,:])	
 
 # ╔═╡ 163679f6-ec63-4582-8b64-55dbdc65cc43
 html"""
@@ -1777,16 +1825,19 @@ version = "0.9.1+5"
 # ╠═f3f59321-2a70-473f-b4bc-6218dea8a46f
 # ╠═7bc7eb36-c606-41ab-8fc8-de243bbb2c07
 # ╠═7356d7b2-ecba-43f2-b468-d8e8a284ee94
+# ╠═21936c5f-4dac-4e52-ac57-ed572c3fb9a7
 # ╟─d019fc4f-90d9-4297-9527-f02f69372b5b
 # ╠═0a082ec5-f582-4780-807f-0be9bb81dfc2
 # ╠═9558561b-d8e5-4975-bcc4-3cae90637139
 # ╠═8a0a915d-04f5-4e12-a718-27ba55874751
-# ╠═7c50ed16-a3a2-40fe-8c10-1bc7e8508672
-# ╠═afd11181-d5f1-4060-991c-a76a59560f85
-# ╠═75959d13-bfd0-4185-94d5-5b98842cdfbc
-# ╠═914a992d-6b99-4275-b7e7-ae480733c3ab
 # ╠═49102b95-6e30-4613-a1df-be06f01c69e6
 # ╠═3810ed6d-8784-4270-a108-395c38f381ab
+# ╠═2e2da255-c8ae-441f-a291-a8e356bc0c91
+# ╠═a8dac997-08ed-47de-a8dd-af7e6ac45ba6
+# ╟─056bd629-800a-48ef-a2fd-8627ce971b3f
+# ╠═9a93a0ab-0d48-4320-b398-6047fa08326a
+# ╠═4adb03d2-5234-4d56-ab94-eb6a768712bc
+# ╠═9d7afc36-1b00-423e-b226-e94019e95746
 # ╟─dd4b19a1-5ece-4ed7-a087-b30df862b445
 # ╠═acd0003d-e417-462e-8205-dbdbf1534834
 # ╠═b7330499-43fe-4a5b-b8f3-a02ca76f751b

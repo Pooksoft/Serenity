@@ -59,6 +59,52 @@ function compute_log_return_array(ticker_symbol_array::Array{String,1}, data_tab
     return data_dictionary
 end
 
+function compute_fractional_return_array(data::Array{Float64,1}; 
+    multiplier::Float64 = 1.0)
+
+    # what is the length of the array?
+    number_of_steps = length(data)
+    Δ_array = Array{Float64,1}()
+
+    for step_index ∈ 2:number_of_steps
+
+        # compute -
+        P₁ = data[step_index-1]
+        P₂ = data[step_index]
+        Δ = multiplier*(P₂ - P₁)/(P₁)
+
+        # grab -
+        push!(Δ_array,Δ)
+    end
+
+    # return -
+    return Δ_array;
+end
+
+function compute_fractional_return_array(data::Array{Float64,2}; 
+    multiplier::Float64 = 1.0)
+
+    # what is the length of the array?
+    (number_of_steps, number_of_cols) = size(data)
+    Δ_array = Array{Float64,2}(undef, number_of_steps - 1, number_of_cols)
+
+    for col_index ∈ 1:number_of_cols
+        for step_index ∈ 2:number_of_steps
+
+            # compute -
+            P₁ = data[step_index-1,col_index]
+            P₂ = data[step_index, col_index]
+            Δ = multiplier*(P₂ - P₁)/(P₁)
+    
+            # grab -
+            Δ_array[step_index - 1, col_index] = Δ
+        end
+    end
+
+    # return -
+    return Δ_array;
+end
+
 function compute_fractional_return_array(data_table::DataFrame, map::Pair{Symbol,Symbol};
     multiplier::Float64=1.0)
 
@@ -111,7 +157,7 @@ function compute_fractional_return_array(ticker_symbol_array::Array{String,1}, d
     return data_dictionary
 end
 
-function compute_analytical_geometric_brownian_motion_trajectory(model::GeometricBrownianMotionModel, 
+function compute_discrete_geometric_brownian_motion_trajectory(model::GeometricBrownianMotionModel, 
     initial_condition::Float64, number_of_steps::Int64; Δt::Float64 = 1.0, N::Int64 = 100)
 
     # initialize -
@@ -137,16 +183,14 @@ function compute_analytical_geometric_brownian_motion_trajectory(model::Geometri
         # solve the model -
         for time_step_index ∈ 2:number_of_steps
             
-            old_state = state_array[time_step_index-1,sample_path_index]
+            # grab the current price P₁ -
+            P₁ = state_array[time_step_index-1,sample_path_index]
             
             # compute the price difference -
-            Δ = old_state*(drift_term+random_terms[time_step_index])
-
-            # compute the new state -
-            new_state = old_state+Δ
+            ΔP = P₁*(drift_term+random_terms[time_step_index])
 
             # capture -
-            state_array[time_step_index,sample_path_index] = new_state
+            state_array[time_step_index,sample_path_index] = (P₁ + ΔP)
         end
     end
 

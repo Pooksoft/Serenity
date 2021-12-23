@@ -56,7 +56,10 @@ begin
 end
 
 # ╔═╡ 6aaa3a09-5481-40ac-abe0-5cc09c438f23
-ticker_symbol_array = ["SPY","JNJ","AMD","MRNA","PFE"];
+ticker_symbol_array = sort(["MSFT", "ALLY", "MET", "AAPL", "GM", "PFE", "TGT", "WFC", "AIG", "F", "GE", "AMD",
+    "MMM", "AXP", "AMGN", "BA", "CAT", "CVX", "CSCO", "KO", "DIS", "DOW", "GS", "HD", "IBM", "HON", "INTC", "JNJ", "JPM",
+    "MCD", "MRK", "NKE", "PG", "CRM", "TRV", "UNH", "VZ", "V", "WBA", "WMT", "SPY"
+]);
 
 # ╔═╡ 7ce9e2ec-a3a2-4b64-be6e-27618bd9f3f1
 function ingredients(path::String)
@@ -147,6 +150,34 @@ begin
 
 	# show -
 	nothing
+end
+
+# ╔═╡ 3723c110-a44e-4edc-84e8-d8d2a181a090
+begin
+
+	# initialize -
+	N = length(pd["SPY"].data[!,:c]) 
+	𝒫 = length(ticker_symbol_array)
+	state_table = Array{Float64,2}(undef,N,𝒫)
+	
+	for (ticker_index, ticker) ∈ enumerate(ticker_symbol_array)
+
+		# get value for this ticker -
+		data_array = pd[ticker].data
+		P₀ = data_array[1,:c]
+
+		for time_index ∈ 1:N
+			state_table[time_index,ticker_index] = (1/P₀)*data_array[time_index,:c]
+		end
+	end
+
+	# plot -
+	plot(state_table, legend=false, c=GRAY)
+
+	# plot SPY -
+	P_spy = pd["SPY"].data[1,:c]
+	P_spy_scaled = (1/P_spy)*pd["SPY"].data[!,:c]
+	plot!(P_spy_scaled,c=RED,lw=4)
 end
 
 # ╔═╡ b4100007-b259-4fe3-a88c-be88928fe423
@@ -1613,6 +1644,7 @@ version = "0.9.1+5"
 # ╔═╡ Cell order:
 # ╠═6aaa3a09-5481-40ac-abe0-5cc09c438f23
 # ╠═bd0c9e41-fed0-46f9-bf2e-136a439692a2
+# ╠═3723c110-a44e-4edc-84e8-d8d2a181a090
 # ╠═f03fc7e7-3fa0-4b0a-af82-e1cafc1d9eeb
 # ╠═1461bfa4-633e-11ec-0ee6-a590181dc91b
 # ╠═f97cdf69-7604-49b9-a0da-d0622bf75a5f

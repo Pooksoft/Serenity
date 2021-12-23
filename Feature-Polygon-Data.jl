@@ -1,5 +1,5 @@
 ### A Pluto.jl notebook ###
-# v0.17.3
+# v0.17.4
 
 using Markdown
 using InteractiveUtils
@@ -88,12 +88,16 @@ function download_ticker_data(ticker_symbol_array::Array{String,1}, from::Date, 
 	# initialize -
     price_data_dictionary = Dict{String,NamedTuple}()
 	
-	# setup polygon call -
-	options_dictionary = Dict{String,Any}()
-	options_dictionary["adjusted"] = adjusted
-	options_dictionary["sort"] = sortdirection
-	options_dictionary["limit"] = limit
-	options_dictionary["apiKey"] = POLYGON_API_KEY
+	# API call model -
+	api_model = Serenity.PolygonAggregatesEndpointModel()
+	api_model.adjusted = adjusted
+	api_model.sortdirection = sortdirection
+	api_model.apikey = POLYGON_API_KEY
+	api_model.limit = limit
+	api_model.to = to
+	api_model.from = from
+	api_model.multiplier = multiplier
+	api_model.timespan = timespan
 
 	# make the dir to save the data (if we don't have it already) -
 	mkpath(savepath)
@@ -108,9 +112,11 @@ function download_ticker_data(ticker_symbol_array::Array{String,1}, from::Date, 
 		
 		if (ispath(local_path_to_data_file) == false || Serenity.does_data_file_exist(local_path_to_data_file) == false)
 
+			# update the ticker -
+			api_model.ticker = ticker_symbol
+			
 			# call -
-			(hd,df) = Serenity.execute_polygon_aggregates_api_call(DATASTORE_URL_STRING, ticker_symbol, multiplier,
-				timespan, from, to, options_dictionary)
+			(hd,df) = Serenity.download(DATASTORE_URL_STRING, api_model)
 
             # dump data to disk -
             CSV.write(local_path_to_data_file, df)
@@ -1646,9 +1652,9 @@ version = "0.9.1+5"
 # ╠═bd0c9e41-fed0-46f9-bf2e-136a439692a2
 # ╠═3723c110-a44e-4edc-84e8-d8d2a181a090
 # ╠═f03fc7e7-3fa0-4b0a-af82-e1cafc1d9eeb
-# ╠═1461bfa4-633e-11ec-0ee6-a590181dc91b
+# ╟─1461bfa4-633e-11ec-0ee6-a590181dc91b
 # ╠═f97cdf69-7604-49b9-a0da-d0622bf75a5f
-# ╠═7ce9e2ec-a3a2-4b64-be6e-27618bd9f3f1
+# ╟─7ce9e2ec-a3a2-4b64-be6e-27618bd9f3f1
 # ╟─b4100007-b259-4fe3-a88c-be88928fe423
 # ╟─5596d565-04f3-44a6-9b72-05cf2b64a1ca
 # ╟─00000000-0000-0000-0000-000000000001

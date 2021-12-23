@@ -57,3 +57,21 @@ mutable struct Equity <: AbstractAsset
     # constructor
     Equity() = new()
 end
+
+# --- Polygon API model --------------------------------------------- #
+mutable struct PolygonAggregatesEndpointModel
+
+    # data -
+    adjusted::Bool
+    limit::Int64
+    sortdirection::String
+    apikey::String
+    ticker::String
+    to::Date
+    from::Date
+    multiplier::Int64
+    timespan::String
+
+    # constructor -
+    PolygonAggregatesEndpointModel() = new()
+end

@@ -28,23 +28,6 @@ function http_get_call_with_url(url::String)::Some
     end
 end
 
-function build_url_query_string(base::String, options::Dict{String,Any})::String
-
-    # init -
-    url_string = base
-
-    parameters = ""
-    for (key, value) in options
-        parameters *= "$(key)=$(value)&"
-    end
-
-    # cut off trailing &
-    query_parameters = parameters[1:end-1]
-
-    # return -
-    return url_string * query_parameters
-end
-
 function process_aggregates_polygon_call_response(body::String)
 
     # convert to JSON -
@@ -104,5 +87,14 @@ function execute_polygon_aggregates_api_call(base::String, ticker::String, multi
     return (result_string |> process_aggregates_polygon_call_response)
 end
 
+function download(base::String, model::PolygonAggregatesEndpointModel)
 
+    # build the url string -
+    complete_url_string = build(base, model)
 
+    # execute -
+    result_string = http_get_call_with_url(complete_url_string) |> check
+
+    # process and return -
+    return (result_string |> process_aggregates_polygon_call_response)
+end

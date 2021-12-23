@@ -108,3 +108,47 @@ function build_geometric_brownian_motion_model(asset_return_array::Array{Float64
     # build the model -
     return gbm
 end
+
+function build(base::String, model::PolygonAggregatesEndpointModel)::String
+
+    # get data from the API call data -
+    adjusted = model.adjusted
+    limit = model.limit
+    sortdirection = model.sortdirection
+    apikey = model.apikey
+    ticker = model.ticker
+    to = model.to
+    from = model.from
+    multiplier = model.multiplier
+    timespan = model.timespan
+
+    # build up the base string -
+    base_url = "$(base)/aggs/ticker/$(ticker)/range/$(multiplier)/$(timespan)/$(from)/$(to)?"
+
+    # what keys are passed as parameters?
+    options_dictionary = Dict{String,Any}()
+	options_dictionary["adjusted"] = adjusted
+	options_dictionary["sort"] = sortdirection
+	options_dictionary["limit"] = limit
+	options_dictionary["apiKey"] = apikey
+
+    # return -
+    return add_parameters_to_url_query_string(base_url, options_dictionary)
+end
+
+function add_parameters_to_url_query_string(base::String, options::Dict{String,Any})::String
+
+    # init -
+    url_string = base
+
+    parameters = ""
+    for (key, value) in options
+        parameters *= "$(key)=$(value)&"
+    end
+
+    # cut off trailing &
+    query_parameters = parameters[1:end-1]
+
+    # return -
+    return url_string * query_parameters
+end

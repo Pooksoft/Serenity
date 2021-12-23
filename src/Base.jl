@@ -1,20 +1,3 @@
-function build_url_query_string(base::String, options::Dict{String,String})::String
-
-    # init -
-    url_string = base
-
-    parameters = ""
-    for (key, value) in options
-        parameters *= "$(key)=$(value)&"
-    end
-
-    # cut off trailing &
-    query_parameters = parameters[1:end-1]
-
-    # return -
-    return url_string * query_parameters
-end
-
 function check(result::Some)::(Union{Nothing,T} where {T<:Any})
 
     # ok, so check, do we have an error object?

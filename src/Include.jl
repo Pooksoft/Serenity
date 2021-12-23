@@ -8,6 +8,7 @@ using Distributions
 using Optim
 using Convex
 using SCS
+using JSON
 
 # load my codes -
 include("Types.jl")

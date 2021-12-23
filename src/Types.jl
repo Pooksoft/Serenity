@@ -10,7 +10,6 @@ mutable struct SingleIndexModel
     SingleIndexModel() = new()
 end
 
-
 mutable struct GeometricBrownianMotionModel
 
     # model parameters -
@@ -20,9 +19,8 @@ mutable struct GeometricBrownianMotionModel
     GeometricBrownianMotionModel() = new()
 end
 
-
+# --- ASSETS ------------------------------------------------- #
 abstract type AbstractAsset end
-
 mutable struct CallContract <: AbstractAsset
 
     # data -

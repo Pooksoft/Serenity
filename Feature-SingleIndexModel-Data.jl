@@ -1,5 +1,5 @@
 ### A Pluto.jl notebook ###
-# v0.17.3
+# v0.17.4
 
 using Markdown
 using InteractiveUtils
@@ -18,7 +18,6 @@ begin
     using CSV
     using HTTP
     using TOML
-    using ProgressMeter
     using Dates
     using StatsPlots
     using Statistics
@@ -28,9 +27,13 @@ begin
 	using PrettyTables
 	using Colors
 	using Optim
+	using Convex
+	using SCS
+	using MathOptInterface
+	using JSON
 	
     # alias the AlphaVantage URL -
-    DATASTORE_URL_STRING = "https://www.alphavantage.co/query?"
+    DATASTORE_URL_STRING = "https://api.polygon.io/v2"
 
     # What we have here is a classic good news, bad news situation ...
     # Bad news: We don't check in our AlphaVantage API key to GitHub (sorry). 
@@ -39,7 +42,7 @@ begin
     configuration_dictionary = TOML.parsefile(joinpath(_PATH_TO_CONFIG, "Configuration.toml"))
 
     # get some stuff from the configuration dictionary -
-    ALPHAVANTAGE_API_KEY = configuration_dictionary["API"]["alphavantage_api_key"]
+    POLYGON_API_KEY = configuration_dictionary["API"]["polygon_api_key"]
 
 	# List of colors -
 	WHITE = RGB(1.0, 1.0, 1.0)
@@ -72,21 +75,18 @@ md"""
 
 # ╔═╡ 779f010f-27cc-4ba8-bde1-4e4bf9ff608e
 # Pooksoft Industrial Average (PSIA) -> the DJIA + some stuff
-psia_ticker_symbol_array = sort(["SPYD", "MSFT", "ALLY", "MET", "AAPL", "GM", "PFE", "TGT", "WFC", "AIG", "F", "GE", "AMD",
+psia_ticker_symbol_array = sort(["SPY", "MSFT", "ALLY", "MET", "AAPL", "GM", "PFE", "TGT", "WFC", "AIG", "F", "GE", "AMD",
     "MMM", "AXP", "AMGN", "BA", "CAT", "CVX", "CSCO", "KO", "DIS", "DOW", "GS", "HD", "IBM", "HON", "INTC", "JNJ", "JPM",
     "MCD", "MRK", "NKE", "PG", "CRM", "TRV", "UNH", "VZ", "V", "WBA", "WMT"
 ]);
 
 # ╔═╡ 14553057-37e8-4404-b7c2-235812db662a
-ticker_symbol = "SPYD";
+ticker_symbol = "JNJ";
 
 # ╔═╡ 4be380a2-23b1-4749-a829-e80e27280b41
 md"""
 ### Results and Discussion
 """
-
-# ╔═╡ 7f6d43cc-5266-42d5-b8c4-55678b90d4e3
-
 
 # ╔═╡ ffe10048-3d4b-4c91-be63-b3de2fe17a0c
 md"""
@@ -110,20 +110,16 @@ function ingredients(path::String)
 end
 
 # ╔═╡ 29fad20b-77f8-4da3-b1f6-337bb15ef391
-begin
-	Serenity = ingredients(joinpath(_PATH_TO_SRC, "Include.jl"))
-end
+Serenity = ingredients(joinpath(_PATH_TO_SRC, "Include.jl"));
 
 # ╔═╡ bedc21aa-1ee8-4371-bcc3-b0ae70f48bbd
 begin
 
 	# load the SP500 data -
-	df_SP_nasdaq = CSV.read(joinpath(_PATH_TO_DATA,"SP500-Daily-close-10y-Nasdaq.csv"), DataFrame)
-	df_SP_dc = Serenity.transform_date_fields(df_SP_nasdaq,:timestamp) |> Serenity.reverse_row_order_in_table;
+	df_SPY = CSV.read(joinpath(_PATH_TO_DATA,"polygon", "training", "daily", "SPY.csv"), DataFrame)
 
 	# compute the return vector -
-	market_return_table = Serenity.compute_fractional_return_array(df_SP_dc,:timestamp=>:adjusted_close; 
-		multiplier=1.0)
+	market_return_table = Serenity.compute_fractional_return_array(df_SPY,:t=>:c; multiplier=1.0)
 
 	# show -
 	nothing
@@ -136,10 +132,10 @@ begin
 	LAPLACE_MARKET = fit(Laplace, μ_market)
 	
 	# number of bins - 10% of the length of a test ticker
-    number_of_bins = convert(Int64, (floor(0.05 * length(market_return_table[!, :μ]))))
+    number_of_bins = convert(Int64, (floor(0.1 * length(market_return_table[!, :μ]))))
 	
 	# plot -
-	stephist(μ_market, bins = number_of_bins, normed = :true, lw=2, label="Historical return (10 yrs)", 
+	stephist(μ_market, bins = number_of_bins, normed = :true, lw=2, label="Historical return (2 yrs)", 
 		background_color = BACKGROUND, background_color_outside = WHITE, c=LBLUE, foreground_color_legend = nothing)
 	stephist!(rand(LAPLACE_MARKET, 20000), bins = number_of_bins, normed = :true, lw=2, 
 		label="Return Laplace model", c=RED)
@@ -151,76 +147,97 @@ begin
 end
 
 # ╔═╡ 10a567fa-d21a-41f3-b638-840b3f66cbd8
-function download_ticker_data(ticker_symbol_array::Array{String,1})::Dict{String,DataFrame}
+function download_ticker_data(ticker_symbol_array::Array{String,1}, from::Date, to::Date; 
+	savepath::String = _PATH_TO_DATA, adjusted=true, sortdirection="asc", limit=5000, multiplier = 1, timespan = "day")
 
-    # initialize some storage -
-    price_data_dictionary = Dict{String,DataFrame}() # Dict key => value where key = ticker symbol and value = price DataFrame
+	# initialize -
+    price_data_dictionary = Dict{String,NamedTuple}()
+	
+	# API call model -
+	api_model = Serenity.PolygonAggregatesEndpointModel()
+	api_model.adjusted = adjusted
+	api_model.sortdirection = sortdirection
+	api_model.apikey = POLYGON_API_KEY
+	api_model.limit = limit
+	api_model.to = to
+	api_model.from = from
+	api_model.multiplier = multiplier
+	api_model.timespan = timespan
 
-    # setup: specify the query parameters for the call to Alphavantage -
-    # check out the API documentation: https://www.alphavantage.co/documentation/
-    query_parameters = Dict{String,String}()
-    query_parameters["function"] = "TIME_SERIES_DAILY_ADJUSTED" # get the daily close price adjusted
-    query_parameters["apikey"] = ALPHAVANTAGE_API_KEY # your alphavantage API key goes here (see setup/config block below)
-    query_parameters["datatype"] = "csv" # download in CSV (the other option is JSON) format
-    query_parameters["outputsize"] = "full" # compact -vs- full: last 100 trading days -vs- up to 20 years of data
+	# make the dir to save the data (if we don't have it already) -
+	mkpath(savepath)
+    mkpath(joinpath(savepath,"header"))
 
-    # data type: sub dir where we save the data
-    data_type_flag = "daily"
-    training_prediction_flag = "training"
+	# process each ticker -
+	for ticker_symbol ∈ ticker_symbol_array
 
-    # main download loop -
-    for ticker_symbol in ticker_symbol_array
+		# check - do we have this data already?
+		local_path_to_data_file = joinpath(savepath,"$(ticker_symbol).csv")
+		local_path_to_header_file = joinpath(savepath, "header", "$(ticker_symbol)-header.csv")
+		
+		if (ispath(local_path_to_data_file) == false || Serenity.does_data_file_exist(local_path_to_data_file) == false)
 
-        # check -> have we downloaded this data already?
-        data_file_path = joinpath(_PATH_TO_DATA, "$(training_prediction_flag)", "$(data_type_flag)",
-            "$(ticker_symbol).csv")
-        if (ispath(data_file_path) == false || Serenity.does_data_file_exist(data_file_path) == false)
+			# update the ticker -
+			api_model.ticker = ticker_symbol
+			
+			# call -
+			(hd,df) = Serenity.download(DATASTORE_URL_STRING, api_model)
 
-            # let use know what is going on ...
-            with_terminal() do
-                println("Starting $(ticker_symbol) download ...")
-            end
+            # dump data to disk -
+            CSV.write(local_path_to_data_file, df)
+			CSV.write(local_path_to_header_file, hd)
+			
+            # put the price DataFrame into the price_data_dictionary -
+            price_data_dictionary[ticker_symbol] = (header=hd, data=df)
 
-            # We do NOT have this data file -> download from Alphavantage.co
-            # execute API call -> check to see if error -> turn into DataFrame
-            query_parameters["symbol"] = ticker_symbol
-            url_string = Serenity.build_url_query_string(DATASTORE_URL_STRING, query_parameters)
-            data_table = Serenity.http_get_call_with_url(url_string) |> Serenity.check |> Serenity.process_csv_api_data
+			# sleep -
+			sleep(20)
+		else
 
-            # sleep -
-            sleep(10) # to avoid issue w/API limits
-
-            # make the dir to save the data (if we don't have it already) -
-            mkpath(joinpath(_PATH_TO_DATA, "$(training_prediction_flag)", "$(data_type_flag)"))
-
-            # dump data table to disk -
-            CSV.write(data_file_path, data_table)
+			# we already have this ticker downloaded. load the existing file from disk -
+            data_table = CSV.read(local_path_to_data_file, DataFrame)
+			header = CSV.read(local_path_to_header_file, Dict)
 
             # put the price DataFrame into the price_data_dictionary -
-            price_data_dictionary[ticker_symbol] = data_table
+            price_data_dictionary[ticker_symbol] = (header=header, data=data_table)
+		end
+	end
 
-        else
-
-            # we already have this ticker downloaded. load the existing file from disk -
-            data_table = CSV.read(data_file_path, DataFrame)
-
-            # put the price DataFrame into the price_data_dictionary -
-            price_data_dictionary[ticker_symbol] = data_table
-        end
-    end
-
-    # show -
-    return price_data_dictionary
+	return price_data_dictionary
 end
 
-# ╔═╡ 1b45b534-27a1-4162-b66c-5222286ad376
-# load the historical price data from disk (if not saved, then download new data)
-historical_price_dictionary = download_ticker_data(psia_ticker_symbol_array);
+# ╔═╡ 9aab437f-1a17-498f-b689-a8d6b9bb51bb
+begin
+
+	# initialize -
+	historical_price_dictionary = Dict{String,DataFrame}()
+	
+	# what date range do we want to look at? (max: 2 years on free account)
+	from = Date(2019,12,21)
+	to = Date(2021,12,23)
+
+	# where are going to store the data?
+	savepath = joinpath(_PATH_TO_DATA,"polygon", "training", "daily")
+
+	# execute the call(s) -
+	tmp = download_ticker_data(psia_ticker_symbol_array, from, to; savepath);
+
+	# transform tmp -
+	for (key,value) ∈ tmp
+		historical_price_dictionary[key] = value.data
+	end
+
+	# show -
+	nothing
+end
 
 # ╔═╡ b25f2b2e-8f64-4e07-93f6-6ed6e27e6e3c
 # compute the dictionary of historical return tables -
 historical_return_dictionary = Serenity.compute_fractional_return_array(psia_ticker_symbol_array, historical_price_dictionary, 
-	:timestamp=>:adjusted_close; multiplier=1.0);
+	:t=>:c; multiplier=1.0);
+
+# ╔═╡ 172a6430-1185-4f62-8aab-f9f832c4c211
+historical_return_dictionary
 
 # ╔═╡ 327efc85-e82b-40cc-b887-60c52fc486f7
 begin
@@ -246,8 +263,8 @@ begin
 	risk_free_rate = (1+0.0185)^(1/365) - 1 # r = 1.85 per year
 	
 	# Start and end dates -> use the last * years of data -
-	start_date = Date(2016,12,12)
-	stop_date = Date(2021,12,12)
+	start_date = Date(2019,12,23)
+	stop_date = Date(2021,12,23)
 
 	# compute a sim model for the ticker symbols that we have enough data for -
 	sim_dict = Serenity.build_single_index_model(market_return_table, historical_return_dictionary,
@@ -268,13 +285,13 @@ begin
 	# what model do we want to look at?
 	sim_model = sim_dict[ticker_symbol]
 	historical_price_df = Serenity.extract_data_block_for_date_range(historical_price_dictionary[ticker_symbol], 
-		sim_start_date, sim_stop_date)
+		sim_start_date, sim_stop_date; key=:t)
 
 	# setup simulation -
 	initial_price = 1.0 # assume we start from a scaled price -
 
 	# get the market return -
-	market_df = Serenity.extract_data_block_for_date_range(market_return_table, sim_start_date, sim_stop_date);
+	market_df = Serenity.extract_data_block_for_date_range(market_return_table, sim_start_date, sim_stop_date; key=:timestamp);
 
 	# generate market return array -
 	market_return_array = Array{Float64,1}()
@@ -307,8 +324,8 @@ begin
 		background_color = BACKGROUND, background_color_outside = WHITE, foreground_color_legend = nothing)
 
 	# generate actual price -
-	actual_initial_price = historical_price_df[1,:adjusted_close]
-	actual_price_traj = (1/actual_initial_price)*historical_price_df[!,:adjusted_close]
+	actual_initial_price = historical_price_df[1,:c]
+	actual_price_traj = (1/actual_initial_price)*historical_price_df[!,:c]
 	plot!(actual_price_traj, c=RED,lw=4,label="$(ticker_symbol) actual", legend=:bottomleft)
 
 	# label the axis -
@@ -341,15 +358,18 @@ PLUTO_PROJECT_TOML_CONTENTS = """
 [deps]
 CSV = "336ed68f-0bac-5ca0-87d4-7b16caf5d00b"
 Colors = "5ae59095-9a9b-59fe-a467-6f913c188581"
+Convex = "f65535da-76fb-5f13-bab9-19810c17039a"
 DataFrames = "a93c6f00-e57d-5684-b7b6-d8193f3e46c0"
 Dates = "ade2ca70-3891-5945-98fb-dc099432e06a"
 Distributions = "31c24e10-a181-5473-b8eb-7969acd0382f"
 HTTP = "cd3eb016-35fb-5094-929b-558a96fad6f3"
 HypothesisTests = "09f84164-cd44-5f33-b23f-e6b0d136a0d5"
+JSON = "682c06a0-de6a-54ab-a142-c8b1cf79cde6"
+MathOptInterface = "b8f27783-ece8-5eb3-8dc8-9495eed66fee"
 Optim = "429524aa-4258-5aef-a3af-852621145aeb"
 PlutoUI = "7f904dfe-b85e-4ff6-b463-dae2292396a8"
 PrettyTables = "08abe8d2-0d0c-5749-adfa-8a2ac140af0d"
-ProgressMeter = "92933f4c-e287-5a05-a399-4b506db050ca"
+SCS = "c946c3f1-0d1f-5ce8-9dea-7daa1f7e2d13"
 Statistics = "10745b16-79ce-11e8-11f9-7d13ad32a3b2"
 StatsPlots = "f3b207a7-027a-5e70-b257-86293d7955fd"
 TOML = "fa267f1f-6049-4f14-aa54-33bafae1ed76"
@@ -357,14 +377,17 @@ TOML = "fa267f1f-6049-4f14-aa54-33bafae1ed76"
 [compat]
 CSV = "~0.9.11"
 Colors = "~0.12.8"
+Convex = "~0.14.18"
 DataFrames = "~1.3.0"
 Distributions = "~0.25.36"
 HTTP = "~0.9.17"
 HypothesisTests = "~0.10.6"
+JSON = "~0.21.2"
+MathOptInterface = "~0.10.6"
 Optim = "~1.5.0"
 PlutoUI = "~0.7.23"
 PrettyTables = "~1.2.3"
-ProgressMeter = "~1.7.1"
+SCS = "~0.8.1"
 StatsPlots = "~0.14.29"
 """
 
@@ -374,6 +397,12 @@ PLUTO_MANIFEST_TOML_CONTENTS = """
 
 julia_version = "1.7.0"
 manifest_format = "2.0"
+
+[[deps.AMD]]
+deps = ["Libdl", "LinearAlgebra", "SparseArrays", "Test"]
+git-tree-sha1 = "fc66ffc5cff568936649445f58a55b81eaf9592c"
+uuid = "14f7f29c-3bd6-536c-9a0b-7339e30b5a3e"
+version = "0.4.0"
 
 [[deps.AbstractFFTs]]
 deps = ["LinearAlgebra"]
@@ -386,6 +415,11 @@ deps = ["Pkg"]
 git-tree-sha1 = "abb72771fd8895a7ebd83d5632dc4b989b022b5b"
 uuid = "6e696c72-6542-2067-7265-42206c756150"
 version = "1.1.2"
+
+[[deps.AbstractTrees]]
+git-tree-sha1 = "03e0550477d86222521d254b741d470ba17ea0b5"
+uuid = "1520ce14-60c1-5f80-bbc7-55ef81b5835c"
+version = "0.3.4"
 
 [[deps.Adapt]]
 deps = ["LinearAlgebra"]
@@ -426,6 +460,18 @@ version = "1.0.1"
 [[deps.Base64]]
 uuid = "2a0f44e3-6c83-55bd-87e4-b1978d98bd5f"
 
+[[deps.BenchmarkTools]]
+deps = ["JSON", "Logging", "Printf", "Profile", "Statistics", "UUIDs"]
+git-tree-sha1 = "940001114a0147b6e4d10624276d56d531dd9b49"
+uuid = "6e4b80f9-dd63-53aa-95a3-0cdb28fa8baf"
+version = "1.2.2"
+
+[[deps.BinaryProvider]]
+deps = ["Libdl", "Logging", "SHA"]
+git-tree-sha1 = "ecdec412a9abc8db54c0efc5548c64dfce072058"
+uuid = "b99e7846-7c00-51b0-8f62-c81ae34c0232"
+version = "0.5.10"
+
 [[deps.Bzip2_jll]]
 deps = ["Artifacts", "JLLWrappers", "Libdl", "Pkg"]
 git-tree-sha1 = "19a35467a82e236ff51bc17a3a44b69ef35185a2"
@@ -440,9 +486,9 @@ version = "0.9.11"
 
 [[deps.Cairo_jll]]
 deps = ["Artifacts", "Bzip2_jll", "Fontconfig_jll", "FreeType2_jll", "Glib_jll", "JLLWrappers", "LZO_jll", "Libdl", "Pixman_jll", "Pkg", "Xorg_libXext_jll", "Xorg_libXrender_jll", "Zlib_jll", "libpng_jll"]
-git-tree-sha1 = "f2202b55d816427cd385a9a4f3ffb226bee80f99"
+git-tree-sha1 = "4b859a208b2397a7a623a03449e4636bdb17bcf2"
 uuid = "83423d85-b0ee-5818-9007-b63ccbeb887a"
-version = "1.16.1+0"
+version = "1.16.1+1"
 
 [[deps.ChainRulesCore]]
 deps = ["Compat", "LinearAlgebra", "SparseArrays"]
@@ -461,6 +507,12 @@ deps = ["Distances", "LinearAlgebra", "NearestNeighbors", "Printf", "SparseArray
 git-tree-sha1 = "75479b7df4167267d75294d14b58244695beb2ac"
 uuid = "aaaa29a8-35af-508c-8bc3-b662a17a0fe5"
 version = "0.14.2"
+
+[[deps.CodecBzip2]]
+deps = ["Bzip2_jll", "Libdl", "TranscodingStreams"]
+git-tree-sha1 = "2e62a725210ce3c3c2e1a3080190e7ca491f18d7"
+uuid = "523fee87-0ab8-5b00-afb7-3ecf72e48cfd"
+version = "0.7.2"
 
 [[deps.CodecZlib]]
 deps = ["TranscodingStreams", "Zlib_jll"]
@@ -523,6 +575,12 @@ deps = ["StaticArrays"]
 git-tree-sha1 = "9f02045d934dc030edad45944ea80dbd1f0ebea7"
 uuid = "d38c429a-6771-53c6-b99e-75d170b6e991"
 version = "0.5.7"
+
+[[deps.Convex]]
+deps = ["AbstractTrees", "BenchmarkTools", "LDLFactorizations", "LinearAlgebra", "MathOptInterface", "OrderedCollections", "SparseArrays", "Test"]
+git-tree-sha1 = "145c5e0b3ea3c9dd3bba134a58bab4112aa250c8"
+uuid = "f65535da-76fb-5f13-bab9-19810c17039a"
+version = "0.14.18"
 
 [[deps.Crayons]]
 git-tree-sha1 = "3f71217b538d7aaee0b69ab47d9b7724ca8afa0d"
@@ -735,9 +793,9 @@ version = "0.21.0+0"
 
 [[deps.Glib_jll]]
 deps = ["Artifacts", "Gettext_jll", "JLLWrappers", "Libdl", "Libffi_jll", "Libiconv_jll", "Libmount_jll", "PCRE_jll", "Pkg", "Zlib_jll"]
-git-tree-sha1 = "74ef6288d071f58033d54fd6708d4bc23a8b8972"
+git-tree-sha1 = "a32d672ac2c967f3deb8a81d828afc739c838a06"
 uuid = "7746bdde-850d-59dc-9ae8-88ece973131d"
-version = "2.68.3+1"
+version = "2.68.3+2"
 
 [[deps.Graphite2_jll]]
 deps = ["Artifacts", "JLLWrappers", "Libdl", "Pkg"]
@@ -874,6 +932,12 @@ git-tree-sha1 = "f6250b16881adf048549549fba48b1161acdac8c"
 uuid = "c1c5ebd0-6772-5130-a774-d5fcae4a789d"
 version = "3.100.1+0"
 
+[[deps.LDLFactorizations]]
+deps = ["AMD", "LinearAlgebra", "SparseArrays", "Test"]
+git-tree-sha1 = "399bbe845e06e1c2d44ebb241f554d45eaf66788"
+uuid = "40e66cde-538c-5869-a4ad-c39174c6795b"
+version = "0.8.1"
+
 [[deps.LZO_jll]]
 deps = ["Artifacts", "JLLWrappers", "Libdl", "Pkg"]
 git-tree-sha1 = "e5b909bcf985c5e2605737d2ce278ed791b89be6"
@@ -997,6 +1061,12 @@ version = "0.5.9"
 deps = ["Base64"]
 uuid = "d6f4376e-aef5-505a-96c1-9c027394607a"
 
+[[deps.MathOptInterface]]
+deps = ["BenchmarkTools", "CodecBzip2", "CodecZlib", "JSON", "LinearAlgebra", "MutableArithmetics", "OrderedCollections", "Printf", "SparseArrays", "Test", "Unicode"]
+git-tree-sha1 = "92b7de61ecb616562fd2501334f729cc9db2a9a6"
+uuid = "b8f27783-ece8-5eb3-8dc8-9495eed66fee"
+version = "0.10.6"
+
 [[deps.MbedTLS]]
 deps = ["Dates", "MbedTLS_jll", "Random", "Sockets"]
 git-tree-sha1 = "1c38e51c3d08ef2278062ebceade0e46cefc96fe"
@@ -1029,6 +1099,12 @@ deps = ["Arpack", "LinearAlgebra", "SparseArrays", "Statistics", "StatsBase"]
 git-tree-sha1 = "8d958ff1854b166003238fe191ec34b9d592860a"
 uuid = "6f286f6a-111f-5878-ab1e-185364afe411"
 version = "0.8.0"
+
+[[deps.MutableArithmetics]]
+deps = ["LinearAlgebra", "SparseArrays", "Test"]
+git-tree-sha1 = "7bb6853d9afec54019c1397c6eb610b9b9a19525"
+uuid = "d8a4904e-b15c-11e9-3269-09a3773c0cb0"
+version = "0.3.1"
 
 [[deps.NLSolversBase]]
 deps = ["DiffResults", "Distributed", "FiniteDiff", "ForwardDiff"]
@@ -1190,11 +1266,9 @@ version = "1.2.3"
 deps = ["Unicode"]
 uuid = "de0858da-6303-5e67-8744-51eddeeeb8d7"
 
-[[deps.ProgressMeter]]
-deps = ["Distributed", "Printf"]
-git-tree-sha1 = "afadeba63d90ff223a6a48d2009434ecee2ec9e8"
-uuid = "92933f4c-e287-5a05-a399-4b506db050ca"
-version = "1.7.1"
+[[deps.Profile]]
+deps = ["Printf"]
+uuid = "9abbd945-dff8-562f-b5e8-e1ebf5ef1b79"
 
 [[deps.Qt5Base_jll]]
 deps = ["Artifacts", "CompilerSupportLibraries_jll", "Fontconfig_jll", "Glib_jll", "JLLWrappers", "Libdl", "Libglvnd_jll", "OpenSSL_jll", "Pkg", "Xorg_libXext_jll", "Xorg_libxcb_jll", "Xorg_xcb_util_image_jll", "Xorg_xcb_util_keysyms_jll", "Xorg_xcb_util_renderutil_jll", "Xorg_xcb_util_wm_jll", "Zlib_jll", "xkbcommon_jll"]
@@ -1261,6 +1335,24 @@ deps = ["CommonSolve", "Printf", "Setfield"]
 git-tree-sha1 = "51ee572776905ee34c0568f5efe035d44bf59f74"
 uuid = "f2b01f46-fcfa-551c-844a-d8ac1e96c665"
 version = "1.3.11"
+
+[[deps.SCS]]
+deps = ["BinaryProvider", "Libdl", "LinearAlgebra", "MathOptInterface", "Requires", "SCS_GPU_jll", "SCS_jll", "SparseArrays"]
+git-tree-sha1 = "c819d023621358f3c08f08d41bd9354cf1357d35"
+uuid = "c946c3f1-0d1f-5ce8-9dea-7daa1f7e2d13"
+version = "0.8.1"
+
+[[deps.SCS_GPU_jll]]
+deps = ["Artifacts", "JLLWrappers", "Libdl", "OpenBLAS_jll", "Pkg"]
+git-tree-sha1 = "a96402e3b494a8bbec61b1adb86d4be04112c646"
+uuid = "af6e375f-46ec-5fa0-b791-491b0dfa44a4"
+version = "2.1.4+0"
+
+[[deps.SCS_jll]]
+deps = ["Artifacts", "JLLWrappers", "Libdl", "OpenBLAS_jll", "Pkg"]
+git-tree-sha1 = "6cdaccb5e6a69455f960de1ae445ba1de5db9d0d"
+uuid = "f4f2fc5b-1d94-523c-97ea-2ab488bedf4b"
+version = "2.1.2+1"
 
 [[deps.SHA]]
 uuid = "ea8e919c-243c-51af-8825-aaa63cd721ce"
@@ -1663,16 +1755,16 @@ version = "0.9.1+5"
 # ╠═bedc21aa-1ee8-4371-bcc3-b0ae70f48bbd
 # ╠═8ab78f88-ffa6-4fa2-94d5-d9e502be1a1c
 # ╠═779f010f-27cc-4ba8-bde1-4e4bf9ff608e
-# ╠═1b45b534-27a1-4162-b66c-5222286ad376
+# ╠═9aab437f-1a17-498f-b689-a8d6b9bb51bb
 # ╠═b25f2b2e-8f64-4e07-93f6-6ed6e27e6e3c
+# ╠═172a6430-1185-4f62-8aab-f9f832c4c211
 # ╟─327efc85-e82b-40cc-b887-60c52fc486f7
 # ╠═e7f9f63c-34d0-4b7d-a8c7-8c720735f33f
 # ╠═14553057-37e8-4404-b7c2-235812db662a
-# ╟─667773c0-f748-4ad7-bec8-86ea7599cc76
+# ╠═667773c0-f748-4ad7-bec8-86ea7599cc76
 # ╟─4be380a2-23b1-4749-a829-e80e27280b41
 # ╟─95e1f114-edfc-4b32-99f5-e8ab628b628e
 # ╠═9550f4f8-e526-452b-8fd8-23aa0c411000
-# ╠═7f6d43cc-5266-42d5-b8c4-55678b90d4e3
 # ╟─ffe10048-3d4b-4c91-be63-b3de2fe17a0c
 # ╠═02505beb-6846-4935-967e-d44162f33856
 # ╠═29fad20b-77f8-4da3-b1f6-337bb15ef391

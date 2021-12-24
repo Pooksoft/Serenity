@@ -81,7 +81,7 @@ psia_ticker_symbol_array = sort(["SPY", "MSFT", "ALLY", "MET", "AAPL", "GM", "PF
 ]);
 
 # ╔═╡ 14553057-37e8-4404-b7c2-235812db662a
-ticker_symbol = "JNJ";
+ticker_symbol = "KO";
 
 # ╔═╡ 4be380a2-23b1-4749-a829-e80e27280b41
 md"""
@@ -236,26 +236,6 @@ end
 historical_return_dictionary = Serenity.compute_fractional_return_array(psia_ticker_symbol_array, historical_price_dictionary, 
 	:t=>:c; multiplier=1.0);
 
-# ╔═╡ 172a6430-1185-4f62-8aab-f9f832c4c211
-historical_return_dictionary
-
-# ╔═╡ 327efc85-e82b-40cc-b887-60c52fc486f7
-begin
-
-	# initialize -
-	return_distribution_dictionary = Dict{String,Distribution}()
-
-	# main loop -
-	for (ticker, df) ∈ historical_return_dictionary
-
-		# process the df -
-		local_distribution = fit(Laplace, df[!, :μ])
-
-		# grab -
-		return_distribution_dictionary[ticker] = local_distribution
-	end
-end
-
 # ╔═╡ e7f9f63c-34d0-4b7d-a8c7-8c720735f33f
 begin
 
@@ -317,7 +297,7 @@ __Fig XX:__ Random walk simulation of the scaled share price using a single inde
 begin
 
 	# what is my skip factor?
-	skip_range = range(1,stop = N, step=100)
+	skip_range = range(1, stop = N, step=100)
 	
 	# plot simulated trajectories -
 	plot(simulated_price_array[:, skip_range], label="",c=GRAY, lw=1, 
@@ -1757,8 +1737,6 @@ version = "0.9.1+5"
 # ╠═779f010f-27cc-4ba8-bde1-4e4bf9ff608e
 # ╠═9aab437f-1a17-498f-b689-a8d6b9bb51bb
 # ╠═b25f2b2e-8f64-4e07-93f6-6ed6e27e6e3c
-# ╠═172a6430-1185-4f62-8aab-f9f832c4c211
-# ╟─327efc85-e82b-40cc-b887-60c52fc486f7
 # ╠═e7f9f63c-34d0-4b7d-a8c7-8c720735f33f
 # ╠═14553057-37e8-4404-b7c2-235812db662a
 # ╠═667773c0-f748-4ad7-bec8-86ea7599cc76

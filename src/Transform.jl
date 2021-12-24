@@ -37,6 +37,12 @@ function transform_date_fields(data_frame::DataFrame, col_key::Symbol)
     insertcols!(data_frame, col_key => tmp_array)
 end
 
+function filter(data::DataFrame, start_date::Date, end_date::Date;
+    key::Symbol = :timestamp)::DataFrame
+
+    return filter(key => (x) -> (x>=start_date && x<=end_date), data);
+end
+
 function extract_data_block_for_date_range(data_table::DataFrame, start_date::Date, end_date::Date;
     key::Symbol = :timestamp)::DataFrame
 

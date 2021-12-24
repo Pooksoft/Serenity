@@ -35,9 +35,17 @@ function process_aggregates_polygon_call_response(body::String)
 
     # initialize -
     header_dictionary = Dict{String,Any}()
-    df = DataFrame(v=Float64[],vw=Float64[],o=Float64[],c=Float64[],h=Float64[],l=Float64[],t=Date[],n=Int[])
-    #df = DataFrame()
-    #df = Array{NamedTuple,1}()
+    df = DataFrame(
+
+        volume=Float64[],
+        volume_weighted_average_price=Float64[],
+        open=Float64[],
+        close=Float64[],
+        high=Float64[],
+        low=Float64[],
+        timestamp=Date[],
+        number_of_transactions=Int[]
+    )
 
     # fill in the header dictionary -
     header_keys = [
@@ -53,14 +61,14 @@ function process_aggregates_polygon_call_response(body::String)
         
         # build a results tuple -
         result_tuple = (
-            v = result_dictionary["v"],
-            vw = result_dictionary["vw"],
-            o = result_dictionary["o"],
-            c = result_dictionary["c"],
-            h = result_dictionary["h"],
-            l = result_dictionary["l"],
-            t = unix2datetime(result_dictionary["t"]*(1/1000)),
-            n = result_dictionary["n"]
+            volume = result_dictionary["v"],
+            volume_weighted_average_price = result_dictionary["vw"],
+            open = result_dictionary["o"],
+            close = result_dictionary["c"],
+            high = result_dictionary["h"],
+            low = result_dictionary["l"],
+            timestamp = unix2datetime(result_dictionary["t"]*(1/1000)),
+            number_of_transactions = result_dictionary["n"]
         )
     
         # push that tuple into the df -
@@ -87,7 +95,8 @@ function execute_polygon_aggregates_api_call(base::String, ticker::String, multi
     return (result_string |> process_aggregates_polygon_call_response)
 end
 
-function download(base::String, model::PolygonAggregatesEndpointModel)
+function polygon(base::String, model::PolygonAggregatesEndpointModel; 
+    handler::Function)
 
     # build the url string -
     complete_url_string = build(base, model)

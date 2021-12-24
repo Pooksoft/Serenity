@@ -44,6 +44,9 @@ begin
     # get some stuff from the configuration dictionary -
     POLYGON_API_KEY = configuration_dictionary["API"]["polygon_api_key"]
 
+	# load the Pooksoft Industrial Average (PSIA) list of ticker symbols -
+	psia_ticker_symbol_array = configuration_dictionary["PSIA"]["ticker_symbol_array"]
+
 	# List of colors -
 	WHITE = RGB(1.0, 1.0, 1.0)
 	BACKGROUND = RGB(0.99, 0.98, 0.96)
@@ -75,10 +78,10 @@ md"""
 
 # ╔═╡ 779f010f-27cc-4ba8-bde1-4e4bf9ff608e
 # Pooksoft Industrial Average (PSIA) -> the DJIA + some stuff
-psia_ticker_symbol_array = sort(["SPY", "MSFT", "ALLY", "MET", "AAPL", "GM", "PFE", "TGT", "WFC", "AIG", "F", "GE", "AMD",
-    "MMM", "AXP", "AMGN", "BA", "CAT", "CVX", "CSCO", "KO", "DIS", "DOW", "GS", "HD", "IBM", "HON", "INTC", "JNJ", "JPM",
-    "MCD", "MRK", "NKE", "PG", "CRM", "TRV", "UNH", "VZ", "V", "WBA", "WMT"
-]);
+# psia_ticker_symbol_array = sort(["SPY", "MSFT", "ALLY", "MET", "AAPL", "GM", "PFE", "TGT", "WFC", "AIG", "F", "GE", "AMD",
+#     "MMM", "AXP", "AMGN", "BA", "CAT", "CVX", "CSCO", "KO", "DIS", "DOW", "GS", "HD", "IBM", "HON", "INTC", "JNJ", "JPM",
+#     "MCD", "MRK", "NKE", "PG", "CRM", "TRV", "UNH", "VZ", "V", "WBA", "WMT"
+# ]);
 
 # ╔═╡ 14553057-37e8-4404-b7c2-235812db662a
 ticker_symbol = "KO";

@@ -43,6 +43,9 @@ begin
     # get some stuff from the configuration dictionary -
     POLYGON_API_KEY = configuration_dictionary["API"]["polygon_api_key"]
 
+	# load the Pooksoft Industrial Average (PSIA) list of ticker symbols -
+	psia_ticker_symbol_array = configuration_dictionary["PSIA"]["ticker_symbol_array"]
+
 	# List of colors -
 	WHITE = RGB(1.0, 1.0, 1.0)
 	BACKGROUND = RGB(0.99, 0.98, 0.96)
@@ -55,11 +58,71 @@ begin
     nothing
 end
 
-# ╔═╡ 6aaa3a09-5481-40ac-abe0-5cc09c438f23
-ticker_symbol_array = sort(["MSFT", "ALLY", "MET", "AAPL", "GM", "PFE", "TGT", "WFC", "AIG", "F", "GE", "AMD",
-    "MMM", "AXP", "AMGN", "BA", "CAT", "CVX", "CSCO", "KO", "DIS", "DOW", "GS", "HD", "IBM", "HON", "INTC", "JNJ", "JPM",
-    "MCD", "MRK", "NKE", "PG", "CRM", "TRV", "UNH", "VZ", "V", "WBA", "WMT", "SPY"
-]);
+# ╔═╡ 201f572b-9e68-4d80-b823-be41243382fd
+md"""
+## Interfacing with the [Polygon.io](https://polygon.io) Financial Data Application Programming Interface
+"""
+
+# ╔═╡ 48cce16c-31bc-438c-bef9-eee2c13fb220
+md"""
+### Introduction
+
+Data is the key to making great financial decisions. [Polygon.io](https://polygon.io) is a financial data warehouse that provides an application programming interface (API) that can be used to download and analyze all kinds of financial information. 
+
+[Polygon.io](https://polygon.io) was founded by former Googlers in 2016. Since September of 2020, [Polygon.io](https://polygon.io) has provided both [free and paid access](https://polygon.io/pricing) to current and historical [stock](https://polygon.io/docs/stocks/getting-started), [option](https://polygon.io/docs/options/getting-started), [crypto](https://polygon.io/docs/crypto/getting-started) and [forex](https://polygon.io/docs/forex/getting-started) data  
+Check out the [Polygon.io](https://polygon.io/blog/) blog for the latest updates and developments. 
+
+In this notebook, we'll discuss how to interface the [Serenity library](https://github.com/Pooksoft/Serenity) with [Polygon.io](https://polygon.io) using the REST API provided by  [Polygon.io](https://polygon.io). In particular, we'll go over how to:
+
+* Download and analyze daily stock price data for an arbitrary ticker symbol and a specified date range 
+* Download and analyze option data for an arbitrary ticker and a specified date range
+* Download and analyze crypto data for an arbitrary ticker and a specified date range
+
+"""
+
+# ╔═╡ d3884c8d-bd00-4059-a751-f29b211e9ef6
+md"""
+### Materials and Methods
+"""
+
+# ╔═╡ 4b4668f0-6894-4219-9de8-f2106fb70aca
+md"""
+##### What is my [Julia](https://julialang.org/downloads/) setup?
+In this block of code, we set up project paths and import external packages that we use to download and analyze the various financial data.
+"""
+
+# ╔═╡ f91bb8cd-fe80-4f47-99cb-e5cc408b0785
+
+
+# ╔═╡ 6c3e5618-c689-4941-b540-e27734ee096b
+md"""
+### Results and Discussion
+"""
+
+# ╔═╡ 572cb255-04a5-402b-a10f-85f6a1a23f39
+md"""
+##### Stock price data and ticker news and other information
+"""
+
+# ╔═╡ feab4379-ce36-4a34-abf6-70a6a15dcfd2
+md"""
+##### Option price data
+"""
+
+# ╔═╡ 6589f632-2e09-4bc6-aa8e-30f6338d5729
+md"""
+##### Cryptocurrency price data and other crypto information
+"""
+
+# ╔═╡ 8623a119-bf7f-4566-be78-9769c3a64042
+md"""
+### Conclusions
+"""
+
+# ╔═╡ 77473f9a-e5fd-41e6-89d4-acffcba38f45
+md"""
+### References
+"""
 
 # ╔═╡ 7ce9e2ec-a3a2-4b64-be6e-27618bd9f3f1
 function ingredients(path::String)
@@ -82,7 +145,7 @@ end
 Serenity = ingredients(joinpath(_PATH_TO_SRC, "Include.jl"));
 
 # ╔═╡ f97cdf69-7604-49b9-a0da-d0622bf75a5f
-function download_ticker_data(ticker_symbol_array::Array{String,1}, from::Date, to::Date; 
+function download_ticker_data(psia_ticker_symbol_array::Array{String,1}, from::Date, to::Date; 
 	savepath::String = _PATH_TO_DATA, adjusted=true, sortdirection="asc", limit=5000, multiplier = 1, timespan = "day")
 
 	# initialize -
@@ -104,7 +167,7 @@ function download_ticker_data(ticker_symbol_array::Array{String,1}, from::Date, 
     mkpath(joinpath(savepath,"header"))
 
 	# process each ticker -
-	for ticker_symbol ∈ ticker_symbol_array
+	for ticker_symbol ∈ psia_ticker_symbol_array
 
 		# check - do we have this data already?
 		local_path_to_data_file = joinpath(savepath,"$(ticker_symbol).csv")
@@ -116,7 +179,7 @@ function download_ticker_data(ticker_symbol_array::Array{String,1}, from::Date, 
 			api_model.ticker = ticker_symbol
 			
 			# call -
-			(hd,df) = Serenity.download(DATASTORE_URL_STRING, api_model)
+			(hd,df) = Serenity.polygon(DATASTORE_URL_STRING, api_model)
 
             # dump data to disk -
             CSV.write(local_path_to_data_file, df)
@@ -145,14 +208,27 @@ end
 begin
 	
 	# what date range do we want to look at? (max: 2 years on free account)
-	from = Date(2019,12,21)
-	to = Date(2021,12,21)
+	Y = 2021 	# year
+	M = 12 		# month
+	D = 24 		# day
+
+	# uncomment if we want to refresh the data -
+	# current_date = now()
+	# Y = year(current_date)
+	# M = month(current_date)
+	# D = day(current_date)
+
+	# download data from the from -> to dates -
+	from = Date(Y - 2, M, D)
+	to = Date(Y,M,D)
 
 	# where are going to store the data?
-	savepath = joinpath(_PATH_TO_DATA,"polygon", "training", "daily")
+	dir_name = "daily-$(Y)-$(M)-$(D)"
+	savepath = joinpath(_PATH_TO_DATA,"polygon", "stock", dir_name)
 
-	# execute the call(s) -
-	pd = download_ticker_data(ticker_symbol_array, from, to; savepath);
+	# execute the call(s) to the data api
+	# NOTE: if we already have data in the from -> to range, we load that from disk
+	pd = download_ticker_data(psia_ticker_symbol_array, from, to; savepath);
 
 	# show -
 	nothing
@@ -162,18 +238,20 @@ end
 begin
 
 	# initialize -
-	N = length(pd["SPY"].data[!,:c]) 
-	𝒫 = length(ticker_symbol_array)
-	state_table = Array{Float64,2}(undef,N,𝒫)
+	N = length(pd["SPY"].data[!,:close]) 
+	𝒫 = length(psia_ticker_symbol_array)
+	state_table = Array{Float64,2}(undef,N,𝒫-1)
 	
-	for (ticker_index, ticker) ∈ enumerate(ticker_symbol_array)
+	for (ticker_index, ticker) ∈ enumerate(psia_ticker_symbol_array)
 
-		# get value for this ticker -
-		data_array = pd[ticker].data
-		P₀ = data_array[1,:c]
+		if (ticker != "MRNA")
+			# get value for this ticker -
+			data_array = pd[ticker].data
+			P₀ = data_array[1,:close]
 
-		for time_index ∈ 1:N
-			state_table[time_index,ticker_index] = (1/P₀)*data_array[time_index,:c]
+			for time_index ∈ 1:N
+				state_table[time_index,ticker_index] = (1/P₀)*data_array[time_index,:close]
+			end
 		end
 	end
 
@@ -181,8 +259,8 @@ begin
 	plot(state_table, legend=false, c=GRAY)
 
 	# plot SPY -
-	P_spy = pd["SPY"].data[1,:c]
-	P_spy_scaled = (1/P_spy)*pd["SPY"].data[!,:c]
+	P_spy = pd["SPY"].data[1,:close]
+	P_spy_scaled = (1/P_spy)*pd["SPY"].data[!,:close]
 	plot!(P_spy_scaled,c=RED,lw=4)
 end
 
@@ -289,7 +367,7 @@ StatsPlots = "~0.14.30"
 PLUTO_MANIFEST_TOML_CONTENTS = """
 # This file is machine-generated - editing it directly is not advised
 
-julia_version = "1.7.0"
+julia_version = "1.7.1"
 manifest_format = "2.0"
 
 [[deps.AMD]]
@@ -1648,11 +1726,21 @@ version = "0.9.1+5"
 """
 
 # ╔═╡ Cell order:
-# ╠═6aaa3a09-5481-40ac-abe0-5cc09c438f23
+# ╟─201f572b-9e68-4d80-b823-be41243382fd
+# ╟─48cce16c-31bc-438c-bef9-eee2c13fb220
+# ╟─d3884c8d-bd00-4059-a751-f29b211e9ef6
+# ╟─4b4668f0-6894-4219-9de8-f2106fb70aca
+# ╠═1461bfa4-633e-11ec-0ee6-a590181dc91b
+# ╠═f03fc7e7-3fa0-4b0a-af82-e1cafc1d9eeb
+# ╠═f91bb8cd-fe80-4f47-99cb-e5cc408b0785
+# ╟─6c3e5618-c689-4941-b540-e27734ee096b
+# ╟─572cb255-04a5-402b-a10f-85f6a1a23f39
+# ╟─feab4379-ce36-4a34-abf6-70a6a15dcfd2
+# ╟─6589f632-2e09-4bc6-aa8e-30f6338d5729
+# ╟─8623a119-bf7f-4566-be78-9769c3a64042
+# ╟─77473f9a-e5fd-41e6-89d4-acffcba38f45
 # ╠═bd0c9e41-fed0-46f9-bf2e-136a439692a2
 # ╠═3723c110-a44e-4edc-84e8-d8d2a181a090
-# ╠═f03fc7e7-3fa0-4b0a-af82-e1cafc1d9eeb
-# ╟─1461bfa4-633e-11ec-0ee6-a590181dc91b
 # ╠═f97cdf69-7604-49b9-a0da-d0622bf75a5f
 # ╟─7ce9e2ec-a3a2-4b64-be6e-27618bd9f3f1
 # ╟─b4100007-b259-4fe3-a88c-be88928fe423

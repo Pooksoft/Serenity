@@ -125,7 +125,8 @@ The parameters for the [Alphavantage.co](https://www.alphavantage.co) API call a
 # Pooksoft Industrial Average (PSIA) -> the DJIA + some stuff
 ticker_symbol_array = sort(["MSFT", "ALLY", "MET", "AAPL", "GM", "PFE", "TGT", "WFC", "AIG", "F", "GE", "AMD",
     "MMM", "AXP", "AMGN", "BA", "CAT", "CVX", "CSCO", "KO", "DIS", "DOW", "GS", "HD", "IBM", "HON", "INTC", "JNJ", "JPM",
-    "MCD", "MRK", "NKE", "PG", "CRM", "TRV", "UNH", "VZ", "V", "WBA", "WMT"
+    "MCD", "MRK", "NKE", "PG", "CRM", "TRV", "UNH", "VZ", "V", "WBA", "WMT", "SPY",
+    "SPYD", "SPYG", "SPYV", "SPYX", "VOO", "VTI", "VEA", "VWO", "VNQ", "VGK", "MRNA"
 ]);
 
 # ╔═╡ 61ab2949-d72f-4d80-a717-4b6a9227de0e

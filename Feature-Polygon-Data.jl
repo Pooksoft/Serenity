@@ -15,10 +15,10 @@ md"""
 
 Data is the key to making great financial decisions. [Polygon.io](https://polygon.io) is a financial data warehouse that provides an application programming interface (API) that can be used to download and analyze all kinds of financial information. 
 
-[Polygon.io](https://polygon.io) was founded by former Googlers in 2016. Since September of 2020, [Polygon.io](https://polygon.io) has provided both [free and paid access](https://polygon.io/pricing) to current and historical [stock](https://polygon.io/docs/stocks/getting-started), [option](https://polygon.io/docs/options/getting-started), [crypto](https://polygon.io/docs/crypto/getting-started) and [forex](https://polygon.io/docs/forex/getting-started) data  
-Check out the [Polygon.io](https://polygon.io/blog/) blog for the latest updates and developments. 
+[Polygon.io](https://polygon.io) was founded by former Googlers in 2016. Since September of 2020, [Polygon.io](https://polygon.io) has provided both [free and paid access](https://polygon.io/pricing) to current and historical [stock](https://polygon.io/docs/stocks/getting-started), [option](https://polygon.io/docs/options/getting-started), [crypto](https://polygon.io/docs/crypto/getting-started) and [forex](https://polygon.io/docs/forex/getting-started) data.  
+Check out the [Polygon.io blog](https://polygon.io/blog/) for the latest updates and developments from [Polygon.io](https://polygon.io).
 
-In this notebook, we'll discuss how to interface the [Serenity library](https://github.com/Pooksoft/Serenity) with [Polygon.io](https://polygon.io) using the REST API provided by  [Polygon.io](https://polygon.io). In particular, we'll go over how to:
+In this notebook, we'll discuss how to interface the [Serenity library](https://github.com/Pooksoft/Serenity) with the [Polygon.io REST API](https://polygon.io/docs/stocks). In particular, we'll:
 
 * Download and analyze daily stock price data for an arbitrary ticker symbol and a specified date range
 * Download and analyze crypto data for an arbitrary ticker and a specified date range
@@ -35,7 +35,7 @@ md"""
 # ╔═╡ 4b4668f0-6894-4219-9de8-f2106fb70aca
 md"""
 ##### What is my [Julia](https://julialang.org/downloads/) setup?
-In this code block, we set up project paths and import external packages that we use to download and analyze the various financial data. In addition, we load a local copy of the [Serenity library](https://github.com/Pooksoft/Serenity).
+In this code block, we set up project paths and import external packages that we use to download and analyze the various types of financial data. In addition, we load a local copy of the [Serenity library](https://github.com/Pooksoft/Serenity).
 """
 
 # ╔═╡ 6c3e5618-c689-4941-b540-e27734ee096b
@@ -47,6 +47,9 @@ md"""
 md"""
 ##### Stock price data, ticker news and other information
 """
+
+# ╔═╡ d43f58d6-4a15-4248-bea5-96fc34932b94
+
 
 # ╔═╡ 6589f632-2e09-4bc6-aa8e-30f6338d5729
 md"""
@@ -177,10 +180,10 @@ end
 # Arguements
 # ticker_symbol::String String holding the ticker symbol that we are interested in
 # -------------------------------------------------------------------------------------------- #
-function aggregates_api_endpoint(ticker_symbol::String)::NamedTuple
+function aggregates_api_endpoint(ticker_symbol::String; sleeptime::Float64 = 20.0)::NamedTuple
 
 	# save the file locally to avoid the API limit -
-	savepath = joinpath(_PATH_TO_DATA,"polygon", "demo")
+	savepath = joinpath(_PATH_TO_DATA,"polygon", "demo", "aggregates")
 	local_path_to_data_file = joinpath(savepath, "$(ticker_symbol).csv")
 	local_path_to_header_file = joinpath(savepath, "header", "$(ticker_symbol)-header.csv")
 
@@ -200,7 +203,7 @@ function aggregates_api_endpoint(ticker_symbol::String)::NamedTuple
 		mkpath(savepath)
     	mkpath(joinpath(savepath,"header"))
 		
-		# Build an API model for the Aggregates endpoint -
+		# Build an API model for the aggregates endpoint -
 		# see: https://polygon.io/docs/stocks/getting-started
 		aggregates_api_model = Serenity.PolygonAggregatesEndpointModel()
 		aggregates_api_model.adjusted = true
@@ -219,6 +222,9 @@ function aggregates_api_endpoint(ticker_symbol::String)::NamedTuple
 		# save locally -
 		CSV.write(local_path_to_data_file, df)
 		CSV.write(local_path_to_header_file, header)
+
+		# sleep sometime before we return - helps avoid API limit issue -
+		sleep(sleeptime)
 			
         # put the price DataFrame into the price_data_dictionary -
         return (header=header, data=df)
@@ -227,31 +233,47 @@ end
 
 # ╔═╡ 3bd81185-9277-4903-bc0b-b41f5e3e7685
 begin
+
+	# initialize some space -
+	stock_data_dictionary = Dict{String,NamedTuple}()
 	
-	# Download data for this ticker -
-	stock_ticker_symbol = "GILD";
-	(header,data) = aggregates_api_endpoint(stock_ticker_symbol);
+	# what crypto currencies are we interested in?
+	ticker_stock_symbol_array = [
+		"SPY", "GILD", "AAPL", "PFE", "MRNA", "PG", "JNJ", "AMD"
+	];
+
+	for ticker_stock ∈ ticker_stock_symbol_array
+		# make the API call -> store the result in stock_data_dictionary -
+		stock_data_dictionary[ticker_stock] = aggregates_api_endpoint(ticker_stock);
+	end
 
 	# show -
 	nothing
 end
-
-# ╔═╡ e86e3aa9-1168-4475-9cf0-6c77602251e2
-data
 
 # ╔═╡ cabe68be-fad4-4a60-8234-546643c09770
 begin
+
+	# initialize some space -
+	crypto_data_dictionary = Dict{String,NamedTuple}()
 	
-	# what crypto currency are we interested in?
-	crypto_ticker_symbol = "X:BTCUSD";
-	(header_crypto,data_crypto) = aggregates_api_endpoint(crypto_ticker_symbol);
+	# what crypto currencies are we interested in?
+	ticker_crypto_symbol_array = [
+		"X:BTCUSD", "X:ETHUSD"
+	];
+
+	for ticker_crypto ∈ ticker_crypto_symbol_array
+		
+		# make the API call -> store the result in crypto_data_dictionary -
+		crypto_data_dictionary[ticker_crypto] = aggregates_api_endpoint(ticker_crypto);
+	end
 
 	# show -
 	nothing
 end
 
-# ╔═╡ a792f0af-5d08-4820-ae33-bae5cd80b58f
-data_crypto
+# ╔═╡ e7ff2aa0-fceb-4fde-8ba6-7438ad1961d5
+plot(crypto_data_dictionary["X:ETHUSD"].data[!,:close])
 
 # ╔═╡ feb87b95-c7c7-4bb3-925e-0b7600c89954
 begin
@@ -268,33 +290,34 @@ begin
 	nothing
 end
 
-# ╔═╡ 3723c110-a44e-4edc-84e8-d8d2a181a090
+# ╔═╡ 02f7555b-3569-4364-b8d8-4859a36faeac
 begin
 
 	# initialize -
-	N = length(pd["SPY"].data[!,:close]) 
-	𝒫 = length(psia_ticker_symbol_array)
-	state_table = Array{Float64,2}(undef,N,𝒫-1)
+	N = length(stock_data_dictionary["SPY"].data[!,:close]) 
+	𝒫 = length(ticker_stock_symbol_array)
+	state_table = Array{Float64,2}(undef,N,𝒫)
 	
-	for (ticker_index, ticker) ∈ enumerate(psia_ticker_symbol_array)
+	for (ticker_index, ticker_stock) ∈ enumerate(ticker_stock_symbol_array)
 
-		if (ticker != "MRNA")
-			# get value for this ticker -
-			data_array = pd[ticker].data
-			P₀ = data_array[1,:close]
+		# get value for this ticker -
+		data_array = stock_data_dictionary[ticker_stock].data
+		P₀ = data_array[1,:close]
 
-			for time_index ∈ 1:N
-				state_table[time_index,ticker_index] = (1/P₀)*data_array[time_index,:close]
-			end
+		for time_index ∈ 1:N
+			state_table[time_index,ticker_index] = (1/P₀)*data_array[time_index,:close]
 		end
 	end
 
+	# which index is MRNA?
+	idx_plot = findall(x-> x !="MRNA", ticker_stock_symbol_array)
+	
 	# plot -
-	plot(state_table, legend=false, c=GRAY)
+	plot(state_table[:, idx_plot], legend=false, c=GRAY)
 
 	# plot SPY -
-	P_spy = pd["SPY"].data[1,:close]
-	P_spy_scaled = (1/P_spy)*pd["SPY"].data[!,:close]
+	P_spy = stock_data_dictionary["SPY"].data[1,:close]
+	P_spy_scaled = (1/P_spy)*stock_data_dictionary["SPY"].data[!,:close]
 	plot!(P_spy_scaled,c=RED,lw=4)
 end
 
@@ -1830,17 +1853,17 @@ version = "0.9.1+5"
 # ╟─6c3e5618-c689-4941-b540-e27734ee096b
 # ╟─572cb255-04a5-402b-a10f-85f6a1a23f39
 # ╠═3bd81185-9277-4903-bc0b-b41f5e3e7685
-# ╠═e86e3aa9-1168-4475-9cf0-6c77602251e2
+# ╠═02f7555b-3569-4364-b8d8-4859a36faeac
+# ╠═d43f58d6-4a15-4248-bea5-96fc34932b94
 # ╟─6589f632-2e09-4bc6-aa8e-30f6338d5729
 # ╠═cabe68be-fad4-4a60-8234-546643c09770
-# ╠═a792f0af-5d08-4820-ae33-bae5cd80b58f
+# ╠═e7ff2aa0-fceb-4fde-8ba6-7438ad1961d5
 # ╠═3e49d29f-c3d0-4824-9196-6030a73936df
 # ╟─feab4379-ce36-4a34-abf6-70a6a15dcfd2
 # ╟─8623a119-bf7f-4566-be78-9769c3a64042
 # ╟─77473f9a-e5fd-41e6-89d4-acffcba38f45
 # ╠═feb87b95-c7c7-4bb3-925e-0b7600c89954
 # ╠═bd0c9e41-fed0-46f9-bf2e-136a439692a2
-# ╠═3723c110-a44e-4edc-84e8-d8d2a181a090
 # ╠═f97cdf69-7604-49b9-a0da-d0622bf75a5f
 # ╟─7ce9e2ec-a3a2-4b64-be6e-27618bd9f3f1
 # ╟─b4100007-b259-4fe3-a88c-be88928fe423

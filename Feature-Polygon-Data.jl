@@ -20,9 +20,10 @@ Check out the [Polygon.io](https://polygon.io/blog/) blog for the latest updates
 
 In this notebook, we'll discuss how to interface the [Serenity library](https://github.com/Pooksoft/Serenity) with [Polygon.io](https://polygon.io) using the REST API provided by  [Polygon.io](https://polygon.io). In particular, we'll go over how to:
 
-* Download and analyze daily stock price data for an arbitrary ticker symbol and a specified date range 
-* Download and analyze option data for an arbitrary ticker and a specified date range
+* Download and analyze daily stock price data for an arbitrary ticker symbol and a specified date range
 * Download and analyze crypto data for an arbitrary ticker and a specified date range
+* Download and analyze option data for an arbitrary ticker and a specified date range
+
 
 """
 
@@ -47,17 +48,10 @@ md"""
 ##### Stock price data, ticker news and other information
 """
 
-# ╔═╡ a36d7f10-02f3-473b-9977-2e82f432f27b
-stock_ticker_symbol = "GILD";
-
 # ╔═╡ 6589f632-2e09-4bc6-aa8e-30f6338d5729
 md"""
 ##### Cryptocurrency price data and other crypto information
 """
-
-# ╔═╡ cabe68be-fad4-4a60-8234-546643c09770
-# what crypto currency are we interested in?
-crypto_ticker_symbol = "X:BTCUSD";
 
 # ╔═╡ feab4379-ce36-4a34-abf6-70a6a15dcfd2
 md"""
@@ -175,9 +169,10 @@ end
 # aggregates_api_endpoint(ticker_symbol::String) -> NamedTuple
 #
 # Downloads pricing data from the Polygon.io API for the Aggregate endpoint. Takes a string
-# corresponding the ticker symbol and downloads pricing data. The options for the API are 
-# hardcoded in this example, check out: https://polygon.io/docs/stocks/getting-started for
-# more information.
+# corresponding to the ticker symbol and downloads pricing data. 
+#
+# The options for the API are hardcoded in this example, 
+# check out: https://polygon.io/docs/stocks/getting-started for more information.
 #
 # Arguements
 # ticker_symbol::String String holding the ticker symbol that we are interested in
@@ -231,13 +226,32 @@ function aggregates_api_endpoint(ticker_symbol::String)::NamedTuple
 end
 
 # ╔═╡ 3bd81185-9277-4903-bc0b-b41f5e3e7685
-(header,data) = aggregates_api_endpoint(stock_ticker_symbol);
+begin
+	
+	# Download data for this ticker -
+	stock_ticker_symbol = "GILD";
+	(header,data) = aggregates_api_endpoint(stock_ticker_symbol);
+
+	# show -
+	nothing
+end
 
 # ╔═╡ e86e3aa9-1168-4475-9cf0-6c77602251e2
 data
 
-# ╔═╡ ecab77da-23d9-4125-8619-aa5bf39e3ddf
-(header_crypto,data_crypto) = aggregates_api_endpoint(crypto_ticker_symbol);
+# ╔═╡ cabe68be-fad4-4a60-8234-546643c09770
+begin
+	
+	# what crypto currency are we interested in?
+	crypto_ticker_symbol = "X:BTCUSD";
+	(header_crypto,data_crypto) = aggregates_api_endpoint(crypto_ticker_symbol);
+
+	# show -
+	nothing
+end
+
+# ╔═╡ a792f0af-5d08-4820-ae33-bae5cd80b58f
+data_crypto
 
 # ╔═╡ feb87b95-c7c7-4bb3-925e-0b7600c89954
 begin
@@ -1809,18 +1823,17 @@ version = "0.9.1+5"
 
 # ╔═╡ Cell order:
 # ╟─201f572b-9e68-4d80-b823-be41243382fd
-# ╠═48cce16c-31bc-438c-bef9-eee2c13fb220
+# ╟─48cce16c-31bc-438c-bef9-eee2c13fb220
 # ╟─d3884c8d-bd00-4059-a751-f29b211e9ef6
 # ╟─4b4668f0-6894-4219-9de8-f2106fb70aca
 # ╠═1461bfa4-633e-11ec-0ee6-a590181dc91b
 # ╟─6c3e5618-c689-4941-b540-e27734ee096b
 # ╟─572cb255-04a5-402b-a10f-85f6a1a23f39
-# ╠═a36d7f10-02f3-473b-9977-2e82f432f27b
 # ╠═3bd81185-9277-4903-bc0b-b41f5e3e7685
 # ╠═e86e3aa9-1168-4475-9cf0-6c77602251e2
 # ╟─6589f632-2e09-4bc6-aa8e-30f6338d5729
 # ╠═cabe68be-fad4-4a60-8234-546643c09770
-# ╠═ecab77da-23d9-4125-8619-aa5bf39e3ddf
+# ╠═a792f0af-5d08-4820-ae33-bae5cd80b58f
 # ╠═3e49d29f-c3d0-4824-9196-6030a73936df
 # ╟─feab4379-ce36-4a34-abf6-70a6a15dcfd2
 # ╟─8623a119-bf7f-4566-be78-9769c3a64042

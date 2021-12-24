@@ -88,7 +88,7 @@ md"""
 # ╔═╡ 4b4668f0-6894-4219-9de8-f2106fb70aca
 md"""
 ##### What is my [Julia](https://julialang.org/downloads/) setup?
-In this block of code, we set up project paths and import external packages that we use to download and analyze the various financial data.
+In this code block, we set up project paths and import external packages that we use to download and analyze the various financial data.
 """
 
 # ╔═╡ f91bb8cd-fe80-4f47-99cb-e5cc408b0785

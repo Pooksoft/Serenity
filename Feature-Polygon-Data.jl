@@ -4,60 +4,6 @@
 using Markdown
 using InteractiveUtils
 
-# ╔═╡ 1461bfa4-633e-11ec-0ee6-a590181dc91b
-begin
-	# setup: we need to specify the paths where we can find our project resources
-    _PATH_TO_ROOT = pwd()
-    _PATH_TO_SRC = joinpath(_PATH_TO_ROOT, "src")
-    _PATH_TO_DATA = joinpath(_PATH_TO_ROOT, "data")
-    _PATH_TO_CONFIG = joinpath(_PATH_TO_ROOT, "configuration")
-
-    # what packages are we going to use?
-    using DataFrames
-    using CSV
-    using HTTP
-    using TOML
-    using Dates
-    using StatsPlots
-    using Statistics
-    using Distributions
-    using PlutoUI
-	using HypothesisTests
-	using PrettyTables
-	using Colors
-	using Optim
-	using Convex
-	using SCS
-	using MathOptInterface
-	using JSON
-	
-    # alias the AlphaVantage URL -
-    DATASTORE_URL_STRING = "https://api.polygon.io/v2"
-
-    # What we have here is a classic good news, bad news situation ...
-    # Bad news: We don't check in our AlphaVantage API key to GitHub (sorry). 
-    # Good news: AlphaVantage API keys are free. 
-    # check out: https://www.alphavantage.co/support/#api-key
-    configuration_dictionary = TOML.parsefile(joinpath(_PATH_TO_CONFIG, "Configuration.toml"))
-
-    # get some stuff from the configuration dictionary -
-    POLYGON_API_KEY = configuration_dictionary["API"]["polygon_api_key"]
-
-	# load the Pooksoft Industrial Average (PSIA) list of ticker symbols -
-	psia_ticker_symbol_array = configuration_dictionary["PSIA"]["ticker_symbol_array"]
-
-	# List of colors -
-	WHITE = RGB(1.0, 1.0, 1.0)
-	BACKGROUND = RGB(0.99, 0.98, 0.96)
-	BLUE = RGB(68 / 255, 119 / 255, 170 / 255)
-	LBLUE = RGB(102 / 255, 204 / 255, 238 / 255)
-	GRAY = RGB(187 / 255, 187 / 255, 187 / 255)
-	RED = RGB(238 / 255, 102 / 255, 119 / 255)
-    
-    # show -
-    nothing
-end
-
 # ╔═╡ 201f572b-9e68-4d80-b823-be41243382fd
 md"""
 ## Interfacing with the [Polygon.io](https://polygon.io) Financial Data Application Programming Interface
@@ -88,11 +34,8 @@ md"""
 # ╔═╡ 4b4668f0-6894-4219-9de8-f2106fb70aca
 md"""
 ##### What is my [Julia](https://julialang.org/downloads/) setup?
-In this code block, we set up project paths and import external packages that we use to download and analyze the various financial data.
+In this code block, we set up project paths and import external packages that we use to download and analyze the various financial data. In addition, we load a local copy of the [Serenity library](https://github.com/Pooksoft/Serenity).
 """
-
-# ╔═╡ f91bb8cd-fe80-4f47-99cb-e5cc408b0785
-
 
 # ╔═╡ 6c3e5618-c689-4941-b540-e27734ee096b
 md"""
@@ -101,17 +44,24 @@ md"""
 
 # ╔═╡ 572cb255-04a5-402b-a10f-85f6a1a23f39
 md"""
-##### Stock price data and ticker news and other information
+##### Stock price data, ticker news and other information
 """
 
-# ╔═╡ feab4379-ce36-4a34-abf6-70a6a15dcfd2
-md"""
-##### Option price data
-"""
+# ╔═╡ a36d7f10-02f3-473b-9977-2e82f432f27b
+stock_ticker_symbol = "GILD";
 
 # ╔═╡ 6589f632-2e09-4bc6-aa8e-30f6338d5729
 md"""
 ##### Cryptocurrency price data and other crypto information
+"""
+
+# ╔═╡ cabe68be-fad4-4a60-8234-546643c09770
+# what crypto currency are we interested in?
+crypto_ticker_symbol = "X:BTCUSD";
+
+# ╔═╡ feab4379-ce36-4a34-abf6-70a6a15dcfd2
+md"""
+##### Option price data
 """
 
 # ╔═╡ 8623a119-bf7f-4566-be78-9769c3a64042
@@ -123,6 +73,36 @@ md"""
 md"""
 ### References
 """
+
+# ╔═╡ bd0c9e41-fed0-46f9-bf2e-136a439692a2
+begin
+	
+	# # what date range do we want to look at? (max: 2 years on free account)
+	# Y = 2021 	# year
+	# M = 12 		# month
+	# D = 24 		# day
+
+	# # uncomment if we want to refresh the data -
+	# # current_date = now()
+	# # Y = year(current_date)
+	# # M = month(current_date)
+	# # D = day(current_date)
+
+	# # download data from the from -> to dates -
+	# from = Date(Y - 2, M, D)
+	# to = Date(Y,M,D)
+
+	# # where are going to store the data?
+	# dir_name = "daily-$(Y)-$(M)-$(D)"
+	# savepath = joinpath(_PATH_TO_DATA,"polygon", "stock", dir_name)
+
+	# # execute the call(s) to the data api
+	# # NOTE: if we already have data in the from -> to range, we load that from disk
+	# pd = download_ticker_data(psia_ticker_symbol_array, from, to; savepath);
+
+	# show -
+	nothing
+end
 
 # ╔═╡ 7ce9e2ec-a3a2-4b64-be6e-27618bd9f3f1
 function ingredients(path::String)
@@ -140,9 +120,169 @@ function ingredients(path::String)
 	m
 end
 
-# ╔═╡ f03fc7e7-3fa0-4b0a-af82-e1cafc1d9eeb
-# load the serenity library -
-Serenity = ingredients(joinpath(_PATH_TO_SRC, "Include.jl"));
+# ╔═╡ 1461bfa4-633e-11ec-0ee6-a590181dc91b
+begin
+	
+	# setup: we need to specify the paths where we can find our project resources
+    _PATH_TO_ROOT = pwd()
+    _PATH_TO_SRC = joinpath(_PATH_TO_ROOT, "src")
+    _PATH_TO_DATA = joinpath(_PATH_TO_ROOT, "data")
+    _PATH_TO_CONFIG = joinpath(_PATH_TO_ROOT, "configuration")
+
+    # what packages are we going to use?
+    using TOML
+	using PlutoUI
+	using HypothesisTests
+	using PrettyTables
+	using Colors
+	using StatsPlots
+	using Reexport
+	
+	# these packages are reexported by Serenity 
+	using DataFrames
+    using CSV
+    using HTTP
+    using Dates
+    using Statistics
+    using Distributions
+	using Optim
+	using Convex
+	using SCS
+	using MathOptInterface
+	using JSON
+	
+    # alias the Polygon.io URL -
+    DATASTORE_URL_STRING = "https://api.polygon.io/v2"
+
+    # What we have here is a classic good news, bad news situation ...
+    # Bad news: We don't check in our Polygon.io API key to GitHub (sorry). 
+    # Good news: Polygon.io API keys are free. 
+    # check out: https://polygon.io -
+    configuration_dictionary = TOML.parsefile(joinpath(_PATH_TO_CONFIG, "Configuration.toml"))
+
+    # get some stuff from the configuration dictionary -
+    POLYGON_API_KEY = configuration_dictionary["API"]["polygon_api_key"]
+
+	# load the local version of the serenity library -
+	Serenity = ingredients(joinpath(_PATH_TO_SRC, "Include.jl"));
+
+    # show -
+    nothing
+end
+
+# ╔═╡ 3e49d29f-c3d0-4824-9196-6030a73936df
+# -------------------------------------------------------------------------------------------- #
+# aggregates_api_endpoint(ticker_symbol::String) -> NamedTuple
+#
+# Downloads pricing data from the Polygon.io API for the Aggregate endpoint. Takes a string
+# corresponding the ticker symbol and downloads pricing data. The options for the API are 
+# hardcoded in this example, check out: https://polygon.io/docs/stocks/getting-started for
+# more information.
+#
+# Arguements
+# ticker_symbol::String String holding the ticker symbol that we are interested in
+# -------------------------------------------------------------------------------------------- #
+function aggregates_api_endpoint(ticker_symbol::String)::NamedTuple
+
+	# save the file locally to avoid the API limit -
+	savepath = joinpath(_PATH_TO_DATA,"polygon", "demo")
+	local_path_to_data_file = joinpath(savepath, "$(ticker_symbol).csv")
+	local_path_to_header_file = joinpath(savepath, "header", "$(ticker_symbol)-header.csv")
+
+	# do we have a saved file already?
+	if (ispath(local_path_to_data_file) == true && 	ispath(local_path_to_header_file) == true)
+	
+		# we already have this ticker downloaded. load the existing file from disk -
+        data_table = CSV.read(local_path_to_data_file, DataFrame)
+		header = CSV.read(local_path_to_header_file, Dict)
+
+        # put the price DataFrame into the price_data_dictionary -
+        return (header=header, data=data_table)
+		
+	else
+
+		# make the dir to save the data (if we don't have it already) -
+		mkpath(savepath)
+    	mkpath(joinpath(savepath,"header"))
+		
+		# Build an API model for the Aggregates endpoint -
+		# see: https://polygon.io/docs/stocks/getting-started
+		aggregates_api_model = Serenity.PolygonAggregatesEndpointModel()
+		aggregates_api_model.adjusted = true
+		aggregates_api_model.sortdirection = "asc"
+		aggregates_api_model.apikey = POLYGON_API_KEY
+		aggregates_api_model.limit = 5000
+		aggregates_api_model.to = Date(2021, 12, 24)
+		aggregates_api_model.from = Date(2019,12, 24)
+		aggregates_api_model.multiplier = 1
+		aggregates_api_model.timespan = "day"
+		aggregates_api_model.ticker = ticker_symbol
+
+		# execute the API call for these parameters -
+		(header,df) = Serenity.polygon(DATASTORE_URL_STRING, aggregates_api_model);
+
+		# save locally -
+		CSV.write(local_path_to_data_file, df)
+		CSV.write(local_path_to_header_file, header)
+			
+        # put the price DataFrame into the price_data_dictionary -
+        return (header=header, data=df)
+	end
+end
+
+# ╔═╡ 3bd81185-9277-4903-bc0b-b41f5e3e7685
+(header,data) = aggregates_api_endpoint(stock_ticker_symbol);
+
+# ╔═╡ e86e3aa9-1168-4475-9cf0-6c77602251e2
+data
+
+# ╔═╡ ecab77da-23d9-4125-8619-aa5bf39e3ddf
+(header_crypto,data_crypto) = aggregates_api_endpoint(crypto_ticker_symbol);
+
+# ╔═╡ feb87b95-c7c7-4bb3-925e-0b7600c89954
+begin
+	
+	# List of colors -
+	WHITE = RGB(1.0, 1.0, 1.0)
+	BACKGROUND = RGB(0.99, 0.98, 0.96)
+	BLUE = RGB(68 / 255, 119 / 255, 170 / 255)
+	LBLUE = RGB(102 / 255, 204 / 255, 238 / 255)
+	GRAY = RGB(187 / 255, 187 / 255, 187 / 255)
+	RED = RGB(238 / 255, 102 / 255, 119 / 255)
+
+	# show -
+	nothing
+end
+
+# ╔═╡ 3723c110-a44e-4edc-84e8-d8d2a181a090
+begin
+
+	# initialize -
+	N = length(pd["SPY"].data[!,:close]) 
+	𝒫 = length(psia_ticker_symbol_array)
+	state_table = Array{Float64,2}(undef,N,𝒫-1)
+	
+	for (ticker_index, ticker) ∈ enumerate(psia_ticker_symbol_array)
+
+		if (ticker != "MRNA")
+			# get value for this ticker -
+			data_array = pd[ticker].data
+			P₀ = data_array[1,:close]
+
+			for time_index ∈ 1:N
+				state_table[time_index,ticker_index] = (1/P₀)*data_array[time_index,:close]
+			end
+		end
+	end
+
+	# plot -
+	plot(state_table, legend=false, c=GRAY)
+
+	# plot SPY -
+	P_spy = pd["SPY"].data[1,:close]
+	P_spy_scaled = (1/P_spy)*pd["SPY"].data[!,:close]
+	plot!(P_spy_scaled,c=RED,lw=4)
+end
 
 # ╔═╡ f97cdf69-7604-49b9-a0da-d0622bf75a5f
 function download_ticker_data(psia_ticker_symbol_array::Array{String,1}, from::Date, to::Date; 
@@ -202,66 +342,6 @@ function download_ticker_data(psia_ticker_symbol_array::Array{String,1}, from::D
 	end
 
 	return price_data_dictionary
-end
-
-# ╔═╡ bd0c9e41-fed0-46f9-bf2e-136a439692a2
-begin
-	
-	# what date range do we want to look at? (max: 2 years on free account)
-	Y = 2021 	# year
-	M = 12 		# month
-	D = 24 		# day
-
-	# uncomment if we want to refresh the data -
-	# current_date = now()
-	# Y = year(current_date)
-	# M = month(current_date)
-	# D = day(current_date)
-
-	# download data from the from -> to dates -
-	from = Date(Y - 2, M, D)
-	to = Date(Y,M,D)
-
-	# where are going to store the data?
-	dir_name = "daily-$(Y)-$(M)-$(D)"
-	savepath = joinpath(_PATH_TO_DATA,"polygon", "stock", dir_name)
-
-	# execute the call(s) to the data api
-	# NOTE: if we already have data in the from -> to range, we load that from disk
-	pd = download_ticker_data(psia_ticker_symbol_array, from, to; savepath);
-
-	# show -
-	nothing
-end
-
-# ╔═╡ 3723c110-a44e-4edc-84e8-d8d2a181a090
-begin
-
-	# initialize -
-	N = length(pd["SPY"].data[!,:close]) 
-	𝒫 = length(psia_ticker_symbol_array)
-	state_table = Array{Float64,2}(undef,N,𝒫-1)
-	
-	for (ticker_index, ticker) ∈ enumerate(psia_ticker_symbol_array)
-
-		if (ticker != "MRNA")
-			# get value for this ticker -
-			data_array = pd[ticker].data
-			P₀ = data_array[1,:close]
-
-			for time_index ∈ 1:N
-				state_table[time_index,ticker_index] = (1/P₀)*data_array[time_index,:close]
-			end
-		end
-	end
-
-	# plot -
-	plot(state_table, legend=false, c=GRAY)
-
-	# plot SPY -
-	P_spy = pd["SPY"].data[1,:close]
-	P_spy_scaled = (1/P_spy)*pd["SPY"].data[!,:close]
-	plot!(P_spy_scaled,c=RED,lw=4)
 end
 
 # ╔═╡ b4100007-b259-4fe3-a88c-be88928fe423
@@ -341,6 +421,7 @@ MathOptInterface = "b8f27783-ece8-5eb3-8dc8-9495eed66fee"
 Optim = "429524aa-4258-5aef-a3af-852621145aeb"
 PlutoUI = "7f904dfe-b85e-4ff6-b463-dae2292396a8"
 PrettyTables = "08abe8d2-0d0c-5749-adfa-8a2ac140af0d"
+Reexport = "189a3867-3050-52da-a836-e630ba90ab69"
 SCS = "c946c3f1-0d1f-5ce8-9dea-7daa1f7e2d13"
 Statistics = "10745b16-79ce-11e8-11f9-7d13ad32a3b2"
 StatsPlots = "f3b207a7-027a-5e70-b257-86293d7955fd"
@@ -356,9 +437,10 @@ HTTP = "~0.9.17"
 HypothesisTests = "~0.10.6"
 JSON = "~0.21.2"
 MathOptInterface = "~0.10.6"
-Optim = "~1.5.0"
+Optim = "~1.6.0"
 PlutoUI = "~0.7.27"
 PrettyTables = "~1.3.1"
+Reexport = "~1.2.2"
 SCS = "~0.8.1"
 StatsPlots = "~0.14.30"
 """
@@ -1137,9 +1219,9 @@ version = "0.5.5+0"
 
 [[deps.Optim]]
 deps = ["Compat", "FillArrays", "ForwardDiff", "LineSearches", "LinearAlgebra", "NLSolversBase", "NaNMath", "Parameters", "PositiveFactorizations", "Printf", "SparseArrays", "StatsBase"]
-git-tree-sha1 = "35d435b512fbab1d1a29138b5229279925eba369"
+git-tree-sha1 = "916077e0f0f8966eb0dc98a5c39921fdb8f49eb4"
 uuid = "429524aa-4258-5aef-a3af-852621145aeb"
-version = "1.5.0"
+version = "1.6.0"
 
 [[deps.Opus_jll]]
 deps = ["Artifacts", "JLLWrappers", "Libdl", "Pkg"]
@@ -1727,18 +1809,23 @@ version = "0.9.1+5"
 
 # ╔═╡ Cell order:
 # ╟─201f572b-9e68-4d80-b823-be41243382fd
-# ╟─48cce16c-31bc-438c-bef9-eee2c13fb220
+# ╠═48cce16c-31bc-438c-bef9-eee2c13fb220
 # ╟─d3884c8d-bd00-4059-a751-f29b211e9ef6
 # ╟─4b4668f0-6894-4219-9de8-f2106fb70aca
 # ╠═1461bfa4-633e-11ec-0ee6-a590181dc91b
-# ╠═f03fc7e7-3fa0-4b0a-af82-e1cafc1d9eeb
-# ╠═f91bb8cd-fe80-4f47-99cb-e5cc408b0785
 # ╟─6c3e5618-c689-4941-b540-e27734ee096b
 # ╟─572cb255-04a5-402b-a10f-85f6a1a23f39
-# ╟─feab4379-ce36-4a34-abf6-70a6a15dcfd2
+# ╠═a36d7f10-02f3-473b-9977-2e82f432f27b
+# ╠═3bd81185-9277-4903-bc0b-b41f5e3e7685
+# ╠═e86e3aa9-1168-4475-9cf0-6c77602251e2
 # ╟─6589f632-2e09-4bc6-aa8e-30f6338d5729
+# ╠═cabe68be-fad4-4a60-8234-546643c09770
+# ╠═ecab77da-23d9-4125-8619-aa5bf39e3ddf
+# ╠═3e49d29f-c3d0-4824-9196-6030a73936df
+# ╟─feab4379-ce36-4a34-abf6-70a6a15dcfd2
 # ╟─8623a119-bf7f-4566-be78-9769c3a64042
 # ╟─77473f9a-e5fd-41e6-89d4-acffcba38f45
+# ╠═feb87b95-c7c7-4bb3-925e-0b7600c89954
 # ╠═bd0c9e41-fed0-46f9-bf2e-136a439692a2
 # ╠═3723c110-a44e-4edc-84e8-d8d2a181a090
 # ╠═f97cdf69-7604-49b9-a0da-d0622bf75a5f

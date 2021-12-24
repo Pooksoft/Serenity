@@ -96,7 +96,7 @@ function execute_polygon_aggregates_api_call(base::String, ticker::String, multi
 end
 
 function polygon(base::String, model::PolygonAggregatesEndpointModel; 
-    handler::Function)
+    handler::Function = process_aggregates_polygon_call_response)
 
     # build the url string -
     complete_url_string = build(base, model)
@@ -105,5 +105,5 @@ function polygon(base::String, model::PolygonAggregatesEndpointModel;
     result_string = http_get_call_with_url(complete_url_string) |> check
 
     # process and return -
-    return (result_string |> process_aggregates_polygon_call_response)
+    return (result_string |> handler)
 end

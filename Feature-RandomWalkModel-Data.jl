@@ -79,30 +79,21 @@ ticker_symbol_array = sort(["MSFT", "ALLY", "MET", "AAPL", "GM", "PFE", "TGT", "
 
 # ╔═╡ 61ab2949-d72f-4d80-a717-4b6a9227de0e
 md"""
-##### Estimate the growth rate distributions from historical data
+##### Estimate the daily return distributions from historical data assuming a continuous compounding model
 
 To estimate a model for the return $\mathcal{D}\left(\bar{m},\sigma\right)$, we first compute the historical return for a ticker. 
-The [Serenity library](https://github.com/Pooksoft/Serenity.git) provides a method to compute the [log return](https://en.wikipedia.org/wiki/Rate_of_return) from historical data (contained in a DataFrame):
-
-	compute_log_return_array(data::DataFrame,map::Pair{Symbol,Symbol}; Δt::Float64 = 1.0) -> DataFrame
-
-	Computes μ of historical price data. 
-	
-	Arguments:
-	data  	DataFrame that holds historical price data where each row is a record
-	map 	Different APIs return data with different field names. The map arg connects the time and price fields
-	Δt 		Time step size. Default is 1.0 in the units you want the μ to be calculated in
+The [Serenity library](https://github.com/Pooksoft/Serenity.git) provides a method to compute the [log return](https://en.wikipedia.org/wiki/Rate_of_return) from historical data (contained in a DataFrame).
 """
 
 # ╔═╡ a39b90ec-a4c5-472f-b00e-c81ee9c5576f
 md"""
-__Fig. 1__: Histogram of the adjusted daily returns computed using the `stephist` routine of the [StatsPlots.jl](https://github.com/JuliaPlots/StatsPlots.jl) package for the 𝒫 = 40 ticker symbols in the PSIA. The number of bins was set to be 10% of the number of historical records for `AAPL` (shown in red) and was constant for each ticker. The returns were calculated using approximately 10 to 20 years of historical daily adjusted close price data (depending upon the ticker symbol) 
-downloaded from using [Alphavantage.co](https://www.alphavantage.co) application programming interface. 
+__Fig. 1__: Histogram of the adjusted daily returns computed using the `stephist` routine of the [StatsPlots.jl](https://github.com/JuliaPlots/StatsPlots.jl) package for the 𝒫 = 40 ticker symbols in the PSIA. The number of bins was set to be 20% of the number of historical records for `AAPL` (shown in red) and was constant for each ticker. The returns were calculated using approximately two years of historical daily adjusted close price data (depending upon the ticker symbol). 
+Close price data was downloaded from the [Polygon.io](https://www.polygon.io) data warehouse. 
 """
 
 # ╔═╡ edfbf364-e126-4e95-93d2-a6adfb340045
 md"""
-###### The daily return of individual ticker symbols is not normally distributed
+##### The daily return of individual ticker symbols was not normally distributed
 
 A key assumption often made in mathematical finance is that the growth rate $\mu_{j\rightarrow{j+1}}$ (return) computed using the log of the prices is normally distributed. However, a closer examination of the $\mu_{j\rightarrow{j+1}}$ values computed from historical data suggests this is not true (Fig. 2). Visual inspection of the histograms computed using a [Laplace distribution](https://en.wikipedia.org/wiki/Laplace_distribution) (Fig 2, dark blue) for the returns appear to be closer to the historical data (Fig 2, red) compared to a [Normal distribution](https://en.wikipedia.org/wiki/Normal_distribution) (Fig 2, light blue). 
 """
@@ -118,7 +109,7 @@ __Fig 2__: Comparison of the actual (red line) and estimated histogram for the a
 
 # ╔═╡ 1d72b291-24b7-4ec6-8307-1da0bc4a9183
 md"""
-To further explore the question of a Normal versus Laplace return distribution, we constructed [QQplots](https://en.wikipedia.org/wiki/Q–Q_plot) to visualize the historical return data versus a Laplace distribution (Fig. 3), and performed the [Kolmogorov–Smirnov (KS) test](https://en.wikipedia.org/wiki/Kolmogorov–Smirnov_test), using the KS test implementation in the [HypothesisTests.jl](https://juliastats.org/HypothesisTests.jl/latest/nonparametric/#Kolmogorov-Smirnov-test-1) package, to test whether the historical return data were Normally or Laplace distributed (Table 1). 
+We further explored the question of a Normal versus Laplace return distribution, by constructing [QQplots](https://en.wikipedia.org/wiki/Q–Q_plot) to visualize the historical return data versus a Laplace distribution (Fig. 3), and performed the [Kolmogorov–Smirnov (KS) test](https://en.wikipedia.org/wiki/Kolmogorov–Smirnov_test), using the KS test implementation in the [HypothesisTests.jl](https://juliastats.org/HypothesisTests.jl/latest/nonparametric/#Kolmogorov-Smirnov-test-1) package, to test whether the historical return data were Normally or Laplace distributed (Table 1). 
 """
 
 # ╔═╡ 1867ecec-3c3d-4b2b-9036-1488e2184c40
@@ -128,7 +119,7 @@ __Fig 3__: Quantile-Quantile plot (QQplot) for historical $(single_asset_ticker_
 
 # ╔═╡ 379373b1-e563-4341-9978-5b35c768b5c7
 md"""
-__Table 1__: [Kolmogorov–Smirnov (KS)](https://en.wikipedia.org/wiki/Kolmogorov–Smirnov_test) test results for Normal and Laplace distribution for stocks in the PSIA (𝒫 = 40). The historical return values for 39 of the 40 members of the PSIA were governed by a Laplace distribution; MRNA failed the KS test for a Laplace distribution, and was estimated to be Normally distributed.  
+__Table 1__: [Kolmogorov–Smirnov (KS)](https://en.wikipedia.org/wiki/Kolmogorov–Smirnov_test) test results for Normal and Laplace distribution for PSIA tickers (𝒫 = 40). The historical return values for 39 of the 40 members of the PSIA were governed by a Laplace distribution; MRNA failed the KS test for a Laplace distribution, and was estimated to be Normally distributed.  
 """
 
 # ╔═╡ 10fa507e-1429-4eb0-b74c-1e6638725690
@@ -2056,19 +2047,19 @@ version = "0.9.1+5"
 # ╟─61ab2949-d72f-4d80-a717-4b6a9227de0e
 # ╠═34b06415-21c1-4904-97f0-ab614447355c
 # ╟─a39b90ec-a4c5-472f-b00e-c81ee9c5576f
-# ╠═cbbd8670-49ab-4601-b8d7-9f3f456752e8
+# ╟─cbbd8670-49ab-4601-b8d7-9f3f456752e8
 # ╟─edfbf364-e126-4e95-93d2-a6adfb340045
 # ╠═a786ca10-06d2-4b76-97a9-2bcf879ea6cb
 # ╟─a3d29aa3-96ca-4681-960c-3b4b04b1e40d
 # ╟─6bf06c12-cf25-43c4-81f3-b1d79d13fc94
-# ╟─1d72b291-24b7-4ec6-8307-1da0bc4a9183
+# ╠═1d72b291-24b7-4ec6-8307-1da0bc4a9183
 # ╟─1867ecec-3c3d-4b2b-9036-1488e2184c40
 # ╟─0e09d312-2ddf-4d1f-8ad5-a50fb48ca4dd
 # ╟─f0ee3633-1d28-4344-9b85-f5433679582a
 # ╟─379373b1-e563-4341-9978-5b35c768b5c7
 # ╟─8b2725a2-8007-46b8-a160-75042562794d
 # ╟─10fa507e-1429-4eb0-b74c-1e6638725690
-# ╟─5a3500c2-4f82-43e9-a31b-d530f56fdbe9
+# ╠═5a3500c2-4f82-43e9-a31b-d530f56fdbe9
 # ╟─a1e1d5f8-e06e-4682-ab54-a9454a8e3b30
 # ╟─e36979d5-c1b6-4c17-a65a-d8de8e6bd8d0
 # ╟─aeafe1ed-f217-48fd-9624-add5f6f791e6

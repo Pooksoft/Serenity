@@ -480,7 +480,7 @@ __Fig 5__: In sample random walk simulation (N = $(number_of_sample_paths) sampl
 begin
 
 	# initialize -
-	serial_autocorrelation_array =  Array{Float64,2}(undef,𝒫,𝒯-1)
+	serial_autocorrelation_array =  Array{Float64,2}(undef,𝒫,𝒯)
 
 	for (ticker_index, ticker_symbol) ∈ enumerate(ticker_symbol_array)
 
@@ -501,7 +501,7 @@ begin
 end
 
 # ╔═╡ 9ef73762-8af6-4976-b864-4cef8e9ab2a9
-sum(serial_autocorrelation_array,dims=2)
+mean(serial_autocorrelation_array,dims=2)
 
 # ╔═╡ aeafe1ed-f217-48fd-9624-add5f6f791e6
 begin

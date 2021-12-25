@@ -77,6 +77,9 @@ ticker_symbol_array = sort(["MSFT", "ALLY", "MET", "AAPL", "GM", "PFE", "TGT", "
     "SPYD", "SPYG", "SPYV", "SPYX", "VOO", "VTI", "VEA", "VWO", "VNQ", "VGK", "MRNA"
 ]);
 
+# ╔═╡ 866cc84d-86c1-40e2-bd29-deae01da9a2e
+𝒫 = length(ticker_symbol_array);
+
 # ╔═╡ 61ab2949-d72f-4d80-a717-4b6a9227de0e
 md"""
 ##### Estimate the daily return distributions from historical data assuming a continuous compounding model
@@ -129,6 +132,11 @@ md"""
 A basic explain of Monte Carlo simulations goes here
 """
 
+# ╔═╡ 4d3357c4-0a43-4ea9-a479-99a30c6468be
+md"""
+##### Serial autocorrelation test 
+"""
+
 # ╔═╡ 7927aec8-83c0-4d7c-9639-69d4b6f1a807
 
 
@@ -171,6 +179,7 @@ begin
 	using PrettyTables
 	using Colors
 	using StatsPlots
+	using StatsBase
 	using Reexport
 	
 	# these packages are reexported by Serenity 
@@ -431,20 +440,20 @@ end
 begin
     
 	# how many steps, sample paths etc -
-    number_of_days = 14
+    𝒯 = 14 # number of days 
     number_of_sample_paths = 25000
 	monte_carlo_simulation_dictionary = Dict{String,Array{Float64,2}}()
 
 	for ticker_symbol ∈ ticker_symbol_array
 
 		# what is the *actual* price data?
-    	actual_price_data = price_data_dictionary[ticker_symbol][end-number_of_days:end, :close]
+    	actual_price_data = price_data_dictionary[ticker_symbol][end-𝒯:end, :close]
 
     	# get initial price -
     	initial_price_value = log(actual_price_data[1])
 
     	# compute a set of possible trajectories -> convert back to actual price -
-    	monte_carlo_simulation_dictionary[ticker_symbol] = LAPLACE(initial_price_value, number_of_days;
+    	monte_carlo_simulation_dictionary[ticker_symbol] = LAPLACE(initial_price_value, 𝒯;
         		number_of_sample_paths = number_of_sample_paths) .|> exp
 	end
     
@@ -454,18 +463,45 @@ end
 
 # ╔═╡ a1e1d5f8-e06e-4682-ab54-a9454a8e3b30
 md"""
-__Fig 4__: In sample random walk simulation of ticker = $(single_asset_ticker_symbol) for a 𝒯 = $(number_of_days) day prediction horizon. Blue lines denotes simulated sample paths while the red line denotes the actual price trajectory for ticker $(single_asset_ticker_symbol). The simulation consisted of N = $(number_of_sample_paths) sample paths.
+__Fig 4__: In sample random walk simulation of ticker = $(single_asset_ticker_symbol) for a 𝒯 = $(𝒯) day prediction horizon. Blue lines denotes simulated sample paths while the red line denotes the actual price trajectory for ticker $(single_asset_ticker_symbol). The simulation consisted of N = $(number_of_sample_paths) sample paths.
 """
 
 # ╔═╡ b547311c-ddf0-4053-9de4-f0e85b861e63
 md"""
-__Table 2__: Comparison of the actual close price versus the Monte Carlo simulated close price for a 𝒯 = $(number_of_days) day prediction horizon for each ticker in the PSIA (𝒫 = 40). Each ticker was classified into class c ∈ {-1,0,1} where: +1 HIGH, 0 INSIDE, or -1 LOW. The classification was based upon whether the actual close price Pₐ ∈ Pₑ ± σ, where Pₐ denotes the actual close price (units: USD/share), Pₑ denotes the mean simulated close price (units: USD/share), and σ denotes the standard deviation of the simulated close price (units: USD/share) computed over the family Monte Carlo trajectories (N = $(number_of_sample_paths)).
+__Table 2__: Comparison of the actual close price versus the Monte Carlo simulated close price for a 𝒯 = $(𝒯) day prediction horizon for each ticker in the PSIA (𝒫 = 40). Each ticker was classified into class c ∈ {-1,0,1} where: +1 HIGH, 0 INSIDE, or -1 LOW. The classification was based upon whether the actual close price Pₐ ∈ Pₑ ± σ, where Pₐ denotes the actual close price (units: USD/share), Pₑ denotes the mean simulated close price (units: USD/share), and σ denotes the standard deviation of the simulated close price (units: USD/share) computed over the family Monte Carlo trajectories (N = $(number_of_sample_paths)).
 """
 
 # ╔═╡ 849f69b0-07af-40ab-8295-c0b80a26a2d5
 md"""
-__Fig 5__: In sample random walk simulation (N = $(number_of_sample_paths) sample paths) of ticker $(single_asset_ticker_symbol) for T = $(number_of_days) days. Gray lines denotes simulated sample paths. Red line denotes actual price trajectory for ticker $(single_asset_ticker_symbol).
+__Fig 5__: In sample random walk simulation (N = $(number_of_sample_paths) sample paths) of ticker $(single_asset_ticker_symbol) for T = $(𝒯) days. Gray lines denotes simulated sample paths. Red line denotes actual price trajectory for ticker $(single_asset_ticker_symbol).
 """
+
+# ╔═╡ 9e226d34-9ea9-45af-b54f-b12854fb571c
+begin
+
+	# initialize -
+	serial_autocorrelation_array =  Array{Float64,2}(undef,𝒫,𝒯-1)
+
+	for (ticker_index, ticker_symbol) ∈ enumerate(ticker_symbol_array)
+
+		# get the return -
+		μ_vector = return_data_dictionary[ticker_symbol][!,:μ]
+
+		# what is the lag?
+		L = (1:𝒯-1) |> collect
+
+		# compute the auto correlation function -
+		acf_v = autocor(μ_vector,L)
+
+		# package -
+		for (index,value) ∈ enumerate(acf_v)
+			serial_autocorrelation_array[ticker_index,index] = acf_v[index]
+		end
+	end
+end
+
+# ╔═╡ 9ef73762-8af6-4976-b864-4cef8e9ab2a9
+sum(serial_autocorrelation_array,dims=2)
 
 # ╔═╡ aeafe1ed-f217-48fd-9624-add5f6f791e6
 begin
@@ -476,7 +512,7 @@ begin
 	simulated_price_trajectory = monte_carlo_simulation_dictionary[single_asset_ticker_symbol]
 	
 	# what is the *actual* price data?
-    actual_price_data = price_data_dictionary[single_asset_ticker_symbol][end-number_of_days:end, :close]
+    actual_price_data = price_data_dictionary[single_asset_ticker_symbol][end-𝒯:end, :close]
 	
     # plot -
     plot(simulated_price_trajectory[:, plot_index_array], c = LBLUE, legend = false, label = "", lw = 1,
@@ -534,7 +570,7 @@ begin
 		simulated_price_trajectory = monte_carlo_simulation_dictionary[ticker_symbol]
 		estimated_mean_price = round(mean(simulated_price_trajectory[end, :]), sigdigits = 4)
     	std_estimated_price = round(std(simulated_price_trajectory[end, :]), sigdigits = 4)
-		actual_price_data = price_data_dictionary[ticker_symbol][end-number_of_days:end, :close]
+		actual_price_data = price_data_dictionary[ticker_symbol][end-𝒯:end, :close]
     	price_actual = actual_price_data[end]
 		tmp_LB = estimated_mean_price - 1*std_estimated_price
         tmp_UB = estimated_mean_price + 1*std_estimated_price
@@ -652,6 +688,7 @@ PrettyTables = "08abe8d2-0d0c-5749-adfa-8a2ac140af0d"
 Reexport = "189a3867-3050-52da-a836-e630ba90ab69"
 SCS = "c946c3f1-0d1f-5ce8-9dea-7daa1f7e2d13"
 Statistics = "10745b16-79ce-11e8-11f9-7d13ad32a3b2"
+StatsBase = "2913bbd2-ae8a-5f71-8c99-4fb6c76f3a91"
 StatsPlots = "f3b207a7-027a-5e70-b257-86293d7955fd"
 TOML = "fa267f1f-6049-4f14-aa54-33bafae1ed76"
 
@@ -670,6 +707,7 @@ PlutoUI = "~0.7.27"
 PrettyTables = "~1.3.1"
 Reexport = "~1.2.2"
 SCS = "~0.8.1"
+StatsBase = "~0.33.13"
 StatsPlots = "~0.14.30"
 """
 
@@ -2043,6 +2081,7 @@ version = "0.9.1+5"
 # ╠═fe2848df-823a-4ed0-918c-2c200957ee80
 # ╟─f66a480b-3f0c-4ebf-a8b8-e0f91dff851d
 # ╠═54efa70c-bac6-4d7c-93df-0dfd1b89769d
+# ╠═866cc84d-86c1-40e2-bd29-deae01da9a2e
 # ╠═5c5d5eeb-6775-452f-880d-7b4fa2acda57
 # ╟─61ab2949-d72f-4d80-a717-4b6a9227de0e
 # ╠═34b06415-21c1-4904-97f0-ab614447355c
@@ -2052,7 +2091,7 @@ version = "0.9.1+5"
 # ╠═a786ca10-06d2-4b76-97a9-2bcf879ea6cb
 # ╟─a3d29aa3-96ca-4681-960c-3b4b04b1e40d
 # ╟─6bf06c12-cf25-43c4-81f3-b1d79d13fc94
-# ╠═1d72b291-24b7-4ec6-8307-1da0bc4a9183
+# ╟─1d72b291-24b7-4ec6-8307-1da0bc4a9183
 # ╟─1867ecec-3c3d-4b2b-9036-1488e2184c40
 # ╟─0e09d312-2ddf-4d1f-8ad5-a50fb48ca4dd
 # ╟─f0ee3633-1d28-4344-9b85-f5433679582a
@@ -2062,10 +2101,13 @@ version = "0.9.1+5"
 # ╠═5a3500c2-4f82-43e9-a31b-d530f56fdbe9
 # ╟─a1e1d5f8-e06e-4682-ab54-a9454a8e3b30
 # ╟─e36979d5-c1b6-4c17-a65a-d8de8e6bd8d0
-# ╟─aeafe1ed-f217-48fd-9624-add5f6f791e6
+# ╠═aeafe1ed-f217-48fd-9624-add5f6f791e6
 # ╟─b547311c-ddf0-4053-9de4-f0e85b861e63
 # ╟─2ed2f3c3-619b-4aed-b88b-b92a43578d84
 # ╟─849f69b0-07af-40ab-8295-c0b80a26a2d5
+# ╠═4d3357c4-0a43-4ea9-a479-99a30c6468be
+# ╠═9e226d34-9ea9-45af-b54f-b12854fb571c
+# ╠═9ef73762-8af6-4976-b864-4cef8e9ab2a9
 # ╟─36372d31-215d-4299-b4f1-49e42d8b0dbd
 # ╠═7927aec8-83c0-4d7c-9639-69d4b6f1a807
 # ╟─c32725a4-e276-4372-8d06-d40ba52c9f09

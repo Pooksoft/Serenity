@@ -11,6 +11,7 @@ using Reexport
 @reexport using SCS
 @reexport using JSON
 @reexport using MathOptInterface
+@reexport using StatsBase
 
 # load my codes -
 include("Types.jl")

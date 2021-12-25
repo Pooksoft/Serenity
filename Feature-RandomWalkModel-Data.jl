@@ -1,5 +1,5 @@
 ### A Pluto.jl notebook ###
-# v0.17.3
+# v0.17.4
 
 using Markdown
 using InteractiveUtils
@@ -12,59 +12,6 @@ macro bind(def, element)
         global $(esc(def)) = Core.applicable(Base.get, el) ? Base.get(el) : iv(el)
         el
     end
-end
-
-# ╔═╡ f9e5092b-a158-48cb-a919-96f30ec51038
-begin
-
-    # setup: we need to specify the paths where we can find our project resources
-    _PATH_TO_ROOT = pwd()
-    _PATH_TO_SRC = joinpath(_PATH_TO_ROOT, "src")
-    _PATH_TO_DATA = joinpath(_PATH_TO_ROOT, "data")
-    _PATH_TO_CONFIG = joinpath(_PATH_TO_ROOT, "configuration")
-
-    # what packages are we going to use?
-    using DataFrames
-    using CSV
-    using HTTP
-    using TOML
-    using ProgressMeter
-    using Dates
-    using StatsPlots
-    using Statistics
-    using Distributions
-    using PlutoUI
-    using PlotThemes
-	using HypothesisTests
-	using PrettyTables
-	
-    theme(:default)
-
-    # load my lib of code -
-    include(joinpath(_PATH_TO_SRC, "Include.jl"))
-
-    # alias the AlphaVantage URL -
-    DATASTORE_URL_STRING = "https://www.alphavantage.co/query?"
-
-    # What we have here is a classic good news, bad news situation ...
-    # Bad news: We don't check in our AlphaVantage API key to GitHub (sorry). 
-    # Good news: AlphaVantage API keys are free. 
-    # check out: https://www.alphavantage.co/support/#api-key
-    configuration_dictionary = TOML.parsefile(joinpath(_PATH_TO_CONFIG, "Configuration.toml"))
-
-    # get some stuff from the configuration dictionary -
-    ALPHAVANTAGE_API_KEY = configuration_dictionary["API"]["alphavantage_api_key"]
-
-    # background color plots -
-    background_color_outside = RGB(1.0, 1.0, 1.0)
-    background_color = RGB(0.99, 0.98, 0.96)
-    CB_BLUE = RGB(68 / 255, 119 / 255, 170 / 255)
-    CB_LBLUE = RGB(102 / 255, 204 / 255, 238 / 255)
-    CB_GRAY = RGB(187 / 255, 187 / 255, 187 / 255)
-    CB_RED = RGB(238 / 255, 102 / 255, 119 / 255)
-
-    # show -
-    nothing
 end
 
 # ╔═╡ 2bb52ee4-1c6f-46b6-b105-86827ada0f75
@@ -114,11 +61,12 @@ md"""
 
 # ╔═╡ f66a480b-3f0c-4ebf-a8b8-e0f91dff851d
 md"""
-##### Download historical price data from the [Alphavantage.co](https://www.alphavantage.co) financial data application programming interface (API)
+##### Download historical price data from the [Polygon.io](https://www.polygon.io) financial data warehouse
 We specify a list of ticker symbols that we want to model. Next, we check to see if we have price data already saved locally for each ticker. 
 * If yes, then we load the saved file as a [DataFrame](https://dataframes.juliadata.org/stable/) and store it in the `price_data_dictionary` where the keys are the ticker strings e.g., MSFT, etc. 
-* if no, we download new data from [Alphavantage.co](https://www.alphavantage.co), save this data locally as a `CSV` file (<ticker>.csv), and finally we store the price data as a DataFrame in the `price_data_dictionary` where the keys are the ticker symbols.
-The parameters for the [Alphavantage.co](https://www.alphavantage.co) API call are stored in the `query_parameters` dictionary. For estimating a SIM, we use the daily close price for the last 100 trading days for each ticker. 
+* if no, we download new data from [Polygon.io](https://www.polygon.io), save this data locally as a `CSV` file (<ticker>.csv), and finally we store the price data as a DataFrame in the `price_data_dictionary` where the keys are the ticker symbols.
+
+The parameters for the [Polygon.io](https://www.polygon.io) API call are encoded in endpoint-specific structs in the [Serenity library](https://github.com/Pooksoft/Serenity). For estimating a SIM, we use the daily close price for the last 100 trading days for each ticker. 
 """
 
 # ╔═╡ 54efa70c-bac6-4d7c-93df-0dfd1b89769d
@@ -161,7 +109,7 @@ A key assumption often made in mathematical finance is that the growth rate $\mu
 
 # ╔═╡ a786ca10-06d2-4b76-97a9-2bcf879ea6cb
 # fit a distribution to a ticker -
-single_asset_ticker_symbol = "GS";
+single_asset_ticker_symbol = "MRNA";
 
 # ╔═╡ a3d29aa3-96ca-4681-960c-3b4b04b1e40d
 md"""
@@ -180,7 +128,7 @@ __Fig 3__: Quantile-Quantile plot (QQplot) for historical $(single_asset_ticker_
 
 # ╔═╡ 379373b1-e563-4341-9978-5b35c768b5c7
 md"""
-__Table 1__: [Kolmogorov–Smirnov (KS)](https://en.wikipedia.org/wiki/Kolmogorov–Smirnov_test) test results for Normal and Laplace distribution for stocks in the PSIA (𝒫 = 40). The historical return values for all tickers in PSIA were not Normally distributed. However, the returns for 23 of the 40 members of the PSIA were governed by a Laplace distribution. On the other hand, 17 tickers failed the KS test. Thus, the returns for these tickers were not governed by a Normal or Laplace distributions.   
+__Table 1__: [Kolmogorov–Smirnov (KS)](https://en.wikipedia.org/wiki/Kolmogorov–Smirnov_test) test results for Normal and Laplace distribution for stocks in the PSIA (𝒫 = 40). The historical return values for 39 of the 40 members of the PSIA were governed by a Laplace distribution; MRNA failed the KS test for a Laplace distribution, and was estimated to be Normally distributed.  
 """
 
 # ╔═╡ 10fa507e-1429-4eb0-b74c-1e6638725690
@@ -190,10 +138,8 @@ md"""
 A basic explain of Monte Carlo simulations goes here
 """
 
-# ╔═╡ e36979d5-c1b6-4c17-a65a-d8de8e6bd8d0
-md"""
-Show actual price trajectory? $(@bind show_real_traj CheckBox()) 
-"""
+# ╔═╡ 7927aec8-83c0-4d7c-9639-69d4b6f1a807
+
 
 # ╔═╡ c32725a4-e276-4372-8d06-d40ba52c9f09
 md"""
@@ -203,74 +149,166 @@ md"""
 """
 
 # ╔═╡ f1a71f47-fb19-4988-a439-2ff8d38be5b7
+function ingredients(path::String)
+	
+	# this is from the Julia source code (evalfile in base/loading.jl)
+	# but with the modification that it returns the module instead of the last object
+	name = Symbol("Serenity")
+	m = Module(name)
+	Core.eval(m,
+        Expr(:toplevel,
+             :(eval(x) = $(Expr(:core, :eval))($name, x)),
+             :(include(x) = $(Expr(:top, :include))($name, x)),
+             :(include(mapexpr::Function, x) = $(Expr(:top, :include))(mapexpr, $name, x)),
+             :(include($path))))
+	m
+end
 
+# ╔═╡ fe2848df-823a-4ed0-918c-2c200957ee80
+begin
+	
+	# setup: we need to specify the paths where we can find our project resources
+    _PATH_TO_ROOT = pwd()
+    _PATH_TO_SRC = joinpath(_PATH_TO_ROOT, "src")
+    _PATH_TO_DATA = joinpath(_PATH_TO_ROOT, "data")
+    _PATH_TO_CONFIG = joinpath(_PATH_TO_ROOT, "configuration")
 
-# ╔═╡ a6c4e663-f1e3-4e0c-a8bf-7c13fcb076f0
-function download_ticker_data(ticker_symbol_array::Array{String,1})::Dict{String,DataFrame}
+    # what packages are we going to use?
+    using TOML
+	using PlutoUI
+	using HypothesisTests
+	using PrettyTables
+	using Colors
+	using StatsPlots
+	using Reexport
+	
+	# these packages are reexported by Serenity 
+	using DataFrames
+    using CSV
+    using HTTP
+    using Dates
+    using Statistics
+    using Distributions
+	using Optim
+	using Convex
+	using SCS
+	using MathOptInterface
+	using JSON
+	using Colors
+	
+    # alias the Polygon.io URL -
+    DATASTORE_URL_STRING = "https://api.polygon.io"
 
-    # initialize some storage -
-    price_data_dictionary = Dict{String,DataFrame}() # Dict key => value where key = ticker symbol and value = price DataFrame
+    # What we have here is a classic good news, bad news situation ...
+    # Bad news: We don't check in our Polygon.io API key to GitHub (sorry). 
+    # Good news: Polygon.io API keys are free. 
+    # check out: https://polygon.io -
+    configuration_dictionary = TOML.parsefile(joinpath(_PATH_TO_CONFIG, "Configuration.toml"))
 
-    # setup: specify the query parameters for the call to Alphavantage -
-    # check out the API documentation: https://www.alphavantage.co/documentation/
-    query_parameters = Dict{String,String}()
-    query_parameters["function"] = "TIME_SERIES_DAILY_ADJUSTED" # get the daily close price adjusted
-    query_parameters["apikey"] = ALPHAVANTAGE_API_KEY # your alphavantage API key goes here (see setup/config block below)
-    query_parameters["datatype"] = "csv" # download in CSV (the other option is JSON) format
-    query_parameters["outputsize"] = "full" # compact -vs- full: last 100 trading days -vs- up to 20 years of data
+    # get some stuff from the configuration dictionary -
+    POLYGON_API_KEY = configuration_dictionary["API"]["polygon_api_key"]
 
-    # data type: sub dir where we save the data
-    data_type_flag = "daily"
-    training_prediction_flag = "training"
-
-    # main download loop -
-    for ticker_symbol in ticker_symbol_array
-
-        # check -> have we downloaded this data already?
-        data_file_path = joinpath(_PATH_TO_DATA, "$(training_prediction_flag)", "$(data_type_flag)",
-            "$(ticker_symbol).csv")
-        if (ispath(data_file_path) == false || does_data_file_exist(data_file_path) == false)
-
-            # let use know what is going on ...
-            with_terminal() do
-                println("Starting $(ticker_symbol) download ...")
-            end
-
-            # We do NOT have this data file -> download from Alphavantage.co
-            # execute API call -> check to see if error -> turn into DataFrame
-            query_parameters["symbol"] = ticker_symbol
-            url_string = build_url_query_string(DATASTORE_URL_STRING, query_parameters)
-            data_table = http_get_call_with_url(url_string) |> check |> process_csv_api_data
-
-            # sleep -
-            sleep(10) # to avoid issue w/API limits
-
-            # make the dir to save the data (if we don't have it already) -
-            mkpath(joinpath(_PATH_TO_DATA, "$(training_prediction_flag)", "$(data_type_flag)"))
-
-            # dump data table to disk -
-            CSV.write(data_file_path, data_table)
-
-            # put the price DataFrame into the price_data_dictionary -
-            price_data_dictionary[ticker_symbol] = data_table
-
-        else
-
-            # we already have this ticker downloaded. load the existing file from disk -
-            data_table = CSV.read(data_file_path, DataFrame)
-
-            # put the price DataFrame into the price_data_dictionary -
-            price_data_dictionary[ticker_symbol] = data_table
-        end
-    end
+	# load the local version of the serenity library -
+	Serenity = ingredients(joinpath(_PATH_TO_SRC, "Include.jl"));
 
     # show -
-    return price_data_dictionary
+    nothing
+end
+
+# ╔═╡ e36979d5-c1b6-4c17-a65a-d8de8e6bd8d0
+md"""
+Show actual price trajectory? $(@bind show_real_traj CheckBox()) 
+"""
+
+# ╔═╡ b04cba56-dd48-403b-82fc-1cf3713853a7
+begin
+
+	# List of colors -
+	WHITE = RGB(1.0, 1.0, 1.0)
+	BACKGROUND = RGB(0.99, 0.98, 0.96)
+	BLUE = RGB(68 / 255, 119 / 255, 170 / 255)
+	LBLUE = RGB(102 / 255, 204 / 255, 238 / 255)
+	GRAY = RGB(187 / 255, 187 / 255, 187 / 255)
+	RED = RGB(238 / 255, 102 / 255, 119 / 255)
+
+	# show -
+	nothing
+end
+
+# ╔═╡ 91dae79f-e454-4b27-84a7-4cbc6bc33265
+function aggregates_api_endpoint(ticker_symbol::String; sleeptime::Float64 = 20.0)::NamedTuple
+
+	# save the file locally to avoid the API limit -
+	savepath = joinpath(_PATH_TO_DATA,"polygon", "random_walk_model", "aggregates")
+	local_path_to_data_file = joinpath(savepath, "$(ticker_symbol).csv")
+	local_path_to_header_file = joinpath(savepath, "header", "$(ticker_symbol)-header.csv")
+
+	# do we have a saved file already?
+	if (ispath(local_path_to_data_file) == true && 	ispath(local_path_to_header_file) == true)
+	
+		# we already have this ticker downloaded. load the existing file from disk -
+        data_table = CSV.read(local_path_to_data_file, DataFrame)
+		header = CSV.read(local_path_to_header_file, Dict)
+
+        # put the price DataFrame into the price_data_dictionary -
+        return (header=header, data=data_table)
+		
+	else
+
+		# make the dir to save the data (if we don't have it already) -
+		mkpath(savepath)
+    	mkpath(joinpath(savepath,"header"))
+		
+		# Build an API model for the aggregates endpoint -
+		# see: https://polygon.io/docs/stocks/getting-started
+		aggregates_api_model = Serenity.PolygonAggregatesEndpointModel()
+		aggregates_api_model.adjusted = true
+		aggregates_api_model.sortdirection = "asc"
+		aggregates_api_model.apikey = POLYGON_API_KEY
+		aggregates_api_model.limit = 5000
+		aggregates_api_model.to = Date(2021, 12, 24)
+		aggregates_api_model.from = Date(2019,12, 24)
+		aggregates_api_model.multiplier = 1
+		aggregates_api_model.timespan = "day"
+		aggregates_api_model.ticker = ticker_symbol
+
+		# execute the API call for these parameters -
+		(header,df) = Serenity.polygon(DATASTORE_URL_STRING, aggregates_api_model);
+
+		# save locally -
+		CSV.write(local_path_to_data_file, df)
+		CSV.write(local_path_to_header_file, header)
+
+		# sleep sometime before we return - helps avoid API limit issue -
+		sleep(sleeptime)
+			
+        # put the price DataFrame into the price_data_dictionary -
+        return (header=header, data=df)
+	end
 end
 
 # ╔═╡ 5c5d5eeb-6775-452f-880d-7b4fa2acda57
-# download the data (or load from local cache)
-price_data_dictionary = download_ticker_data(ticker_symbol_array);
+# # download the data (or load from local cache)
+# price_data_dictionary = download_ticker_data(ticker_symbol_array);
+
+begin
+
+	# initialize -
+	price_data_dictionary = Dict{String,DataFrame}()
+
+	# process each member of the ticker symbol array -
+	for ticker_symbol ∈ ticker_symbol_array
+
+		# make a call to Polygon.io (or load local cached data )
+		(h,d) = aggregates_api_endpoint(ticker_symbol)
+
+		# grab the price data -
+		price_data_dictionary[ticker_symbol] = d
+	end
+
+	# show -
+	nothing
+end
 
 # ╔═╡ 34b06415-21c1-4904-97f0-ab614447355c
 begin
@@ -282,8 +320,8 @@ begin
     for ticker_symbol ∈ ticker_symbol_array
 
         # compute_return_array function is provided by Serenity -> computes the log return given a DataFrame, returns a DataFrame
-        return_data_dictionary[ticker_symbol] = compute_log_return_array(price_data_dictionary[ticker_symbol],
-            :timestamp => :adjusted_close; Δt = (1.0 / 1.0))
+        return_data_dictionary[ticker_symbol] = Serenity.compute_log_return_array(price_data_dictionary[ticker_symbol],
+            :timestamp => :close; Δt = (1.0 / 1.0))
     end
 end
 
@@ -295,8 +333,8 @@ begin
     μ_avg = mean(return_data_dictionary[ticker_symbol][!, :μ])
 
     # number of bins - 10% of the length of a test ticker
-    number_of_bins = convert(Int64, (floor(0.1 * length(return_data_dictionary[ticker_symbol][!, :μ]))))
-
+    number_of_bins = convert(Int64, (floor(0.20 * length(return_data_dictionary[ticker_symbol][!, :μ]))))
+	
     # number of tickers -
     number_of_ticker_symbols = length(ticker_symbol_array)
     for ticker_index = number_of_ticker_symbols:-1:1
@@ -306,17 +344,17 @@ begin
 
             # make the first plot -
             stephist(return_data_dictionary[local_ticker_symbol][!, :μ], bins = number_of_bins, normed = :true,
-                background_color = background_color, background_color_outside = background_color_outside,
+                background_color = BACKGROUND, background_color_outside = WHITE,
                 foreground_color_minor_grid = RGB(1.0, 1.0, 1.0),
-                lw = 1, c = CB_GRAY, foreground_color_legend = nothing, label = "")
+                lw = 1, c = GRAY, foreground_color_legend = nothing, label = "")
 
         elseif (ticker_index != 1 && ticker_index != number_of_ticker_symbols)
 
             stephist!(return_data_dictionary[local_ticker_symbol][!, :μ], bins = number_of_bins, normed = :true, lw = 1,
-                c = CB_GRAY, label = "")
+                c = GRAY, label = "")
         else
             stephist!(return_data_dictionary[local_ticker_symbol][!, :μ], bins = number_of_bins, normed = :true, lw = 2,
-                c = CB_RED, label = "$(local_ticker_symbol)")
+                c = RED, label = "$(local_ticker_symbol)")
         end
     end
 
@@ -342,26 +380,26 @@ begin
 
     # plot against actual -
     stephist(return_data_dictionary[single_asset_ticker_symbol][!, :μ], bins = number_of_bins, normed = :true, 
-		lw = 2, c = CB_RED,
-        label = "$(single_asset_ticker_symbol)", background_color = background_color,
-        background_color_outside = background_color_outside, foreground_color_legend = nothing)
+		lw = 2, c = RED,
+        label = "$(single_asset_ticker_symbol)", background_color = BACKGROUND,
+        background_color_outside = WHITE, foreground_color_legend = nothing)
 
-    stephist!(S, bins = number_of_bins, normed = :true, lw = 2, c = CB_BLUE,
+    stephist!(S, bins = number_of_bins, normed = :true, lw = 2, c = BLUE,
         label = "$(single_asset_ticker_symbol) Laplace Model")
 
-    stephist!(SN, bins = number_of_bins, normed = :true, lw = 2, c = CB_LBLUE,
+    stephist!(SN, bins = number_of_bins, normed = :true, lw = 2, c = LBLUE,
         label = "$(single_asset_ticker_symbol) Normal Model")
 
     xlabel!("Daily return μ (1/day)", fontsize = 18)
     ylabel!("Frequency (N=$(number_of_bins); dimensionless)", fontsize = 14)
-    xlims!((-100.0 * μ_avg, 100.0 * μ_avg))
+    xlims!((-75.0 * μ_avg, 75.0 * μ_avg))
 end
 
 # ╔═╡ 0e09d312-2ddf-4d1f-8ad5-a50fb48ca4dd
 begin
 	qqplot(Laplace, μ_vector, label="QQPlot $(single_asset_ticker_symbol)", legend=:topleft, 
-		foreground_color_legend = nothing, c=CB_LBLUE, markerstrokecolor=CB_BLUE, lw=2, 
-		background_color = background_color, background_color_outside = background_color_outside)
+		foreground_color_legend = nothing, c=LBLUE, markerstrokecolor=BLUE, lw=2, 
+		background_color = BACKGROUND, background_color_outside = WHITE)
 	xlabel!("Theoretical Laplace Quantiles", fontsize=18)
 	ylabel!("Sample Quantiles", fontsize=18)
 end
@@ -409,7 +447,7 @@ begin
 	for ticker_symbol ∈ ticker_symbol_array
 
 		# what is the *actual* price data?
-    	actual_price_data = price_data_dictionary[ticker_symbol][end-number_of_days:end, :adjusted_close]
+    	actual_price_data = price_data_dictionary[ticker_symbol][end-number_of_days:end, :close]
 
     	# get initial price -
     	initial_price_value = log(actual_price_data[1])
@@ -447,14 +485,14 @@ begin
 	simulated_price_trajectory = monte_carlo_simulation_dictionary[single_asset_ticker_symbol]
 	
 	# what is the *actual* price data?
-    actual_price_data = price_data_dictionary[single_asset_ticker_symbol][end-number_of_days:end, :adjusted_close]
+    actual_price_data = price_data_dictionary[single_asset_ticker_symbol][end-number_of_days:end, :close]
 	
     # plot -
-    plot(simulated_price_trajectory[:, plot_index_array], c = CB_LBLUE, legend = false, label = "", lw = 1,
-        background_color = background_color, background_color_outside = background_color_outside)
+    plot(simulated_price_trajectory[:, plot_index_array], c = LBLUE, legend = false, label = "", lw = 1,
+        background_color = BACKGROUND, background_color_outside = WHITE)
 
     if (show_real_traj == true)
-        plot!(actual_price_data[1:end], c = CB_RED, lw = 3, legend = :topleft, 
+        plot!(actual_price_data[1:end], c = RED, lw = 3, legend = :topleft, 
 			label = "$(single_asset_ticker_symbol) actual", foreground_color_legend = nothing)
     end
 
@@ -476,14 +514,14 @@ begin
     cprob = Array{Float64,1}()
 
     for price in price_range
-        p = compute_rwm_cumulative_probabilty(x -> (x <= price), simulated_price_trajectory[end, :])
+        p = Serenity.compute_rwm_cumulative_probabilty(x -> (x <= price), simulated_price_trajectory[end, :])
         push!(cprob, p)
     end
 
     # plot -
     #plot(price_range, cprob, legend=:right, label="P(X≤x)", lw=2)
     plot(price_range, 1 .- cprob, legend = :topright, label = "P(X≥x)", lw = 2, c = :red,
-        background_color = background_color, background_color_outside = background_color_outside, 
+        background_color = BACKGROUND, background_color_outside = WHITE, 
 		foreground_color_legend = nothing)
     xlabel!("$(single_asset_ticker_symbol) close daily price (USD/share)", fontsize = 18)
     ylabel!("1 - cumulative probability P(X≤x)")
@@ -505,7 +543,7 @@ begin
 		simulated_price_trajectory = monte_carlo_simulation_dictionary[ticker_symbol]
 		estimated_mean_price = round(mean(simulated_price_trajectory[end, :]), sigdigits = 4)
     	std_estimated_price = round(std(simulated_price_trajectory[end, :]), sigdigits = 4)
-		actual_price_data = price_data_dictionary[ticker_symbol][end-number_of_days:end, :adjusted_close]
+		actual_price_data = price_data_dictionary[ticker_symbol][end-number_of_days:end, :close]
     	price_actual = actual_price_data[end]
 		tmp_LB = estimated_mean_price - 1*std_estimated_price
         tmp_UB = estimated_mean_price + 1*std_estimated_price
@@ -540,17 +578,6 @@ begin
 		)
 	
 		pretty_table(price_state_table, header=price_table_header)
-	end
-end
-
-# ╔═╡ f239c879-81f2-456f-80b1-5b0129e893dd
-begin
-
-	# what is the average excess price?
-	expected_excess_price = sum(price_state_table[:,4])
-
-	with_terminal() do
-		println("Expected excess price for PSIA (𝒫 = 40) at 𝒯 = $(number_of_days) days: $(round(expected_excess_price, sigdigits=4)) USD/share")
 	end
 end
 
@@ -619,38 +646,54 @@ html"""
 PLUTO_PROJECT_TOML_CONTENTS = """
 [deps]
 CSV = "336ed68f-0bac-5ca0-87d4-7b16caf5d00b"
+Colors = "5ae59095-9a9b-59fe-a467-6f913c188581"
+Convex = "f65535da-76fb-5f13-bab9-19810c17039a"
 DataFrames = "a93c6f00-e57d-5684-b7b6-d8193f3e46c0"
 Dates = "ade2ca70-3891-5945-98fb-dc099432e06a"
 Distributions = "31c24e10-a181-5473-b8eb-7969acd0382f"
 HTTP = "cd3eb016-35fb-5094-929b-558a96fad6f3"
 HypothesisTests = "09f84164-cd44-5f33-b23f-e6b0d136a0d5"
-PlotThemes = "ccf2f8ad-2431-5c83-bf29-c5338b663b6a"
+JSON = "682c06a0-de6a-54ab-a142-c8b1cf79cde6"
+MathOptInterface = "b8f27783-ece8-5eb3-8dc8-9495eed66fee"
+Optim = "429524aa-4258-5aef-a3af-852621145aeb"
 PlutoUI = "7f904dfe-b85e-4ff6-b463-dae2292396a8"
 PrettyTables = "08abe8d2-0d0c-5749-adfa-8a2ac140af0d"
-ProgressMeter = "92933f4c-e287-5a05-a399-4b506db050ca"
+Reexport = "189a3867-3050-52da-a836-e630ba90ab69"
+SCS = "c946c3f1-0d1f-5ce8-9dea-7daa1f7e2d13"
 Statistics = "10745b16-79ce-11e8-11f9-7d13ad32a3b2"
 StatsPlots = "f3b207a7-027a-5e70-b257-86293d7955fd"
 TOML = "fa267f1f-6049-4f14-aa54-33bafae1ed76"
 
 [compat]
 CSV = "~0.9.11"
-DataFrames = "~1.3.0"
-Distributions = "~0.25.35"
+Colors = "~0.12.8"
+Convex = "~0.14.18"
+DataFrames = "~1.3.1"
+Distributions = "~0.25.37"
 HTTP = "~0.9.17"
 HypothesisTests = "~0.10.6"
-PlotThemes = "~2.0.1"
-PlutoUI = "~0.7.22"
-PrettyTables = "~1.2.3"
-ProgressMeter = "~1.7.1"
-StatsPlots = "~0.14.29"
+JSON = "~0.21.2"
+MathOptInterface = "~0.10.6"
+Optim = "~1.6.0"
+PlutoUI = "~0.7.27"
+PrettyTables = "~1.3.1"
+Reexport = "~1.2.2"
+SCS = "~0.8.1"
+StatsPlots = "~0.14.30"
 """
 
 # ╔═╡ 00000000-0000-0000-0000-000000000002
 PLUTO_MANIFEST_TOML_CONTENTS = """
 # This file is machine-generated - editing it directly is not advised
 
-julia_version = "1.7.0"
+julia_version = "1.7.1"
 manifest_format = "2.0"
+
+[[deps.AMD]]
+deps = ["Libdl", "LinearAlgebra", "SparseArrays", "Test"]
+git-tree-sha1 = "fc66ffc5cff568936649445f58a55b81eaf9592c"
+uuid = "14f7f29c-3bd6-536c-9a0b-7339e30b5a3e"
+version = "0.4.0"
 
 [[deps.AbstractFFTs]]
 deps = ["LinearAlgebra"]
@@ -660,9 +703,14 @@ version = "1.0.1"
 
 [[deps.AbstractPlutoDingetjes]]
 deps = ["Pkg"]
-git-tree-sha1 = "abb72771fd8895a7ebd83d5632dc4b989b022b5b"
+git-tree-sha1 = "8eaf9f1b4921132a4cff3f36a1d9ba923b14a481"
 uuid = "6e696c72-6542-2067-7265-42206c756150"
-version = "1.1.2"
+version = "1.1.4"
+
+[[deps.AbstractTrees]]
+git-tree-sha1 = "03e0550477d86222521d254b741d470ba17ea0b5"
+uuid = "1520ce14-60c1-5f80-bbc7-55ef81b5835c"
+version = "0.3.4"
 
 [[deps.Adapt]]
 deps = ["LinearAlgebra"]
@@ -685,6 +733,12 @@ git-tree-sha1 = "e214a9b9bd1b4e1b4f15b22c0994862b66af7ff7"
 uuid = "68821587-b530-5797-8361-c406ea357684"
 version = "3.5.0+3"
 
+[[deps.ArrayInterface]]
+deps = ["Compat", "IfElse", "LinearAlgebra", "Requires", "SparseArrays", "Static"]
+git-tree-sha1 = "265b06e2b1f6a216e0e8f183d28e4d354eab3220"
+uuid = "4fba245c-0d91-5ea0-9b3e-6abc04ee57a9"
+version = "3.2.1"
+
 [[deps.Artifacts]]
 uuid = "56f22d72-fd6d-98f1-02f0-08ddc0907c33"
 
@@ -696,6 +750,18 @@ version = "1.0.1"
 
 [[deps.Base64]]
 uuid = "2a0f44e3-6c83-55bd-87e4-b1978d98bd5f"
+
+[[deps.BenchmarkTools]]
+deps = ["JSON", "Logging", "Printf", "Profile", "Statistics", "UUIDs"]
+git-tree-sha1 = "940001114a0147b6e4d10624276d56d531dd9b49"
+uuid = "6e4b80f9-dd63-53aa-95a3-0cdb28fa8baf"
+version = "1.2.2"
+
+[[deps.BinaryProvider]]
+deps = ["Libdl", "Logging", "SHA"]
+git-tree-sha1 = "ecdec412a9abc8db54c0efc5548c64dfce072058"
+uuid = "b99e7846-7c00-51b0-8f62-c81ae34c0232"
+version = "0.5.10"
 
 [[deps.Bzip2_jll]]
 deps = ["Artifacts", "JLLWrappers", "Libdl", "Pkg"]
@@ -711,9 +777,9 @@ version = "0.9.11"
 
 [[deps.Cairo_jll]]
 deps = ["Artifacts", "Bzip2_jll", "Fontconfig_jll", "FreeType2_jll", "Glib_jll", "JLLWrappers", "LZO_jll", "Libdl", "Pixman_jll", "Pkg", "Xorg_libXext_jll", "Xorg_libXrender_jll", "Zlib_jll", "libpng_jll"]
-git-tree-sha1 = "f2202b55d816427cd385a9a4f3ffb226bee80f99"
+git-tree-sha1 = "4b859a208b2397a7a623a03449e4636bdb17bcf2"
 uuid = "83423d85-b0ee-5818-9007-b63ccbeb887a"
-version = "1.16.1+0"
+version = "1.16.1+1"
 
 [[deps.ChainRulesCore]]
 deps = ["Compat", "LinearAlgebra", "SparseArrays"]
@@ -732,6 +798,12 @@ deps = ["Distances", "LinearAlgebra", "NearestNeighbors", "Printf", "SparseArray
 git-tree-sha1 = "75479b7df4167267d75294d14b58244695beb2ac"
 uuid = "aaaa29a8-35af-508c-8bc3-b662a17a0fe5"
 version = "0.14.2"
+
+[[deps.CodecBzip2]]
+deps = ["Bzip2_jll", "Libdl", "TranscodingStreams"]
+git-tree-sha1 = "2e62a725210ce3c3c2e1a3080190e7ca491f18d7"
+uuid = "523fee87-0ab8-5b00-afb7-3ecf72e48cfd"
+version = "0.7.2"
 
 [[deps.CodecZlib]]
 deps = ["TranscodingStreams", "Zlib_jll"]
@@ -767,11 +839,17 @@ git-tree-sha1 = "68a0743f578349ada8bc911a5cbd5a2ef6ed6d1f"
 uuid = "38540f10-b2f7-11e9-35d8-d573e4eb0ff2"
 version = "0.2.0"
 
+[[deps.CommonSubexpressions]]
+deps = ["MacroTools", "Test"]
+git-tree-sha1 = "7b8a93dba8af7e3b42fecabf646260105ac373f7"
+uuid = "bbf7d656-a473-5ed7-a52c-81e309532950"
+version = "0.3.0"
+
 [[deps.Compat]]
 deps = ["Base64", "Dates", "DelimitedFiles", "Distributed", "InteractiveUtils", "LibGit2", "Libdl", "LinearAlgebra", "Markdown", "Mmap", "Pkg", "Printf", "REPL", "Random", "SHA", "Serialization", "SharedArrays", "Sockets", "SparseArrays", "Statistics", "Test", "UUIDs", "Unicode"]
-git-tree-sha1 = "dce3e3fea680869eaa0b774b2e8343e9ff442313"
+git-tree-sha1 = "44c37b4636bc54afac5c574d2d02b625349d6582"
 uuid = "34da2185-b29b-5c13-b0c7-acf172513d20"
-version = "3.40.0"
+version = "3.41.0"
 
 [[deps.CompilerSupportLibraries_jll]]
 deps = ["Artifacts", "Libdl"]
@@ -789,6 +867,12 @@ git-tree-sha1 = "9f02045d934dc030edad45944ea80dbd1f0ebea7"
 uuid = "d38c429a-6771-53c6-b99e-75d170b6e991"
 version = "0.5.7"
 
+[[deps.Convex]]
+deps = ["AbstractTrees", "BenchmarkTools", "LDLFactorizations", "LinearAlgebra", "MathOptInterface", "OrderedCollections", "SparseArrays", "Test"]
+git-tree-sha1 = "145c5e0b3ea3c9dd3bba134a58bab4112aa250c8"
+uuid = "f65535da-76fb-5f13-bab9-19810c17039a"
+version = "0.14.18"
+
 [[deps.Crayons]]
 git-tree-sha1 = "3f71217b538d7aaee0b69ab47d9b7724ca8afa0d"
 uuid = "a8cc5b0e-0ffa-5ad4-8c14-923d3ee1735f"
@@ -801,9 +885,9 @@ version = "1.9.0"
 
 [[deps.DataFrames]]
 deps = ["Compat", "DataAPI", "Future", "InvertedIndices", "IteratorInterfaceExtensions", "LinearAlgebra", "Markdown", "Missings", "PooledArrays", "PrettyTables", "Printf", "REPL", "Reexport", "SortingAlgorithms", "Statistics", "TableTraits", "Tables", "Unicode"]
-git-tree-sha1 = "2e993336a3f68216be91eb8ee4625ebbaba19147"
+git-tree-sha1 = "cfdfef912b7f93e4b848e80b9befdf9e331bc05a"
 uuid = "a93c6f00-e57d-5684-b7b6-d8193f3e46c0"
-version = "1.3.0"
+version = "1.3.1"
 
 [[deps.DataStructures]]
 deps = ["Compat", "InteractiveUtils", "OrderedCollections"]
@@ -836,6 +920,18 @@ git-tree-sha1 = "80c3e8639e3353e5d2912fb3a1916b8455e2494b"
 uuid = "b429d917-457f-4dbc-8f4c-0cc954292b1d"
 version = "0.4.0"
 
+[[deps.DiffResults]]
+deps = ["StaticArrays"]
+git-tree-sha1 = "c18e98cba888c6c25d1c3b048e4b3380ca956805"
+uuid = "163ba53b-c6d8-5494-b064-1a9d43ac40c5"
+version = "1.0.3"
+
+[[deps.DiffRules]]
+deps = ["LogExpFunctions", "NaNMath", "Random", "SpecialFunctions"]
+git-tree-sha1 = "9bc5dac3c8b6706b58ad5ce24cffd9861f07c94f"
+uuid = "b552c78f-8df3-52c6-915a-8e097449b14b"
+version = "1.9.0"
+
 [[deps.Distances]]
 deps = ["LinearAlgebra", "SparseArrays", "Statistics", "StatsAPI"]
 git-tree-sha1 = "3258d0659f812acde79e8a74b11f17ac06d0ca04"
@@ -848,9 +944,9 @@ uuid = "8ba89e20-285c-5b6f-9357-94700520ee1b"
 
 [[deps.Distributions]]
 deps = ["ChainRulesCore", "DensityInterface", "FillArrays", "LinearAlgebra", "PDMats", "Printf", "QuadGK", "Random", "SparseArrays", "SpecialFunctions", "Statistics", "StatsBase", "StatsFuns", "Test"]
-git-tree-sha1 = "d6cc7abd52ebae5815fd75f6004a44abcf7a6b00"
+git-tree-sha1 = "6a8dc9f82e5ce28279b6e3e2cea9421154f5bd0d"
 uuid = "31c24e10-a181-5473-b8eb-7969acd0382f"
-version = "0.25.35"
+version = "0.25.37"
 
 [[deps.DocStringExtensions]]
 deps = ["LibGit2"]
@@ -910,6 +1006,12 @@ git-tree-sha1 = "8756f9935b7ccc9064c6eef0bff0ad643df733a3"
 uuid = "1a297f60-69ca-5386-bcde-b61e274b549b"
 version = "0.12.7"
 
+[[deps.FiniteDiff]]
+deps = ["ArrayInterface", "LinearAlgebra", "Requires", "SparseArrays", "StaticArrays"]
+git-tree-sha1 = "8b3c09b56acaf3c0e581c66638b85c8650ee9dca"
+uuid = "6a86dc24-6348-571c-b903-95158fe2bd41"
+version = "2.8.1"
+
 [[deps.FixedPointNumbers]]
 deps = ["Statistics"]
 git-tree-sha1 = "335bfdceacc84c5cdf16aadc768aa5ddfc5383cc"
@@ -927,6 +1029,12 @@ deps = ["Printf"]
 git-tree-sha1 = "8339d61043228fdd3eb658d86c926cb282ae72a8"
 uuid = "59287772-0a20-5a39-b81b-1366585eb4c0"
 version = "0.4.2"
+
+[[deps.ForwardDiff]]
+deps = ["CommonSubexpressions", "DiffResults", "DiffRules", "LinearAlgebra", "LogExpFunctions", "NaNMath", "Preferences", "Printf", "Random", "SpecialFunctions", "StaticArrays"]
+git-tree-sha1 = "2b72a5624e289ee18256111657663721d59c143e"
+uuid = "f6369f11-7733-5829-9624-2563aa707210"
+version = "0.10.24"
 
 [[deps.FreeType2_jll]]
 deps = ["Artifacts", "Bzip2_jll", "JLLWrappers", "Libdl", "Pkg", "Zlib_jll"]
@@ -958,9 +1066,9 @@ version = "0.62.1"
 
 [[deps.GR_jll]]
 deps = ["Artifacts", "Bzip2_jll", "Cairo_jll", "FFMPEG_jll", "Fontconfig_jll", "GLFW_jll", "JLLWrappers", "JpegTurbo_jll", "Libdl", "Libtiff_jll", "Pixman_jll", "Pkg", "Qt5Base_jll", "Zlib_jll", "libpng_jll"]
-git-tree-sha1 = "fd75fa3a2080109a2c0ec9864a6e14c60cca3866"
+git-tree-sha1 = "f97acd98255568c3c9b416c5a3cf246c1315771b"
 uuid = "d2c73de3-f751-5644-a686-071e5b155ba9"
-version = "0.62.0+0"
+version = "0.63.0+0"
 
 [[deps.GeometryBasics]]
 deps = ["EarCut_jll", "IterTools", "LinearAlgebra", "StaticArrays", "StructArrays", "Tables"]
@@ -976,9 +1084,9 @@ version = "0.21.0+0"
 
 [[deps.Glib_jll]]
 deps = ["Artifacts", "Gettext_jll", "JLLWrappers", "Libdl", "Libffi_jll", "Libiconv_jll", "Libmount_jll", "PCRE_jll", "Pkg", "Zlib_jll"]
-git-tree-sha1 = "74ef6288d071f58033d54fd6708d4bc23a8b8972"
+git-tree-sha1 = "a32d672ac2c967f3deb8a81d828afc739c838a06"
 uuid = "7746bdde-850d-59dc-9ae8-88ece973131d"
-version = "2.68.3+1"
+version = "2.68.3+2"
 
 [[deps.Graphite2_jll]]
 deps = ["Artifacts", "JLLWrappers", "Libdl", "Pkg"]
@@ -1026,6 +1134,11 @@ git-tree-sha1 = "f7be53659ab06ddc986428d3a9dcc95f6fa6705a"
 uuid = "b5f81e59-6552-4d32-b1f0-c071b021bf89"
 version = "0.2.2"
 
+[[deps.IfElse]]
+git-tree-sha1 = "debdd00ffef04665ccbb3e150747a77560e8fad1"
+uuid = "615f187c-cbe4-4ef1-ba3b-2fcf58d6d173"
+version = "0.1.1"
+
 [[deps.IniFile]]
 deps = ["Test"]
 git-tree-sha1 = "098e4d2c533924c921f9f9847274f2ad89e018b8"
@@ -1034,9 +1147,9 @@ version = "0.5.0"
 
 [[deps.InlineStrings]]
 deps = ["Parsers"]
-git-tree-sha1 = "ca99cac337f8e0561c6a6edeeae5bf6966a78d21"
+git-tree-sha1 = "8d70835a3759cdd75881426fced1508bb7b7e1b6"
 uuid = "842dd82b-1e85-43dc-bf29-5d0ee9dffc48"
-version = "1.1.0"
+version = "1.1.1"
 
 [[deps.IntelOpenMP_jll]]
 deps = ["Artifacts", "JLLWrappers", "Libdl", "Pkg"]
@@ -1050,9 +1163,9 @@ uuid = "b77e0a4c-d291-57a0-90e8-8db25a27a240"
 
 [[deps.Interpolations]]
 deps = ["AxisAlgorithms", "ChainRulesCore", "LinearAlgebra", "OffsetArrays", "Random", "Ratios", "Requires", "SharedArrays", "SparseArrays", "StaticArrays", "WoodburyMatrices"]
-git-tree-sha1 = "61aa005707ea2cebf47c8d780da8dc9bc4e0c512"
+git-tree-sha1 = "b15fc0a95c564ca2e0a7ae12c1f095ca848ceb31"
 uuid = "a98d9a8b-a2ab-59e6-89dd-64a1c18fca59"
-version = "0.13.4"
+version = "0.13.5"
 
 [[deps.InverseFunctions]]
 deps = ["Test"]
@@ -1109,6 +1222,12 @@ deps = ["Artifacts", "JLLWrappers", "Libdl", "Pkg"]
 git-tree-sha1 = "f6250b16881adf048549549fba48b1161acdac8c"
 uuid = "c1c5ebd0-6772-5130-a774-d5fcae4a789d"
 version = "3.100.1+0"
+
+[[deps.LDLFactorizations]]
+deps = ["AMD", "LinearAlgebra", "SparseArrays", "Test"]
+git-tree-sha1 = "399bbe845e06e1c2d44ebb241f554d45eaf66788"
+uuid = "40e66cde-538c-5869-a4ad-c39174c6795b"
+version = "0.8.1"
 
 [[deps.LZO_jll]]
 deps = ["Artifacts", "JLLWrappers", "Libdl", "Pkg"]
@@ -1198,15 +1317,21 @@ git-tree-sha1 = "7f3efec06033682db852f8b3bc3c1d2b0a0ab066"
 uuid = "38a345b3-de98-5d2b-a5d3-14cd9215e700"
 version = "2.36.0+0"
 
+[[deps.LineSearches]]
+deps = ["LinearAlgebra", "NLSolversBase", "NaNMath", "Parameters", "Printf"]
+git-tree-sha1 = "f27132e551e959b3667d8c93eae90973225032dd"
+uuid = "d3d80556-e9d4-5f37-9878-2ab0fcc64255"
+version = "7.1.1"
+
 [[deps.LinearAlgebra]]
 deps = ["Libdl", "libblastrampoline_jll"]
 uuid = "37e2e46d-f89d-539d-b4ee-838fcccc9c8e"
 
 [[deps.LogExpFunctions]]
 deps = ["ChainRulesCore", "ChangesOfVariables", "DocStringExtensions", "InverseFunctions", "IrrationalConstants", "LinearAlgebra"]
-git-tree-sha1 = "be9eef9f9d78cecb6f262f3c10da151a6c5ab827"
+git-tree-sha1 = "e5718a00af0ab9756305a0392832c8952c7426c1"
 uuid = "2ab3a3ac-af41-5b50-aa03-7779005ae688"
-version = "0.3.5"
+version = "0.3.6"
 
 [[deps.Logging]]
 uuid = "56ddb016-857b-54e1-b83d-db4d58db5568"
@@ -1226,6 +1351,12 @@ version = "0.5.9"
 [[deps.Markdown]]
 deps = ["Base64"]
 uuid = "d6f4376e-aef5-505a-96c1-9c027394607a"
+
+[[deps.MathOptInterface]]
+deps = ["BenchmarkTools", "CodecBzip2", "CodecZlib", "JSON", "LinearAlgebra", "MutableArithmetics", "OrderedCollections", "Printf", "SparseArrays", "Test", "Unicode"]
+git-tree-sha1 = "92b7de61ecb616562fd2501334f729cc9db2a9a6"
+uuid = "b8f27783-ece8-5eb3-8dc8-9495eed66fee"
+version = "0.10.6"
 
 [[deps.MbedTLS]]
 deps = ["Dates", "MbedTLS_jll", "Random", "Sockets"]
@@ -1260,10 +1391,22 @@ git-tree-sha1 = "8d958ff1854b166003238fe191ec34b9d592860a"
 uuid = "6f286f6a-111f-5878-ab1e-185364afe411"
 version = "0.8.0"
 
+[[deps.MutableArithmetics]]
+deps = ["LinearAlgebra", "SparseArrays", "Test"]
+git-tree-sha1 = "7bb6853d9afec54019c1397c6eb610b9b9a19525"
+uuid = "d8a4904e-b15c-11e9-3269-09a3773c0cb0"
+version = "0.3.1"
+
+[[deps.NLSolversBase]]
+deps = ["DiffResults", "Distributed", "FiniteDiff", "ForwardDiff"]
+git-tree-sha1 = "50310f934e55e5ca3912fb941dec199b49ca9b68"
+uuid = "d41bc354-129a-5804-8e4c-c37616107c6c"
+version = "7.8.2"
+
 [[deps.NaNMath]]
-git-tree-sha1 = "bfe47e760d60b82b66b61d2d44128b62e3a369fb"
+git-tree-sha1 = "f755f36b19a5116bb580de457cda0c140153f283"
 uuid = "77ba4419-2d1f-58cd-9bb1-8ffee604a2e3"
-version = "0.3.5"
+version = "0.3.6"
 
 [[deps.NearestNeighbors]]
 deps = ["Distances", "StaticArrays"]
@@ -1311,6 +1454,12 @@ git-tree-sha1 = "13652491f6856acfd2db29360e1bbcd4565d04f1"
 uuid = "efe28fd5-8261-553b-a9e1-b2916fc3738e"
 version = "0.5.5+0"
 
+[[deps.Optim]]
+deps = ["Compat", "FillArrays", "ForwardDiff", "LineSearches", "LinearAlgebra", "NLSolversBase", "NaNMath", "Parameters", "PositiveFactorizations", "Printf", "SparseArrays", "StatsBase"]
+git-tree-sha1 = "916077e0f0f8966eb0dc98a5c39921fdb8f49eb4"
+uuid = "429524aa-4258-5aef-a3af-852621145aeb"
+version = "1.6.0"
+
 [[deps.Opus_jll]]
 deps = ["Artifacts", "JLLWrappers", "Libdl", "Pkg"]
 git-tree-sha1 = "51a08fb14ec28da2ec7a927c4337e4332c2a4720"
@@ -1334,11 +1483,17 @@ git-tree-sha1 = "ee26b350276c51697c9c2d88a072b339f9f03d73"
 uuid = "90014a1f-27ba-587c-ab20-58faa44d9150"
 version = "0.11.5"
 
+[[deps.Parameters]]
+deps = ["OrderedCollections", "UnPack"]
+git-tree-sha1 = "34c0e9ad262e5f7fc75b10a9952ca7692cfc5fbe"
+uuid = "d96e819e-fc66-5662-9728-84c9c7592b0a"
+version = "0.12.3"
+
 [[deps.Parsers]]
 deps = ["Dates"]
-git-tree-sha1 = "ae4bbcadb2906ccc085cf52ac286dc1377dceccc"
+git-tree-sha1 = "d7fa6237da8004be601e19bd6666083056649918"
 uuid = "69de0a69-1ddd-5017-9359-2bf0b02dc9f0"
-version = "2.1.2"
+version = "2.1.3"
 
 [[deps.Pixman_jll]]
 deps = ["Artifacts", "JLLWrappers", "Libdl", "Pkg"]
@@ -1358,21 +1513,21 @@ version = "2.0.1"
 
 [[deps.PlotUtils]]
 deps = ["ColorSchemes", "Colors", "Dates", "Printf", "Random", "Reexport", "Statistics"]
-git-tree-sha1 = "b084324b4af5a438cd63619fd006614b3b20b87b"
+git-tree-sha1 = "68604313ed59f0408313228ba09e79252e4b2da8"
 uuid = "995b91a9-d308-5afd-9ec6-746e21dbc043"
-version = "1.0.15"
+version = "1.1.2"
 
 [[deps.Plots]]
-deps = ["Base64", "Contour", "Dates", "Downloads", "FFMPEG", "FixedPointNumbers", "GR", "GeometryBasics", "JSON", "Latexify", "LinearAlgebra", "Measures", "NaNMath", "PlotThemes", "PlotUtils", "Printf", "REPL", "Random", "RecipesBase", "RecipesPipeline", "Reexport", "Requires", "Scratch", "Showoff", "SparseArrays", "Statistics", "StatsBase", "UUIDs", "UnicodeFun"]
-git-tree-sha1 = "65ebc27d8c00c84276f14aaf4ff63cbe12016c70"
+deps = ["Base64", "Contour", "Dates", "Downloads", "FFMPEG", "FixedPointNumbers", "GR", "GeometryBasics", "JSON", "Latexify", "LinearAlgebra", "Measures", "NaNMath", "PlotThemes", "PlotUtils", "Printf", "REPL", "Random", "RecipesBase", "RecipesPipeline", "Reexport", "Requires", "Scratch", "Showoff", "SparseArrays", "Statistics", "StatsBase", "UUIDs", "UnicodeFun", "Unzip"]
+git-tree-sha1 = "7eda8e2a61e35b7f553172ef3d9eaa5e4e76d92e"
 uuid = "91a5bcdd-55d7-5caf-9e0b-520d859cae80"
-version = "1.25.2"
+version = "1.25.3"
 
 [[deps.PlutoUI]]
-deps = ["AbstractPlutoDingetjes", "Base64", "Dates", "Hyperscript", "HypertextLiteral", "IOCapture", "InteractiveUtils", "JSON", "Logging", "Markdown", "Random", "Reexport", "UUIDs"]
-git-tree-sha1 = "565564f615ba8c4e4f40f5d29784aa50a8f7bbaf"
+deps = ["AbstractPlutoDingetjes", "Base64", "ColorTypes", "Dates", "Hyperscript", "HypertextLiteral", "IOCapture", "InteractiveUtils", "JSON", "Logging", "Markdown", "Random", "Reexport", "UUIDs"]
+git-tree-sha1 = "fed057115644d04fba7f4d768faeeeff6ad11a60"
 uuid = "7f904dfe-b85e-4ff6-b463-dae2292396a8"
-version = "0.7.22"
+version = "0.7.27"
 
 [[deps.PooledArrays]]
 deps = ["DataAPI", "Future"]
@@ -1380,27 +1535,31 @@ git-tree-sha1 = "db3a23166af8aebf4db5ef87ac5b00d36eb771e2"
 uuid = "2dfb63ee-cc39-5dd5-95bd-886bf059d720"
 version = "1.4.0"
 
+[[deps.PositiveFactorizations]]
+deps = ["LinearAlgebra"]
+git-tree-sha1 = "17275485f373e6673f7e7f97051f703ed5b15b20"
+uuid = "85a6dd25-e78a-55b7-8502-1745935b8125"
+version = "0.2.4"
+
 [[deps.Preferences]]
 deps = ["TOML"]
-git-tree-sha1 = "00cfd92944ca9c760982747e9a1d0d5d86ab1e5a"
+git-tree-sha1 = "2cf929d64681236a2e074ffafb8d568733d2e6af"
 uuid = "21216c6a-2e73-6563-6e65-726566657250"
-version = "1.2.2"
+version = "1.2.3"
 
 [[deps.PrettyTables]]
 deps = ["Crayons", "Formatting", "Markdown", "Reexport", "Tables"]
-git-tree-sha1 = "d940010be611ee9d67064fe559edbb305f8cc0eb"
+git-tree-sha1 = "dfb54c4e414caa595a1f2ed759b160f5a3ddcba5"
 uuid = "08abe8d2-0d0c-5749-adfa-8a2ac140af0d"
-version = "1.2.3"
+version = "1.3.1"
 
 [[deps.Printf]]
 deps = ["Unicode"]
 uuid = "de0858da-6303-5e67-8744-51eddeeeb8d7"
 
-[[deps.ProgressMeter]]
-deps = ["Distributed", "Printf"]
-git-tree-sha1 = "afadeba63d90ff223a6a48d2009434ecee2ec9e8"
-uuid = "92933f4c-e287-5a05-a399-4b506db050ca"
-version = "1.7.1"
+[[deps.Profile]]
+deps = ["Printf"]
+uuid = "9abbd945-dff8-562f-b5e8-e1ebf5ef1b79"
 
 [[deps.Qt5Base_jll]]
 deps = ["Artifacts", "CompilerSupportLibraries_jll", "Fontconfig_jll", "Glib_jll", "JLLWrappers", "Libdl", "Libglvnd_jll", "OpenSSL_jll", "Pkg", "Xorg_libXext_jll", "Xorg_libxcb_jll", "Xorg_xcb_util_image_jll", "Xorg_xcb_util_keysyms_jll", "Xorg_xcb_util_renderutil_jll", "Xorg_xcb_util_wm_jll", "Zlib_jll", "xkbcommon_jll"]
@@ -1446,9 +1605,9 @@ version = "1.2.2"
 
 [[deps.Requires]]
 deps = ["UUIDs"]
-git-tree-sha1 = "4036a3bd08ac7e968e27c203d45f5fff15020621"
+git-tree-sha1 = "8f82019e525f4d5c669692772a6f4b0a58b06a6a"
 uuid = "ae029012-a4dd-5104-9daa-d747884805df"
-version = "1.1.3"
+version = "1.2.0"
 
 [[deps.Rmath]]
 deps = ["Random", "Rmath_jll"]
@@ -1464,9 +1623,27 @@ version = "0.3.0+0"
 
 [[deps.Roots]]
 deps = ["CommonSolve", "Printf", "Setfield"]
-git-tree-sha1 = "51ee572776905ee34c0568f5efe035d44bf59f74"
+git-tree-sha1 = "ee885e0f773804f046fd43d0d4ace305b3d540e2"
 uuid = "f2b01f46-fcfa-551c-844a-d8ac1e96c665"
-version = "1.3.11"
+version = "1.3.13"
+
+[[deps.SCS]]
+deps = ["BinaryProvider", "Libdl", "LinearAlgebra", "MathOptInterface", "Requires", "SCS_GPU_jll", "SCS_jll", "SparseArrays"]
+git-tree-sha1 = "c819d023621358f3c08f08d41bd9354cf1357d35"
+uuid = "c946c3f1-0d1f-5ce8-9dea-7daa1f7e2d13"
+version = "0.8.1"
+
+[[deps.SCS_GPU_jll]]
+deps = ["Artifacts", "JLLWrappers", "Libdl", "OpenBLAS_jll", "Pkg"]
+git-tree-sha1 = "a96402e3b494a8bbec61b1adb86d4be04112c646"
+uuid = "af6e375f-46ec-5fa0-b791-491b0dfa44a4"
+version = "2.1.4+0"
+
+[[deps.SCS_jll]]
+deps = ["Artifacts", "JLLWrappers", "Libdl", "OpenBLAS_jll", "Pkg"]
+git-tree-sha1 = "6cdaccb5e6a69455f960de1ae445ba1de5db9d0d"
+uuid = "f4f2fc5b-1d94-523c-97ea-2ab488bedf4b"
+version = "2.1.2+1"
 
 [[deps.SHA]]
 uuid = "ea8e919c-243c-51af-8825-aaa63cd721ce"
@@ -1479,9 +1656,9 @@ version = "1.1.0"
 
 [[deps.SentinelArrays]]
 deps = ["Dates", "Random"]
-git-tree-sha1 = "f45b34656397a1f6e729901dc9ef679610bd12b5"
+git-tree-sha1 = "244586bc07462d22aed0113af9c731f2a518c93e"
 uuid = "91c51154-3ec4-41a3-a24f-3f23e20d615c"
-version = "1.3.8"
+version = "1.3.10"
 
 [[deps.Serialization]]
 uuid = "9e88b42a-f829-5b0c-bbe9-9e923198166b"
@@ -1517,9 +1694,15 @@ uuid = "2f01184e-e22b-5df5-ae63-d93ebab69eaf"
 
 [[deps.SpecialFunctions]]
 deps = ["ChainRulesCore", "IrrationalConstants", "LogExpFunctions", "OpenLibm_jll", "OpenSpecFun_jll"]
-git-tree-sha1 = "f0bccf98e16759818ffc5d97ac3ebf87eb950150"
+git-tree-sha1 = "e08890d19787ec25029113e88c34ec20cac1c91e"
 uuid = "276daf66-3868-5448-9aa4-cd146d93841b"
-version = "1.8.1"
+version = "2.0.0"
+
+[[deps.Static]]
+deps = ["IfElse"]
+git-tree-sha1 = "7f5a513baec6f122401abfc8e9c074fdac54f6c1"
+uuid = "aedffcd0-7271-4cad-89d0-dc628f76c6d3"
+version = "0.4.1"
 
 [[deps.StaticArrays]]
 deps = ["LinearAlgebra", "Random", "Statistics"]
@@ -1532,9 +1715,9 @@ deps = ["LinearAlgebra", "SparseArrays"]
 uuid = "10745b16-79ce-11e8-11f9-7d13ad32a3b2"
 
 [[deps.StatsAPI]]
-git-tree-sha1 = "0f2aa8e32d511f758a2ce49208181f7733a0936a"
+git-tree-sha1 = "d88665adc9bcf45903013af0982e2fd05ae3d0a6"
 uuid = "82ae8749-77ed-4fe6-ae5f-f523153014b0"
-version = "1.1.0"
+version = "1.2.0"
 
 [[deps.StatsBase]]
 deps = ["DataAPI", "DataStructures", "LinearAlgebra", "LogExpFunctions", "Missings", "Printf", "Random", "SortingAlgorithms", "SparseArrays", "Statistics", "StatsAPI"]
@@ -1550,9 +1733,9 @@ version = "0.9.14"
 
 [[deps.StatsPlots]]
 deps = ["Clustering", "DataStructures", "DataValues", "Distributions", "Interpolations", "KernelDensity", "LinearAlgebra", "MultivariateStats", "Observables", "Plots", "RecipesBase", "RecipesPipeline", "Reexport", "StatsBase", "TableOperations", "Tables", "Widgets"]
-git-tree-sha1 = "d6956cefe3766a8eb5caae9226118bb0ac61c8ac"
+git-tree-sha1 = "e1e5ed9669d5521d4bbdd4fab9f0945a0ffceba2"
 uuid = "f3b207a7-027a-5e70-b257-86293d7955fd"
-version = "0.14.29"
+version = "0.14.30"
 
 [[deps.StructArrays]]
 deps = ["Adapt", "DataAPI", "StaticArrays", "Tables"]
@@ -1582,9 +1765,9 @@ version = "1.0.1"
 
 [[deps.Tables]]
 deps = ["DataAPI", "DataValueInterfaces", "IteratorInterfaceExtensions", "LinearAlgebra", "TableTraits", "Test"]
-git-tree-sha1 = "fed34d0e71b91734bf0a7e10eb1bb05296ddbcd0"
+git-tree-sha1 = "bb1064c9a84c52e277f1096cf41434b675cd368b"
 uuid = "bd369af6-aec1-5ad0-b16a-f7cc5008161c"
-version = "1.6.0"
+version = "1.6.1"
 
 [[deps.Tar]]
 deps = ["ArgTools", "SHA"]
@@ -1609,6 +1792,11 @@ version = "1.3.0"
 deps = ["Random", "SHA"]
 uuid = "cf7118a7-6976-5b1a-9a39-7adc72f591a4"
 
+[[deps.UnPack]]
+git-tree-sha1 = "387c1f73762231e86e0c9c5443ce3b4a0a9a0c2b"
+uuid = "3a884ed6-31ef-47d7-9d2a-63182c4928ed"
+version = "1.0.2"
+
 [[deps.Unicode]]
 uuid = "4ec0a83e-493e-50e2-b9ac-8f72acf5a8f5"
 
@@ -1617,6 +1805,11 @@ deps = ["REPL"]
 git-tree-sha1 = "53915e50200959667e78a92a418594b428dffddf"
 uuid = "1cfade01-22cf-5700-b092-accc4b62d6e1"
 version = "0.4.1"
+
+[[deps.Unzip]]
+git-tree-sha1 = "34db80951901073501137bdbc3d5a8e7bbd06670"
+uuid = "41fe7b60-77ed-43a1-b4f0-825fd5a5650d"
+version = "0.1.2"
 
 [[deps.Wayland_jll]]
 deps = ["Artifacts", "Expat_jll", "JLLWrappers", "Libdl", "Libffi_jll", "Pkg", "XML2_jll"]
@@ -1856,13 +2049,14 @@ version = "0.9.1+5"
 # ╟─2f499c95-38cf-4856-b199-6c9aac44237a
 # ╟─34bf07e8-5c47-4aa8-aa2c-161709c158be
 # ╟─9943d000-83d0-413d-a231-0295fb19df71
+# ╠═fe2848df-823a-4ed0-918c-2c200957ee80
 # ╟─f66a480b-3f0c-4ebf-a8b8-e0f91dff851d
 # ╠═54efa70c-bac6-4d7c-93df-0dfd1b89769d
 # ╠═5c5d5eeb-6775-452f-880d-7b4fa2acda57
 # ╟─61ab2949-d72f-4d80-a717-4b6a9227de0e
 # ╠═34b06415-21c1-4904-97f0-ab614447355c
 # ╟─a39b90ec-a4c5-472f-b00e-c81ee9c5576f
-# ╟─cbbd8670-49ab-4601-b8d7-9f3f456752e8
+# ╠═cbbd8670-49ab-4601-b8d7-9f3f456752e8
 # ╟─edfbf364-e126-4e95-93d2-a6adfb340045
 # ╠═a786ca10-06d2-4b76-97a9-2bcf879ea6cb
 # ╟─a3d29aa3-96ca-4681-960c-3b4b04b1e40d
@@ -1870,24 +2064,24 @@ version = "0.9.1+5"
 # ╟─1d72b291-24b7-4ec6-8307-1da0bc4a9183
 # ╟─1867ecec-3c3d-4b2b-9036-1488e2184c40
 # ╟─0e09d312-2ddf-4d1f-8ad5-a50fb48ca4dd
-# ╠═f0ee3633-1d28-4344-9b85-f5433679582a
+# ╟─f0ee3633-1d28-4344-9b85-f5433679582a
 # ╟─379373b1-e563-4341-9978-5b35c768b5c7
 # ╟─8b2725a2-8007-46b8-a160-75042562794d
 # ╟─10fa507e-1429-4eb0-b74c-1e6638725690
-# ╠═5a3500c2-4f82-43e9-a31b-d530f56fdbe9
+# ╟─5a3500c2-4f82-43e9-a31b-d530f56fdbe9
 # ╟─a1e1d5f8-e06e-4682-ab54-a9454a8e3b30
 # ╟─e36979d5-c1b6-4c17-a65a-d8de8e6bd8d0
 # ╟─aeafe1ed-f217-48fd-9624-add5f6f791e6
 # ╟─b547311c-ddf0-4053-9de4-f0e85b861e63
-# ╠═2ed2f3c3-619b-4aed-b88b-b92a43578d84
-# ╟─f239c879-81f2-456f-80b1-5b0129e893dd
+# ╟─2ed2f3c3-619b-4aed-b88b-b92a43578d84
 # ╟─849f69b0-07af-40ab-8295-c0b80a26a2d5
 # ╟─36372d31-215d-4299-b4f1-49e42d8b0dbd
+# ╠═7927aec8-83c0-4d7c-9639-69d4b6f1a807
 # ╟─c32725a4-e276-4372-8d06-d40ba52c9f09
-# ╟─f1a71f47-fb19-4988-a439-2ff8d38be5b7
-# ╠═a6c4e663-f1e3-4e0c-a8bf-7c13fcb076f0
-# ╠═f9e5092b-a158-48cb-a919-96f30ec51038
-# ╠═c8c3fe32-560d-11ec-0617-2dc33608384a
-# ╠═5394b13a-e629-47c8-902d-685c061b37ae
+# ╟─b04cba56-dd48-403b-82fc-1cf3713853a7
+# ╠═f1a71f47-fb19-4988-a439-2ff8d38be5b7
+# ╠═91dae79f-e454-4b27-84a7-4cbc6bc33265
+# ╟─c8c3fe32-560d-11ec-0617-2dc33608384a
+# ╟─5394b13a-e629-47c8-902d-685c061b37ae
 # ╟─00000000-0000-0000-0000-000000000001
 # ╟─00000000-0000-0000-0000-000000000002

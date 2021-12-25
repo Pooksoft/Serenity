@@ -94,7 +94,7 @@ function compute_profit_loss_at_expiration(assets::Array{AbstractAsset,1},
     # construct the col names -
     push!(col_name_array,"P")
     for asset ∈ assets
-        col_name = description(asset)
+        col_name = build_option_ticker_symbol(asset)
         push!(col_name_array, col_name)
     end
     push!(col_name_array,"Σ")

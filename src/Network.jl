@@ -28,10 +28,33 @@ function http_get_call_with_url(url::String)::Some
     end
 end
 
+function polygon_error_handler(request_body_dictionary::Dict{String, Any})::Tuple
+
+    # initialize -
+    error_response_dictionary = Dict{String,Any}()
+    
+    # what are my error keys?
+    error_keys = [
+        "status", "error", "request_id"
+    ]
+    for key ∈ error_keys
+        error_response_dictionary[key] = request_body_dictionary[key]
+    end
+
+    # return -
+    return (error_response_dictionary, nothing)
+end
+
 function process_aggregates_polygon_call_response(body::String)
 
     # convert to JSON -
     request_body_dictionary = JSON.parse(body)
+
+    # before we do anything - check: do we have an error?
+    status_flag = request_body_dictionary["status"]
+    if (status_flag == "ERROR")
+        return polygon_error_handler(request_body_dictionary)
+    end
 
     # initialize -
     header_dictionary = Dict{String,Any}()
@@ -61,6 +84,7 @@ function process_aggregates_polygon_call_response(body::String)
         
         # build a results tuple -
         result_tuple = (
+            
             volume = result_dictionary["v"],
             volume_weighted_average_price = result_dictionary["vw"],
             open = result_dictionary["o"],
@@ -79,24 +103,84 @@ function process_aggregates_polygon_call_response(body::String)
     return (header_dictionary, df)
 end
 
-function execute_polygon_aggregates_api_call(base::String, ticker::String, multiplier::Int,
-    timespan::String, from::Date, to::Date, options::Dict{String,Any})
+function process_options_reference_call_response(body::String)
 
-    # build up the base string -
-    base_url = "$(base)/aggs/ticker/$(ticker)/range/$(multiplier)/$(timespan)/$(from)/$(to)?"
+    # convert to JSON -
+    request_body_dictionary = JSON.parse(body)
+
+    # before we do anything - check: do we have an error?
+    status_flag = request_body_dictionary["status"]
+    if (status_flag == "ERROR")
+        return polygon_error_handler(request_body_dictionary)
+    end
+
+    # initialize -
+    header_dictionary = Dict{String,Any}()
+    df = DataFrame(
+
+        cifi=String[],
+        contract_type=String[],
+        correction=Int64[],
+        exercise_style=String[],
+        expiration_date=Date[],
+        primary_exchange=String[],
+        shares_per_contract=Int64[],
+        strike_price=Float64[],
+        ticker = String[],
+        underlying_ticker = String[]
+    )
+
+    # fill in the header dictionary -
+    header_keys = [
+        "status", "request_id", "count", "next_url"
+    ]
+    for key ∈ header_keys
+        header_dictionary[key] = request_body_dictionary[key]
+    end
+
+    # populate the results DataFrame -
+    results_array = request_body_dictionary["results"]
+    for result_dictionary ∈ results_array
+        
+        # build a results tuple -
+        result_tuple = (
+
+            cifi = result_dictionary["cifi"],
+            contract_type = result_dictionary["contract_type"],
+            correction = result_dictionary["correction"],
+            exercise_style = result_dictionary["exercise_style"],
+            expiration_date = Date(result_dictionary["expiration_date"]),
+            primary_exchange = result_dictionary["primary_exchange"],
+            shares_per_contract = result_dictionary["shares_per_contract"],
+            strike_price = result_dictionary["strike_price"],
+            ticker = result_dictionary["ticker"],
+            underlying_ticker = result_dictionary["underlying_ticker"]
+        )
+    
+        # push that tuple into the df -
+        push!(df, result_tuple)
+    end
 
     # return -
-    complete_url_string = build_url_query_string(base_url, options)
-
-    # execute -
-    result_string = http_get_call_with_url(complete_url_string) |> check
-
-    # process and return -
-    return (result_string |> process_aggregates_polygon_call_response)
+    return (header_dictionary, df)
 end
 
-function polygon(base::String, model::PolygonAggregatesEndpointModel; 
-    handler::Function = process_aggregates_polygon_call_response)
+function process_polygon_response(model::AbstractPolygonEndpointModel, 
+    response::String)::Tuple
+
+    # which handler should we call?
+    if (isa(model,PolygonAggregatesEndpointModel) == true)
+        return process_aggregates_polygon_call_response(response)
+    elseif (isa(model, PolygonOptionsContractReferenceEndpoint) == true)
+        return process_options_reference_call_response(response)
+    end
+
+    # default -
+    return nothing
+end
+
+function polygon(base::String, model::AbstractPolygonEndpointModel; 
+    handler::Function = process_polygon_response)::Tuple
 
     # build the url string -
     complete_url_string = build(base, model)
@@ -105,5 +189,5 @@ function polygon(base::String, model::PolygonAggregatesEndpointModel;
     result_string = http_get_call_with_url(complete_url_string) |> check
 
     # process and return -
-    return (result_string |> handler)
+    return handler(model, result_string)
 end

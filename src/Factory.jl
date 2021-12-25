@@ -109,33 +109,6 @@ function build_geometric_brownian_motion_model(asset_return_array::Array{Float64
     return gbm
 end
 
-function build(base::String, model::PolygonAggregatesEndpointModel)::String
-
-    # get data from the API call data -
-    adjusted = model.adjusted
-    limit = model.limit
-    sortdirection = model.sortdirection
-    apikey = model.apikey
-    ticker = model.ticker
-    to = model.to
-    from = model.from
-    multiplier = model.multiplier
-    timespan = model.timespan
-
-    # build up the base string -
-    base_url = "$(base)/aggs/ticker/$(ticker)/range/$(multiplier)/$(timespan)/$(from)/$(to)?"
-
-    # what keys are passed as parameters?
-    options_dictionary = Dict{String,Any}()
-	options_dictionary["adjusted"] = adjusted
-	options_dictionary["sort"] = sortdirection
-	options_dictionary["limit"] = limit
-	options_dictionary["apiKey"] = apikey
-
-    # return -
-    return add_parameters_to_url_query_string(base_url, options_dictionary)
-end
-
 function add_parameters_to_url_query_string(base::String, options::Dict{String,Any})::String
 
     # init -
@@ -151,4 +124,87 @@ function add_parameters_to_url_query_string(base::String, options::Dict{String,A
 
     # return -
     return url_string * query_parameters
+end
+
+function build(base::String, model::PolygonAggregatesEndpointModel; 
+    apiversion::Int64 = 2)::String
+
+    # get data from the API call data -
+    adjusted = model.adjusted
+    limit = model.limit
+    sortdirection = model.sortdirection
+    apikey = model.apikey
+    ticker = model.ticker
+    to = model.to
+    from = model.from
+    multiplier = model.multiplier
+    timespan = model.timespan
+
+    # build up the base string -
+    base_url = "$(base)/v$(apiversion)/aggs/ticker/$(ticker)/range/$(multiplier)/$(timespan)/$(from)/$(to)?"
+
+    # what keys are passed as parameters?
+    options_dictionary = Dict{String,Any}()
+	options_dictionary["adjusted"] = adjusted
+	options_dictionary["sort"] = sortdirection
+	options_dictionary["limit"] = limit
+	options_dictionary["apiKey"] = apikey
+
+    # return -
+    return add_parameters_to_url_query_string(base_url, options_dictionary)
+end
+
+function build(base::String, model::PolygonOptionsContractReferenceEndpoint; 
+    apiversion::Int64 = 3)::String
+
+    # what are the fields for this api model?
+    api_model_fieldnames = fieldnames(model);
+
+    # build -
+    base_url = "$(base)/v$(apiversion)/reference/options/contracts?"
+
+    # build an options dictionary -
+    options_dictionary = Dict{String,Any}()
+    for fieldname ∈ api_model_fieldnames
+        
+        value = getproperty(model,fieldname)
+        if (isnothing(value) == false)
+            options_dictionary[String(fieldname)] = value
+        end
+    end
+
+    # add some defaults to the options dictionary -
+    get!(options_dictionary,"order","asc")
+    get!(options_dictionary,"sort","strike_price")
+    get!(options_dictionary,"limit", 1000) # default to max if not specified
+
+    # now - add the parameters ...
+    return add_parameters_to_url_query_string(base_url, options_dictionary)
+end
+
+function build_option_ticker_symbol(underlying::String, expiration::Date, type::OptionContractType, 
+    K::Float64)
+
+    # compute the ticker string -
+    
+    # get all the components -
+    ticker_component = uppercase(underlying)
+    YY = year(expiration) - 2000 # hack to get a two digit year 
+    MM = lpad(month(expiration),2,"0")
+    DD = lpad(day(expiration),2,"0")
+
+    # what is the option contract type?
+    contract_type = "C"
+    if (type == put)
+        contract_type = "P"
+    end
+
+    # compute the price code -
+    strike_component = lpad(convert(Int64, K*1000), 8, "0");
+
+    # build the string -
+    ticker_string = "$(ticker_component)$(YY)$(MM)$(DD)$(contract_type)$(strike_component)"
+
+    # return the ticker string -
+    return ticker_string;
 end

@@ -149,7 +149,7 @@ begin
 	using JSON
 	
     # alias the Polygon.io URL -
-    DATASTORE_URL_STRING = "https://api.polygon.io/v2"
+    DATASTORE_URL_STRING = "https://api.polygon.io"
 
     # What we have here is a classic good news, bad news situation ...
     # Bad news: We don't check in our Polygon.io API key to GitHub (sorry). 

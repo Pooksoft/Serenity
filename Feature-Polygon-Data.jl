@@ -48,9 +48,6 @@ md"""
 ##### Stock price data, ticker news and other information
 """
 
-# ╔═╡ d43f58d6-4a15-4248-bea5-96fc34932b94
-
-
 # ╔═╡ 6589f632-2e09-4bc6-aa8e-30f6338d5729
 md"""
 ##### Cryptocurrency price data and other crypto information
@@ -58,8 +55,11 @@ md"""
 
 # ╔═╡ feab4379-ce36-4a34-abf6-70a6a15dcfd2
 md"""
-##### Option price data
+##### Options data
 """
+
+# ╔═╡ 05d72483-d219-4c4f-823c-c9ceb82caa3d
+
 
 # ╔═╡ 8623a119-bf7f-4566-be78-9769c3a64042
 md"""
@@ -1863,13 +1863,13 @@ version = "0.9.1+5"
 # ╟─572cb255-04a5-402b-a10f-85f6a1a23f39
 # ╠═3bd81185-9277-4903-bc0b-b41f5e3e7685
 # ╠═02f7555b-3569-4364-b8d8-4859a36faeac
-# ╠═d43f58d6-4a15-4248-bea5-96fc34932b94
 # ╟─6589f632-2e09-4bc6-aa8e-30f6338d5729
 # ╠═cabe68be-fad4-4a60-8234-546643c09770
 # ╠═e7ff2aa0-fceb-4fde-8ba6-7438ad1961d5
 # ╟─feab4379-ce36-4a34-abf6-70a6a15dcfd2
 # ╠═1ae954ce-a4c7-4508-9ede-0fb59cd5d638
 # ╠═9d5bb802-9857-4090-af31-11d8b0d5e333
+# ╠═05d72483-d219-4c4f-823c-c9ceb82caa3d
 # ╠═9d55aea4-ac0c-4c33-a161-80ddd34678c6
 # ╠═3e49d29f-c3d0-4824-9196-6030a73936df
 # ╟─8623a119-bf7f-4566-be78-9769c3a64042

@@ -84,7 +84,7 @@ function process_aggregates_polygon_call_response(body::String)
         
         # build a results tuple -
         result_tuple = (
-            
+
             volume = result_dictionary["v"],
             volume_weighted_average_price = result_dictionary["vw"],
             open = result_dictionary["o"],
@@ -118,9 +118,8 @@ function process_options_reference_call_response(body::String)
     header_dictionary = Dict{String,Any}()
     df = DataFrame(
 
-        cifi=String[],
+        cfi=String[],
         contract_type=String[],
-        correction=Int64[],
         exercise_style=String[],
         expiration_date=Date[],
         primary_exchange=String[],
@@ -145,9 +144,8 @@ function process_options_reference_call_response(body::String)
         # build a results tuple -
         result_tuple = (
 
-            cifi = result_dictionary["cifi"],
+            cfi = result_dictionary["cfi"],
             contract_type = result_dictionary["contract_type"],
-            correction = result_dictionary["correction"],
             exercise_style = result_dictionary["exercise_style"],
             expiration_date = Date(result_dictionary["expiration_date"]),
             primary_exchange = result_dictionary["primary_exchange"],

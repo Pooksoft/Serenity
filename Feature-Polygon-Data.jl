@@ -147,6 +147,7 @@ begin
 	using SCS
 	using MathOptInterface
 	using JSON
+	using Colors
 	
     # alias the Polygon.io URL -
     DATASTORE_URL_STRING = "https://api.polygon.io"
@@ -166,6 +167,74 @@ begin
     # show -
     nothing
 end
+
+# ╔═╡ 9d55aea4-ac0c-4c33-a161-80ddd34678c6
+function option_contract_reference_api_endpoint(ticker_symbol::String, expiration::Date; 
+	sleeptime::Float64 = 20.0)::NamedTuple
+
+	# save the file locally to avoid the API limit -
+	savepath = joinpath(_PATH_TO_DATA,"polygon", "demo", "options","$(ticker_symbol)")
+
+	# check: have we already made the savepath directory?
+	if (ispath(savepath) == true)
+
+		# yes: this means we already have downloaded this data - load the local version. 
+		
+		# what are my local paths?
+		local_path_to_data_file = joinpath(savepath,"C$(ticker_symbol).csv")
+		local_path_to_header_file = joinpath(savepath,"header", "C$(ticker_symbol)-header.csv")
+
+		# we already have this ticker downloaded. load the existing file from disk -
+        data_table = CSV.read(local_path_to_data_file, DataFrame)
+		header = CSV.read(local_path_to_header_file, Dict)
+
+        # put the price DataFrame into the price_data_dictionary -
+        return (header=header, data=data_table)
+	else
+
+		# no: download the options information for this ticker, both put and call -
+
+		# make local paths -
+		mkpath(savepath)
+    	mkpath(joinpath(savepath, "header"))
+		
+		# call -
+		call_endpoint_model = Serenity.PolygonOptionsContractReferenceEndpoint()
+		call_endpoint_model.ticker = nothing
+    	call_endpoint_model.underlying_ticker = ticker_symbol
+    	call_endpoint_model.contract_type = Serenity.put
+    	call_endpoint_model.expiration_date = expiration
+    	call_endpoint_model.limit = 100
+    	call_endpoint_model.order = "asc"
+    	call_endpoint_model.sort = Serenity.strike_price
+		call_endpoint_model.apikey = POLYGON_API_KEY
+
+		# execute -
+		(header,df) = Serenity.polygon(DATASTORE_URL_STRING, call_endpoint_model);
+
+		# what are my local paths?
+		local_path_to_data_file = joinpath(savepath,"C$(ticker_symbol).csv")
+		local_path_to_header_file = joinpath(savepath,"header", "C$(ticker_symbol)-header.csv")
+		
+		# save locally -
+		CSV.write(local_path_to_data_file, df)
+		CSV.write(local_path_to_header_file, header)
+
+		# sleep sometime before we return - helps avoid API limit issue -
+		sleep(sleeptime)
+
+		
+			
+        # put the price DataFrame into the price_data_dictionary -
+        return (header=header, data=df)
+	end
+end
+
+# ╔═╡ 1ae954ce-a4c7-4508-9ede-0fb59cd5d638
+(h,d) = option_contract_reference_api_endpoint("SPY", Date(2022,1,3));
+
+# ╔═╡ 9d5bb802-9857-4090-af31-11d8b0d5e333
+d
 
 # ╔═╡ 3e49d29f-c3d0-4824-9196-6030a73936df
 # -------------------------------------------------------------------------------------------- #
@@ -319,66 +388,6 @@ begin
 	P_spy = stock_data_dictionary["SPY"].data[1,:close]
 	P_spy_scaled = (1/P_spy)*stock_data_dictionary["SPY"].data[!,:close]
 	plot!(P_spy_scaled,c=RED,lw=4)
-end
-
-# ╔═╡ f97cdf69-7604-49b9-a0da-d0622bf75a5f
-function download_ticker_data(psia_ticker_symbol_array::Array{String,1}, from::Date, to::Date; 
-	savepath::String = _PATH_TO_DATA, adjusted=true, sortdirection="asc", limit=5000, multiplier = 1, timespan = "day")
-
-	# initialize -
-    price_data_dictionary = Dict{String,NamedTuple}()
-	
-	# API call model -
-	api_model = Serenity.PolygonAggregatesEndpointModel()
-	api_model.adjusted = adjusted
-	api_model.sortdirection = sortdirection
-	api_model.apikey = POLYGON_API_KEY
-	api_model.limit = limit
-	api_model.to = to
-	api_model.from = from
-	api_model.multiplier = multiplier
-	api_model.timespan = timespan
-
-	# make the dir to save the data (if we don't have it already) -
-	mkpath(savepath)
-    mkpath(joinpath(savepath,"header"))
-
-	# process each ticker -
-	for ticker_symbol ∈ psia_ticker_symbol_array
-
-		# check - do we have this data already?
-		local_path_to_data_file = joinpath(savepath,"$(ticker_symbol).csv")
-		local_path_to_header_file = joinpath(savepath, "header", "$(ticker_symbol)-header.csv")
-		
-		if (ispath(local_path_to_data_file) == false || Serenity.does_data_file_exist(local_path_to_data_file) == false)
-
-			# update the ticker -
-			api_model.ticker = ticker_symbol
-			
-			# call -
-			(hd,df) = Serenity.polygon(DATASTORE_URL_STRING, api_model)
-
-            # dump data to disk -
-            CSV.write(local_path_to_data_file, df)
-			CSV.write(local_path_to_header_file, hd)
-			
-            # put the price DataFrame into the price_data_dictionary -
-            price_data_dictionary[ticker_symbol] = (header=hd, data=df)
-
-			# sleep -
-			sleep(20)
-		else
-
-			# we already have this ticker downloaded. load the existing file from disk -
-            data_table = CSV.read(local_path_to_data_file, DataFrame)
-			header = CSV.read(local_path_to_header_file, Dict)
-
-            # put the price DataFrame into the price_data_dictionary -
-            price_data_dictionary[ticker_symbol] = (header=header, data=data_table)
-		end
-	end
-
-	return price_data_dictionary
 end
 
 # ╔═╡ b4100007-b259-4fe3-a88c-be88928fe423
@@ -1858,13 +1867,15 @@ version = "0.9.1+5"
 # ╟─6589f632-2e09-4bc6-aa8e-30f6338d5729
 # ╠═cabe68be-fad4-4a60-8234-546643c09770
 # ╠═e7ff2aa0-fceb-4fde-8ba6-7438ad1961d5
-# ╠═3e49d29f-c3d0-4824-9196-6030a73936df
 # ╟─feab4379-ce36-4a34-abf6-70a6a15dcfd2
+# ╠═1ae954ce-a4c7-4508-9ede-0fb59cd5d638
+# ╠═9d5bb802-9857-4090-af31-11d8b0d5e333
+# ╠═9d55aea4-ac0c-4c33-a161-80ddd34678c6
+# ╠═3e49d29f-c3d0-4824-9196-6030a73936df
 # ╟─8623a119-bf7f-4566-be78-9769c3a64042
 # ╟─77473f9a-e5fd-41e6-89d4-acffcba38f45
 # ╠═feb87b95-c7c7-4bb3-925e-0b7600c89954
 # ╠═bd0c9e41-fed0-46f9-bf2e-136a439692a2
-# ╠═f97cdf69-7604-49b9-a0da-d0622bf75a5f
 # ╟─7ce9e2ec-a3a2-4b64-be6e-27618bd9f3f1
 # ╟─b4100007-b259-4fe3-a88c-be88928fe423
 # ╟─5596d565-04f3-44a6-9b72-05cf2b64a1ca

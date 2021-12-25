@@ -158,7 +158,7 @@ function build(base::String, model::PolygonOptionsContractReferenceEndpoint;
     apiversion::Int64 = 3)::String
 
     # what are the fields for this api model?
-    api_model_fieldnames = fieldnames(model);
+    api_model_fieldnames = fieldnames(PolygonOptionsContractReferenceEndpoint);
 
     # build -
     base_url = "$(base)/v$(apiversion)/reference/options/contracts?"
@@ -182,7 +182,7 @@ function build(base::String, model::PolygonOptionsContractReferenceEndpoint;
     return add_parameters_to_url_query_string(base_url, options_dictionary)
 end
 
-function build_option_ticker_symbol(underlying::String, expiration::Date, type::OptionContractType, 
+function build_option_ticker_symbol(underlying::String, expiration::Date, type::PolygonOptionContractType, 
     K::Float64)
 
     # compute the ticker string -

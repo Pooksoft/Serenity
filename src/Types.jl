@@ -20,7 +20,6 @@ mutable struct GeometricBrownianMotionModel
 end
 
 # --- ASSETS ------------------------------------------------- #
-@enum OptionContractType call=1 put
 abstract type AbstractAsset end
 mutable struct CallContract <: AbstractAsset
 
@@ -81,17 +80,19 @@ mutable struct PolygonAggregatesEndpointModel <: AbstractPolygonEndpointModel
 end
 
 # Setup call for options data -
-@enum PolygonOptionSortKey ticker=1 underlying_ticker expiration_date strike_price 
+@enum PolygonOptionSortKey ticker=1 underlying_ticker expiration_date strike_price
+@enum PolygonOptionContractType call=1 put 
 mutable struct PolygonOptionsContractReferenceEndpoint <: AbstractPolygonEndpointModel
 
     # data -
-    ticker::String
-    underlying_ticker::String
-    contract_type::OptionContractType
+    ticker::Union{Nothing,String}
+    underlying_ticker::Union{Nothing, String}
+    contract_type::PolygonOptionContractType
     expiration_date::Date
     limit::Int64
     order::String
     sort::PolygonOptionSortKey
+    apikey::String
 
     # constructor -
     PolygonOptionsContractReferenceEndpoint() = new()

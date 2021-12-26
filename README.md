@@ -1,5 +1,5 @@
 ## The Serenity Platform
-The Serenity platform is a library of functions for modeling and simulating financial decisions. 
+The Serenity platform is a library of functions for modeling and simulating financial data. 
 Serenity is written in the [Julia](https://julialang.org) programming language, is open source and free to use. 
 
 ### Installation and Requirements

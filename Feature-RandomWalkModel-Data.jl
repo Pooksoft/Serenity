@@ -16,7 +16,7 @@ end
 
 # ╔═╡ 2bb52ee4-1c6f-46b6-b105-86827ada0f75
 md"""
-# Random Walk Simulation and The Efficient Market Hypothesis 
+# Random Walks and The Efficient Market Hypothesis 
 """
 
 # ╔═╡ 2f499c95-38cf-4856-b199-6c9aac44237a
@@ -34,6 +34,14 @@ md"""
 md"""
 ### Materials and Methods
 
+##### Disclaimer
+
+This notebook (and all codes discussed within) is offered solely for training and  informational purposes. No offer or solicitation to buy or sell securities or securities derivative products of any kind, or any type of investment or trading advice or strategy,  is made, given, or in any manner endorsed by Pooksoft. 
+
+Trading involves risk. Carefully review your financial situation before investing in securities, futures contracts, options, or commodity interests. Past performance, whether actual or indicated by historical tests of strategies, is no guarantee of future performance or success. Trading is generally not appropriate for someone with limited resources, investment or trading experience, or a low-risk tolerance.  Only risk capital that will not be needed for living expenses.
+
+You are fully responsible for any investment or trading decisions you make, and such decisions should be based solely on your evaluation of your financial circumstances, investment or trading objectives, risk tolerance, and liquidity needs
+
 ##### Random Walk Models (RWMs)
 [Random walk models](https://en.wikipedia.org/wiki/Random_walk) are tools for computing the time evolution of the prices of risky assets, for example, the price of a stock with the ticker symbol `XYZ`. Let the price of `XYZ` at time $j$ be given by $P_{j}$ (units: USD/share). Then during the next time period (index $j+1$) the `XYZ` share price will be given by:
 
@@ -43,15 +51,17 @@ where $\Delta{t}$ denotes the length of time between periods $j$ and $j+1$ (unit
 
 $$p_{j+1} = p_{j} + \mu_{j\rightarrow{j+1}}\Delta{t}$$
 
-where $p_{\star}$ denotes the log of the price at time $\star$ (units: dimensionless). This expression is a basic [random walk model](https://en.wikipedia.org/wiki/Random_walk). The challenge to using this model is how to estimate the growth rate 
-$\mu_{j\rightarrow{j+1}}$ because the values for $\mu_{j\rightarrow{j+1}}$ are [time-dependent random variables](https://en.wikipedia.org/wiki/Stochastic_process) which are [distributed](https://en.wikipedia.org/wiki/Probability_distribution) in some unknown way. However, if we had a value for $\mu_{j\rightarrow{j+1}}$ (or at least a model to estimate a value for it, denoted as $\hat{\mu}_{j\rightarrow{j+1}}$), we could 
-simulate the price of `XYZ` during the next time period $j+1$ given knowledge of the price now (time period $j$). For example, given a value for the close price of `XYZ` on Monday, we could estimate a value for the close price of `XYZ` on Tuesday if we had a model for the daily growth rate.
+where $p_{\star}$ denotes the log of the price at time $\star$ (units: dimensionless). This expression is a basic [random walk model](https://en.wikipedia.org/wiki/Random_walk). The challenge to using this model is how to estimate the return 
+$\mu_{j\rightarrow{j+1}}$ because the values for $\mu_{j\rightarrow{j+1}}$ are [random variables](https://en.wikipedia.org/wiki/Stochastic_process) which are [distributed](https://en.wikipedia.org/wiki/Probability_distribution) in some unknown way. However, if we had a value for $\mu_{j\rightarrow{j+1}}$ (or at least a model to estimate a value for it, denoted as $\hat{\mu}_{j\rightarrow{j+1}}$), we could 
+simulate the price of `XYZ` during the next time period $j+1$ given knowledge of the price now (time period $j$). For example, given a value for the close price of `XYZ` on Monday, we could estimate a value for the close price of `XYZ` on Tuesday if we had a model for the daily return.
 
-##### Estimating models for the growth rate from historical data
-Suppose values the growth rate were governed by some [probability distribution](https://en.wikipedia.org/wiki/Probability_distribution) $\mathcal{D}\left(\bar{m},\sigma\right)$ where $\bar{m}$ 
+##### Estimating models for the return from historical data
+Suppose values for the return were governed by some [probability distribution](https://en.wikipedia.org/wiki/Probability_distribution) $\mathcal{D}\left(\bar{m},\sigma\right)$ where $\bar{m}$ 
 denotes the [mean value](https://en.wikipedia.org/wiki/Mean) and $\sigma$ denotes the [standard deviation](https://en.wikipedia.org/wiki/Standard_deviation) of the growth rate $\mu_{j\rightarrow{j+1}}$. Of course, we do not know the actual values for 
 $\left(\bar{m},\sigma\right)$, nor do we know the form of $\mathcal{D}\left(\bar{m},\sigma\right)$, but we can estimate them from historial price data. An even better way to learn $\mathcal{D}\left(\bar{m},\sigma\right)$ would be to estimate the form of the distribution from the data itself using a technique such as [Kernel Density Estimation](https://en.wikipedia.org/wiki/Kernel_density_estimation) or KDE. However, KDE is a little advanced for now, maybe later. 
 
+##### My Julia Setup
+In the following code block, we set up project paths and import external packages that we use to download and analyze historical price history for a variety of ticker symbols. In addition, we load a local copy of the [Serenity library](https://github.com/Pooksoft/Serenity).
 """
 
 # ╔═╡ 9943d000-83d0-413d-a231-0295fb19df71
@@ -62,11 +72,20 @@ md"""
 # ╔═╡ f66a480b-3f0c-4ebf-a8b8-e0f91dff851d
 md"""
 ##### Download historical price data from the [Polygon.io](https://www.polygon.io) financial data warehouse
-We specify a list of ticker symbols that we want to model. Next, we check to see if we have price data already saved locally for each ticker. 
-* If yes, then we load the saved file as a [DataFrame](https://dataframes.juliadata.org/stable/) and store it in the `price_data_dictionary` where the keys are the ticker strings e.g., MSFT, etc. 
-* if no, we download new data from [Polygon.io](https://www.polygon.io), save this data locally as a `CSV` file (<ticker>.csv), and finally we store the price data as a DataFrame in the `price_data_dictionary` where the keys are the ticker symbols.
+We used methods in the [Serenity library](https://github.com/Pooksoft/Serenity) and the routine `aggregates_api_endpoint` defined in this notebook to download historical pricing data from the [Polygon.io](https://www.polygon.io) financial data warehouse.
 
-The parameters for the [Polygon.io](https://www.polygon.io) API call are encoded in endpoint-specific structs in the [Serenity library](https://github.com/Pooksoft/Serenity). For estimating a SIM, we use the daily close price for the last 100 trading days for each ticker. 
+The `aggregates_api_endpoint` takes a list of ticker symbols that we want to model as an input argument.
+This method checks to see if we have price data already saved locally for each ticker.
+
+* If yes, then we load the saved file as a [DataFrame](https://dataframes.juliadata.org/stable/) and store it in the `price_data_dictionary` data structure which is of type [Dict](https://docs.julialang.org/en/v1/base/collections/#Dictionaries) where the keys are the ticker strings e.g., MSFT, etc and the values are the price [DataFrames](https://dataframes.juliadata.org/stable/).
+* if no, we download new data from [Polygon.io](https://www.polygon.io), save this data locally as a `CSV` file (<ticker>.csv), and return the price data as a [DataFrame](https://dataframes.juliadata.org/stable/) in the `price_data_dictionary` dictionary.
+
+The parameters for the [Polygon.io](https://www.polygon.io) application programming interface call are encoded in endpoint-specific [Structs](https://docs.julialang.org/en/v1/manual/types/#Composite-Types) defined in the [Serenity library](https://github.com/Pooksoft/Serenity). 
+"""
+
+# ╔═╡ 300b62c8-830a-472f-a07c-17153468c1fb
+md"""
+###### What ticker symbols are we going to model?
 """
 
 # ╔═╡ 54efa70c-bac6-4d7c-93df-0dfd1b89769d
@@ -82,28 +101,32 @@ ticker_symbol_array = sort(["MSFT", "ALLY", "MET", "AAPL", "GM", "PFE", "TGT", "
 
 # ╔═╡ 61ab2949-d72f-4d80-a717-4b6a9227de0e
 md"""
-##### Estimate the daily return distributions from historical data assuming a continuous compounding model
+##### Estimate the daily return distributions assuming a continuous compounding model
 
-To estimate a model for the return $\mathcal{D}\left(\bar{m},\sigma\right)$, we first compute the historical return for a ticker. 
-The [Serenity library](https://github.com/Pooksoft/Serenity.git) provides a method to compute the [log return](https://en.wikipedia.org/wiki/Rate_of_return) from historical data (contained in a DataFrame).
+To estimate a model for the return $\mathcal{D}\left(\bar{m},\sigma\right)$, we first compute the historical returns for each ticker. The [Serenity library](https://github.com/Pooksoft/Serenity.git) provides a method to compute the [log return](https://en.wikipedia.org/wiki/Rate_of_return) from historical data. 
+
+Given the daily return data, we can estimate the parameters of a distribution that describes this data using a variety of approaches e.g., [nonlinear least squares](https://en.wikipedia.org/wiki/Non-linear_least_squares) or [maximum likelihood estimation](https://en.wikipedia.org/wiki/Maximum_likelihood_estimation). However, there are a few technical issues with this approach:
+
+* What model for $\mathcal{D}\left(\bar{m},\sigma\right)$ do we choose? Conventional wisdom suggests return data follows a [Normal distribution](https://en.wikipedia.org/wiki/Normal_distribution). However, is this really correct, or is the data governed by another type of distribution?
+* Next, an underlying assumption of the random walk (and thus our approach at predicting future stock prices) is that the daily returns are independent and identically distributed, ie., the close price for day $j$ and $j+1$ are independent of one another and they follow the same underlying distribution. 
 """
 
 # ╔═╡ a39b90ec-a4c5-472f-b00e-c81ee9c5576f
 md"""
-__Fig. 1__: Histogram of the adjusted daily returns computed using the `stephist` routine of the [StatsPlots.jl](https://github.com/JuliaPlots/StatsPlots.jl) package for the 𝒫 = 40 ticker symbols in the PSIA. The number of bins was set to be 20% of the number of historical records for `AAPL` (shown in red) and was constant for each ticker. The returns were calculated using approximately two years of historical daily adjusted close price data (depending upon the ticker symbol). 
+__Fig. 1__: Histogram of the adjusted daily returns computed using the `stephist` routine of the [StatsPlots.jl package](https://github.com/JuliaPlots/StatsPlots.jl) for 𝒫 = 40 ticker symbols in PSIA. The number of bins was set to 20% of the number of historical records for `AAPL` (shown in red) and was constant for each ticker. The returns were calculated using approximately two years of historical daily adjusted close price data (depending upon the ticker symbol). 
 Close price data was downloaded from the [Polygon.io](https://www.polygon.io) data warehouse. 
 """
 
 # ╔═╡ edfbf364-e126-4e95-93d2-a6adfb340045
 md"""
-##### The daily return of individual ticker symbols was not normally distributed
+##### The daily return of individual ticker symbols is not normally distributed
 
-A key assumption often made in mathematical finance is that the growth rate $\mu_{j\rightarrow{j+1}}$ (return) computed using the log of the prices is normally distributed. However, a closer examination of the $\mu_{j\rightarrow{j+1}}$ values computed from historical data suggests this is not true (Fig. 2). Visual inspection of the histograms computed using a [Laplace distribution](https://en.wikipedia.org/wiki/Laplace_distribution) (Fig 2, dark blue) for the returns appear to be closer to the historical data (Fig 2, red) compared to a [Normal distribution](https://en.wikipedia.org/wiki/Normal_distribution) (Fig 2, light blue). 
+A key assumption often made in mathematical finance is that the return $\mu_{j\rightarrow{j+1}}$ (growth rate) computed using the log of the prices is normally distributed. However, a closer examination of the $\mu_{j\rightarrow{j+1}}$ values computed from historical data suggests this is not true (Fig. 2). Visual inspection of the histograms computed using a [Laplace distribution](https://en.wikipedia.org/wiki/Laplace_distribution) (Fig 2, dark blue) for the returns appear to be closer to the historical data (Fig 2, red) compared to a [Normal distribution](https://en.wikipedia.org/wiki/Normal_distribution) (Fig 2, light blue). 
 """
 
 # ╔═╡ a786ca10-06d2-4b76-97a9-2bcf879ea6cb
 # fit a distribution to a ticker -
-single_asset_ticker_symbol = "MRNA";
+single_asset_ticker_symbol = "AIG";
 
 # ╔═╡ a3d29aa3-96ca-4681-960c-3b4b04b1e40d
 md"""
@@ -112,7 +135,7 @@ __Fig 2__: Comparison of the actual (red line) and estimated histogram for the a
 
 # ╔═╡ 1d72b291-24b7-4ec6-8307-1da0bc4a9183
 md"""
-We further explored the question of a Normal versus Laplace return distribution, by constructing [QQplots](https://en.wikipedia.org/wiki/Q–Q_plot) to visualize the historical return data versus a Laplace distribution (Fig. 3), and performed the [Kolmogorov–Smirnov (KS) test](https://en.wikipedia.org/wiki/Kolmogorov–Smirnov_test), using the KS test implementation in the [HypothesisTests.jl](https://juliastats.org/HypothesisTests.jl/latest/nonparametric/#Kolmogorov-Smirnov-test-1) package, to test whether the historical return data were Normally or Laplace distributed (Table 1). 
+We explored the question of a Normal versus Laplace return distribution, by constructing [QQplots](https://en.wikipedia.org/wiki/Q–Q_plot) to visualize the historical return data versus a Laplace distribution (Fig. 3). Further, we performed the [Kolmogorov–Smirnov (KS) test](https://en.wikipedia.org/wiki/Kolmogorov–Smirnov_test), using the KS test implementation in the [HypothesisTests.jl](https://juliastats.org/HypothesisTests.jl/latest/nonparametric/#Kolmogorov-Smirnov-test-1) package. The KS test determines whether data follows a particular distribution, in our case we test whether the historical return data were either Normally or Laplace distributed (Table 1). 
 """
 
 # ╔═╡ 1867ecec-3c3d-4b2b-9036-1488e2184c40
@@ -120,9 +143,16 @@ md"""
 __Fig 3__: Quantile-Quantile plot (QQplot) for historical $(single_asset_ticker_symbol) return data versus theoretical data generated using a Laplace distribution. If the historical data were governed by a Laplace distribution, the points would lie along the equality line. 
 """
 
+# ╔═╡ a07d661a-a0b4-4000-b7a4-5f17cda5edc3
+md"""
+###### Example: KS test for $(single_asset_ticker_symbol) to determine if the return data follows a Laplace distrubution
+
+The null hypothesis $h_0$ for the KS test is the data follows a specified distribution, in our case a Laplace distribution. Conversely, the alternative hypothesis $h_{1}$ is the data does not follow a particular distribution, again in this case, a Laplace distribution. 
+"""
+
 # ╔═╡ 379373b1-e563-4341-9978-5b35c768b5c7
 md"""
-__Table 1__: [Kolmogorov–Smirnov (KS)](https://en.wikipedia.org/wiki/Kolmogorov–Smirnov_test) test results for Normal and Laplace distribution for PSIA tickers (𝒫 = 40). The historical return values for 39 of the 40 members of the PSIA were governed by a Laplace distribution; MRNA failed the KS test for a Laplace distribution, and was estimated to be Normally distributed.  
+__Table 1__: [Kolmogorov–Smirnov (KS)](https://en.wikipedia.org/wiki/Kolmogorov–Smirnov_test) test results for Normal and Laplace distribution for PSIA tickers (𝒫 = 40). The historical return values computed over the last two years of historical data for 39 of the 40 members of the PSIA were governed by a Laplace distribution; MRNA failed the KS test for a Laplace distribution, and was estimated to be Normally distributed.  
 """
 
 # ╔═╡ 10fa507e-1429-4eb0-b74c-1e6638725690
@@ -288,9 +318,6 @@ function aggregates_api_endpoint(ticker_symbol::String; sleeptime::Float64 = 20.
 end
 
 # ╔═╡ 5c5d5eeb-6775-452f-880d-7b4fa2acda57
-# # download the data (or load from local cache)
-# price_data_dictionary = download_ticker_data(ticker_symbol_array);
-
 begin
 
 	# initialize -
@@ -299,7 +326,8 @@ begin
 	# process each member of the ticker symbol array -
 	for ticker_symbol ∈ ticker_symbol_array
 
-		# make a call to Polygon.io (or load local cached data )
+		# make a call to Polygon.io (or load local cached data)
+		# the aggregates_api_endpoint method is defined at the bottom of this notebook
 		(h,d) = aggregates_api_endpoint(ticker_symbol)
 
 		# grab the price data -
@@ -405,7 +433,7 @@ begin
 end
 
 # ╔═╡ f0ee3633-1d28-4344-9b85-f5433679582a
-test_result = HypothesisTests.ExactOneSampleKSTest(unique(μ_vector), LAPLACE)
+test_result = HypothesisTests.ExactOneSampleKSTest(unique(μ_vector), LAPLACE) 
 
 # ╔═╡ 8b2725a2-8007-46b8-a160-75042562794d
 with_terminal() do
@@ -447,7 +475,7 @@ begin
 	for ticker_symbol ∈ ticker_symbol_array
 
 		# what is the *actual* price data?
-    	actual_price_data = price_data_dictionary[ticker_symbol][end-𝒯:end, :close]
+    	local actual_price_data = price_data_dictionary[ticker_symbol][end-𝒯:end, :close]
 
     	# get initial price -
     	initial_price_value = log(actual_price_data[1])
@@ -2077,16 +2105,17 @@ version = "0.9.1+5"
 # ╟─2bb52ee4-1c6f-46b6-b105-86827ada0f75
 # ╟─2f499c95-38cf-4856-b199-6c9aac44237a
 # ╟─34bf07e8-5c47-4aa8-aa2c-161709c158be
-# ╟─9943d000-83d0-413d-a231-0295fb19df71
 # ╠═fe2848df-823a-4ed0-918c-2c200957ee80
+# ╟─9943d000-83d0-413d-a231-0295fb19df71
 # ╟─f66a480b-3f0c-4ebf-a8b8-e0f91dff851d
+# ╟─300b62c8-830a-472f-a07c-17153468c1fb
 # ╠═54efa70c-bac6-4d7c-93df-0dfd1b89769d
 # ╠═866cc84d-86c1-40e2-bd29-deae01da9a2e
 # ╠═5c5d5eeb-6775-452f-880d-7b4fa2acda57
 # ╟─61ab2949-d72f-4d80-a717-4b6a9227de0e
 # ╠═34b06415-21c1-4904-97f0-ab614447355c
 # ╟─a39b90ec-a4c5-472f-b00e-c81ee9c5576f
-# ╟─cbbd8670-49ab-4601-b8d7-9f3f456752e8
+# ╠═cbbd8670-49ab-4601-b8d7-9f3f456752e8
 # ╟─edfbf364-e126-4e95-93d2-a6adfb340045
 # ╠═a786ca10-06d2-4b76-97a9-2bcf879ea6cb
 # ╟─a3d29aa3-96ca-4681-960c-3b4b04b1e40d
@@ -2094,7 +2123,8 @@ version = "0.9.1+5"
 # ╟─1d72b291-24b7-4ec6-8307-1da0bc4a9183
 # ╟─1867ecec-3c3d-4b2b-9036-1488e2184c40
 # ╟─0e09d312-2ddf-4d1f-8ad5-a50fb48ca4dd
-# ╟─f0ee3633-1d28-4344-9b85-f5433679582a
+# ╟─a07d661a-a0b4-4000-b7a4-5f17cda5edc3
+# ╠═f0ee3633-1d28-4344-9b85-f5433679582a
 # ╟─379373b1-e563-4341-9978-5b35c768b5c7
 # ╟─8b2725a2-8007-46b8-a160-75042562794d
 # ╟─10fa507e-1429-4eb0-b74c-1e6638725690
@@ -2105,7 +2135,7 @@ version = "0.9.1+5"
 # ╟─b547311c-ddf0-4053-9de4-f0e85b861e63
 # ╟─2ed2f3c3-619b-4aed-b88b-b92a43578d84
 # ╟─849f69b0-07af-40ab-8295-c0b80a26a2d5
-# ╠═4d3357c4-0a43-4ea9-a479-99a30c6468be
+# ╟─4d3357c4-0a43-4ea9-a479-99a30c6468be
 # ╠═9e226d34-9ea9-45af-b54f-b12854fb571c
 # ╠═9ef73762-8af6-4976-b864-4cef8e9ab2a9
 # ╟─36372d31-215d-4299-b4f1-49e42d8b0dbd
@@ -2115,6 +2145,6 @@ version = "0.9.1+5"
 # ╠═f1a71f47-fb19-4988-a439-2ff8d38be5b7
 # ╠═91dae79f-e454-4b27-84a7-4cbc6bc33265
 # ╟─c8c3fe32-560d-11ec-0617-2dc33608384a
-# ╟─5394b13a-e629-47c8-902d-685c061b37ae
+# ╠═5394b13a-e629-47c8-902d-685c061b37ae
 # ╟─00000000-0000-0000-0000-000000000001
 # ╟─00000000-0000-0000-0000-000000000002

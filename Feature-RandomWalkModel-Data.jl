@@ -97,7 +97,7 @@ ticker_symbol_array = sort(["MSFT", "ALLY", "MET", "AAPL", "GM", "PFE", "TGT", "
 ]);
 
 # ╔═╡ 866cc84d-86c1-40e2-bd29-deae01da9a2e
-𝒫 = length(ticker_symbol_array);
+𝒫 = length(ticker_symbol_array); # the number of ticker symbols is given the symbol 𝒫
 
 # ╔═╡ 61ab2949-d72f-4d80-a717-4b6a9227de0e
 md"""
@@ -126,7 +126,7 @@ A key assumption often made in mathematical finance is that the return $\mu_{j\r
 
 # ╔═╡ a786ca10-06d2-4b76-97a9-2bcf879ea6cb
 # fit a distribution to a ticker -
-single_asset_ticker_symbol = "AIG";
+single_asset_ticker_symbol = "AAPL";
 
 # ╔═╡ a3d29aa3-96ca-4681-960c-3b4b04b1e40d
 md"""
@@ -435,6 +435,58 @@ end
 # ╔═╡ f0ee3633-1d28-4344-9b85-f5433679582a
 test_result = HypothesisTests.ExactOneSampleKSTest(unique(μ_vector), LAPLACE) 
 
+# ╔═╡ b688be7e-670f-482d-aa83-e141e1c1f252
+L1 = fit(Laplace, μ_vector)
+
+# ╔═╡ 39f0ea77-82aa-4514-916d-f86bf6345fd1
+begin
+
+	NS = 100
+	NSP = 10
+	NT = 14
+
+	sample_return_data = Array{Array{Float64,1},1}(undef, NT)
+	
+	# Let's use stratefied sampling to generate the return samples -
+    for time_step_index ∈ 1:NT
+
+		tmp_vector = Array{Float64,1}()
+                
+        # sample the strata ...
+        for strata_index ∈ 1:NS
+            
+            # compute a number_of_sample_paths draws from tis strata?
+            for _ ∈ 1:NSP
+                
+                # compute V -
+                V = (strata_index - 1)/NS + rand()/NS
+
+                # compute the quantile for this V -
+                q = quantile(L1, V)
+
+                # grab this value -
+                push!(tmp_vector, q)
+            end
+        end
+		
+        sample_return_data[time_step_index] = tmp_vector
+
+		# empty -
+		# empty!(tmp_vector)
+    end
+
+    # how many samples do we need?
+    #sample_return_array = rand(model, number_of_steps, number_of_sample_paths)
+    sample_return_array = transpose(hcat(sample_return_data...))
+
+end
+
+# ╔═╡ 4092deca-495b-490a-bb56-51bd5fa11c1b
+begin
+	stephist(sample_return_array[1,:], number_of_bins = NS)
+	stephist!(sample_return_array[2,:], number_of_bins = NS)
+end
+
 # ╔═╡ 8b2725a2-8007-46b8-a160-75042562794d
 with_terminal() do
 
@@ -469,7 +521,8 @@ begin
     
 	# how many steps, sample paths etc -
     𝒯 = 14 # number of days 
-    number_of_sample_paths = 25000
+    number_of_sample_paths = 5000;
+	number_of_strata = 1;
 	monte_carlo_simulation_dictionary = Dict{String,Array{Float64,2}}()
 
 	for ticker_symbol ∈ ticker_symbol_array
@@ -482,12 +535,18 @@ begin
 
     	# compute a set of possible trajectories -> convert back to actual price -
     	monte_carlo_simulation_dictionary[ticker_symbol] = LAPLACE(initial_price_value, 𝒯;
-        		number_of_sample_paths = number_of_sample_paths) .|> exp
+        		number_of_sample_paths = number_of_sample_paths, number_of_strata = number_of_strata) .|> exp
 	end
     
     # show -
     nothing
 end
+
+# ╔═╡ ff11bdd2-8ab6-40c0-844b-a3474d7e9a04
+Z = monte_carlo_simulation_dictionary[single_asset_ticker_symbol]
+
+# ╔═╡ cac02388-31c4-40b9-8288-a6685e1854fb
+stephist(Z[end,:], number_of_bins=10, normed=true)
 
 # ╔═╡ a1e1d5f8-e06e-4682-ab54-a9454a8e3b30
 md"""
@@ -497,11 +556,6 @@ __Fig 4__: In sample random walk simulation of ticker = $(single_asset_ticker_sy
 # ╔═╡ b547311c-ddf0-4053-9de4-f0e85b861e63
 md"""
 __Table 2__: Comparison of the actual close price versus the Monte Carlo simulated close price for a 𝒯 = $(𝒯) day prediction horizon for each ticker in the PSIA (𝒫 = 40). Each ticker was classified into class c ∈ {-1,0,1} where: +1 HIGH, 0 INSIDE, or -1 LOW. The classification was based upon whether the actual close price Pₐ ∈ Pₑ ± σ, where Pₐ denotes the actual close price (units: USD/share), Pₑ denotes the mean simulated close price (units: USD/share), and σ denotes the standard deviation of the simulated close price (units: USD/share) computed over the family Monte Carlo trajectories (N = $(number_of_sample_paths)).
-"""
-
-# ╔═╡ 849f69b0-07af-40ab-8295-c0b80a26a2d5
-md"""
-__Fig 5__: In sample random walk simulation (N = $(number_of_sample_paths) sample paths) of ticker $(single_asset_ticker_symbol) for T = $(𝒯) days. Gray lines denotes simulated sample paths. Red line denotes actual price trajectory for ticker $(single_asset_ticker_symbol).
 """
 
 # ╔═╡ 9e226d34-9ea9-45af-b54f-b12854fb571c
@@ -516,7 +570,7 @@ begin
 		μ_vector = return_data_dictionary[ticker_symbol][!,:μ]
 
 		# what is the lag?
-		L = (1:𝒯-1) |> collect
+		L = (0:𝒯-1) |> collect
 
 		# compute the auto correlation function -
 		acf_v = autocor(μ_vector,L)
@@ -529,14 +583,14 @@ begin
 end
 
 # ╔═╡ 9ef73762-8af6-4976-b864-4cef8e9ab2a9
-mean(serial_autocorrelation_array,dims=2)
+serial_autocorrelation_array
 
 # ╔═╡ aeafe1ed-f217-48fd-9624-add5f6f791e6
 begin
 	
 	# setup some preliminaries -
-	skip_factor = convert(Int64, (floor(0.005 * number_of_sample_paths)))
-    plot_index_array = 1:skip_factor:number_of_sample_paths |> collect
+	skip_factor = convert(Int64, round(0.01*(2*number_of_sample_paths*number_of_strata)))
+    plot_index_array = 1:skip_factor:(2*number_of_sample_paths*number_of_strata) |> collect
 	simulated_price_trajectory = monte_carlo_simulation_dictionary[single_asset_ticker_symbol]
 	
 	# what is the *actual* price data?
@@ -584,10 +638,10 @@ begin
 end
 
 # ╔═╡ 2ed2f3c3-619b-4aed-b88b-b92a43578d84
-begin
+with_terminal() do
 
 	# initialize some storage -
-	price_state_table = Array{Any,2}(undef, number_of_ticker_symbols, 9)
+	price_state_table = Array{Any,2}(undef, number_of_ticker_symbols, 10)
 	
 	for ticker_symbol_index ∈ 1:number_of_ticker_symbols 
 
@@ -605,35 +659,35 @@ begin
 		
 		# populate state table -
 		price_state_table[ticker_symbol_index,1] = ticker_symbol
-		price_state_table[ticker_symbol_index,2] = price_actual
-		price_state_table[ticker_symbol_index,3] = estimated_mean_price
-		price_state_table[ticker_symbol_index,4] = (price_actual - estimated_mean_price)
-		price_state_table[ticker_symbol_index,5] = tmp_LB
-		price_state_table[ticker_symbol_index,6] = tmp_UB
+		price_state_table[ticker_symbol_index,2] = actual_price_data[1]
+		price_state_table[ticker_symbol_index,3] = price_actual
+		price_state_table[ticker_symbol_index,4] = estimated_mean_price
+		price_state_table[ticker_symbol_index,5] = (price_actual - estimated_mean_price)
+		price_state_table[ticker_symbol_index,6] = tmp_LB
+		price_state_table[ticker_symbol_index,7] = tmp_UB
 		
         δL = max(0,round(tmp_LB - price_actual, sigdigits = 4))
         δU = max(0,round(price_actual - tmp_UB, sigdigits = 4))
-		price_state_table[ticker_symbol_index,7] = δL
-		price_state_table[ticker_symbol_index,8] = δU	
+		price_state_table[ticker_symbol_index,8] = δL
+		price_state_table[ticker_symbol_index,9] = δU	
 
 		if (δL == 0.0 && δU == 0.0)
-			price_state_table[ticker_symbol_index,9] = 0 	# exepcted
+			price_state_table[ticker_symbol_index,10] = 0 	# exepcted
 		elseif (δL>0.0 && δU == 0.0)
-			price_state_table[ticker_symbol_index,9] = -1 # oversold
+			price_state_table[ticker_symbol_index,10] = -1 # oversold
 		elseif (δL == 0.0 && δU > 0.0)
-			price_state_table[ticker_symbol_index,9] = 1 # overbought
+			price_state_table[ticker_symbol_index,10] = 1 # overbought
 		end
 	end
 
-	with_terminal() do
-		price_table_header = (
-			["ticker", "actual Pₐ", "estimate Pₑ", "excess price", "ℒ = (Pₑ - σ)", "𝒰 = (Pₑ + σ)", "δL = max(0, ℒ - Pₐ)", 
-				"δU = max(0, Pₐ - 𝒰)", "class c"],
-			["", "USD/share", "USD/share", "USD/share", "USD/share", "", "USD/share", "USD/share","c ∈ {-1,0,1}"]
-		)
-	
-		pretty_table(price_state_table, header=price_table_header)
-	end
+
+	price_table_header = (
+		["ticker", "P₀ (𝒯 = 1)", "Pₐ (𝒯 = 14)", "Pₑ (𝒯 = 14)", "ΔP", "ℒ = (Pₑ - σ)", "𝒰 = (Pₑ + σ)", "δL = max(0, ℒ - Pₐ)", 
+			"δU = max(0, Pₐ - 𝒰)", "class c"],
+		["", "USD/share", "USD/share", "USD/share", "USD/share", "USD/share", "", "USD/share", "USD/share","c ∈ {-1,0,1}"]
+	)
+
+	pretty_table(price_state_table, header=price_table_header)
 end
 
 # ╔═╡ c8c3fe32-560d-11ec-0617-2dc33608384a
@@ -2126,15 +2180,19 @@ version = "0.9.1+5"
 # ╟─a07d661a-a0b4-4000-b7a4-5f17cda5edc3
 # ╠═f0ee3633-1d28-4344-9b85-f5433679582a
 # ╟─379373b1-e563-4341-9978-5b35c768b5c7
-# ╟─8b2725a2-8007-46b8-a160-75042562794d
+# ╠═8b2725a2-8007-46b8-a160-75042562794d
+# ╠═b688be7e-670f-482d-aa83-e141e1c1f252
+# ╠═39f0ea77-82aa-4514-916d-f86bf6345fd1
+# ╠═4092deca-495b-490a-bb56-51bd5fa11c1b
 # ╟─10fa507e-1429-4eb0-b74c-1e6638725690
 # ╠═5a3500c2-4f82-43e9-a31b-d530f56fdbe9
+# ╠═ff11bdd2-8ab6-40c0-844b-a3474d7e9a04
+# ╠═cac02388-31c4-40b9-8288-a6685e1854fb
 # ╟─a1e1d5f8-e06e-4682-ab54-a9454a8e3b30
 # ╟─e36979d5-c1b6-4c17-a65a-d8de8e6bd8d0
 # ╠═aeafe1ed-f217-48fd-9624-add5f6f791e6
 # ╟─b547311c-ddf0-4053-9de4-f0e85b861e63
 # ╟─2ed2f3c3-619b-4aed-b88b-b92a43578d84
-# ╟─849f69b0-07af-40ab-8295-c0b80a26a2d5
 # ╟─4d3357c4-0a43-4ea9-a479-99a30c6468be
 # ╠═9e226d34-9ea9-45af-b54f-b12854fb571c
 # ╠═9ef73762-8af6-4976-b864-4cef8e9ab2a9

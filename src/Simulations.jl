@@ -77,20 +77,51 @@ function simulate_insample_portfolio_allocation(tickers::Array{String,1},
 end
 
 function simulate_random_walk_model_trajectory(model::Distribution, initial_price::Float64,
-    number_of_steps::Int64; number_of_sample_paths = 1)
+    number_of_steps::Int64; number_of_sample_paths = 1, number_of_strata = 1)
 
     # initialize -
     number_of_steps = number_of_steps + 1
-    price_array = Array{Float64,2}(undef, number_of_steps, number_of_sample_paths)
+    sample_return_data = Array{Array{Float64,1},1}(undef, number_of_steps)
+	
+	# Let's use stratefied sampling to generate the return samples -
+    for time_step_index ∈ 1:number_of_steps
 
-    # insert the first value -
-    price_array[1, 1:number_of_sample_paths] .= initial_price
+		tmp_vector = Array{Float64,1}()
+                
+        # sample the strata ...
+        for strata_index ∈ 1:number_of_strata
+            
+            # compute a number_of_sample_paths draws from tis strata?
+            for _ ∈ 1:number_of_sample_paths
+                
+                # compute V -
+                V₁ = (strata_index - 1)/number_of_strata + rand()/number_of_strata
+                V₂ = (strata_index - 1)/number_of_strata + (1-rand())/number_of_strata
+
+                # compute the quantile for this V -
+                q₁ = quantile(model, V₁)
+                q₂ = quantile(model, V₂)
+
+                # grab this value -
+                push!(tmp_vector, q₁)
+                push!(tmp_vector, q₂)
+            end
+        end
+		
+        sample_return_data[time_step_index] = tmp_vector
+    end
 
     # how many samples do we need?
-    sample_return_array = rand(model, number_of_steps, number_of_sample_paths)
+    #sample_return_array = rand(model, number_of_steps, number_of_sample_paths)
+    sample_return_array = transpose(hcat(sample_return_data...))
+
+    # ok - so how many samples did we generate?
+    (_, number_of_total_samples) = size(sample_return_array)
+    price_array = Array{Float64,2}(undef, number_of_steps, number_of_total_samples)
+    price_array[1, 1:number_of_total_samples] .= initial_price
 
     # compute the price -
-    for sample_path_index = 1:number_of_sample_paths
+    for sample_path_index = 1:number_of_total_samples
         for step_index = 2:number_of_steps
             price_array[step_index, sample_path_index] = price_array[step_index-1, sample_path_index] + sample_return_array[step_index, sample_path_index]
         end
@@ -105,6 +136,7 @@ end
     simulate_sim_random_walk(model, initial_price, market_return; Δt = Δt);
 
 # short cut method RWMC method -
-(model::Distribution)(initial_price::Float64, number_of_steps::Int64; number_of_sample_paths = 1) =
+(model::Distribution)(initial_price::Float64, number_of_steps::Int64; 
+    number_of_sample_paths = 1, number_of_strata = 1) =
     simulate_random_walk_model_trajectory(model, initial_price, number_of_steps;
-        number_of_sample_paths = number_of_sample_paths)
+        number_of_sample_paths = number_of_sample_paths, number_of_strata = number_of_strata)

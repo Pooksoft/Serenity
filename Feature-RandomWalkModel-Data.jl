@@ -72,7 +72,7 @@ md"""
 # ╔═╡ f66a480b-3f0c-4ebf-a8b8-e0f91dff851d
 md"""
 ##### Download historical price data from the [Polygon.io](https://www.polygon.io) financial data warehouse
-We used methods in the [Serenity library](https://github.com/Pooksoft/Serenity) and the routine `aggregates_api_endpoint` defined in this notebook to download historical pricing data from the [Polygon.io](https://www.polygon.io) financial data warehouse.
+In this study, we model two years of daily adjusted close price data from 2019-12-26 to 2021-12-23 (N = 504) for a variety of ticker symbols. We used methods in the [Serenity library](https://github.com/Pooksoft/Serenity) and the routine `aggregates_api_endpoint` defined in this notebook to download historical pricing data from the [Polygon.io](https://www.polygon.io) financial data warehouse using a free tier application programming interface key.
 
 The `aggregates_api_endpoint` takes a list of ticker symbols that we want to model as an input argument.
 This method checks to see if we have price data already saved locally for each ticker.
@@ -103,12 +103,12 @@ ticker_symbol_array = sort(["MSFT", "ALLY", "MET", "AAPL", "GM", "PFE", "TGT", "
 md"""
 ##### Estimate the daily return distributions assuming a continuous compounding model
 
-To estimate a model for the return $\mathcal{D}\left(\bar{m},\sigma\right)$, we first compute the historical returns for each ticker. The [Serenity library](https://github.com/Pooksoft/Serenity.git) provides a method to compute the [log return](https://en.wikipedia.org/wiki/Rate_of_return) from historical data. 
+To estimate a model for the return $\mathcal{D}\left(\bar{m},\sigma\right)$, we first compute the historical returns for each ticker. The [Serenity library](https://github.com/Pooksoft/Serenity.git) provides the `compute_log_return_array` method to compute the [log return](https://en.wikipedia.org/wiki/Rate_of_return) of pricing data.
 
-Given the daily return data, we can estimate the parameters of a distribution that describes this data using a variety of approaches e.g., [nonlinear least squares](https://en.wikipedia.org/wiki/Non-linear_least_squares) or [maximum likelihood estimation](https://en.wikipedia.org/wiki/Maximum_likelihood_estimation). However, there are a few technical issues with this approach:
+Given the daily return data, we can estimate the parameters of a distribution that describes this data using a variety of approaches e.g., [nonlinear least squares](https://en.wikipedia.org/wiki/Non-linear_least_squares) or [maximum likelihood estimation](https://en.wikipedia.org/wiki/Maximum_likelihood_estimation). However, there are a few technical questions with this approach:
 
-* What model for $\mathcal{D}\left(\bar{m},\sigma\right)$ do we choose? Conventional wisdom suggests return data follows a [Normal distribution](https://en.wikipedia.org/wiki/Normal_distribution). However, is this really correct, or is the data governed by another type of distribution?
-* Next, an underlying assumption of the random walk (and thus our approach at predicting future stock prices) is that the daily returns are independent and identically distributed, ie., the close price for day $j$ and $j+1$ are independent of one another and they follow the same underlying distribution. 
+* __Question 1__: What model for $\mathcal{D}\left(\bar{m},\sigma\right)$ do we choose? Conventional wisdom suggests return data follows a [Normal distribution](https://en.wikipedia.org/wiki/Normal_distribution). However, is this really correct, or is the data governed by another type of distribution?
+* __Question 2__: Next, an underlying assumption of the random walk (and thus our approach at predicting future stock prices) is that the daily returns are independent and identically distributed, ie., the close price for the day $j$ and $j+1$ are independent of one another and they follow the same underlying distribution. 
 """
 
 # ╔═╡ a39b90ec-a4c5-472f-b00e-c81ee9c5576f
@@ -121,12 +121,14 @@ Close price data was downloaded from the [Polygon.io](https://www.polygon.io) da
 md"""
 ##### The daily return of individual ticker symbols is not normally distributed
 
-A key assumption often made in mathematical finance is that the return $\mu_{j\rightarrow{j+1}}$ (growth rate) computed using the log of the prices is normally distributed. However, a closer examination of the $\mu_{j\rightarrow{j+1}}$ values computed from historical data suggests this is not true (Fig. 2). Visual inspection of the histograms computed using a [Laplace distribution](https://en.wikipedia.org/wiki/Laplace_distribution) (Fig 2, dark blue) for the returns appear to be closer to the historical data (Fig 2, red) compared to a [Normal distribution](https://en.wikipedia.org/wiki/Normal_distribution) (Fig 2, light blue). 
+A key assumption often made in mathematical finance is that the return $\mu_{j\rightarrow{j+1}}$ (growth rate) computed using the log of the prices is normally distributed (Question 1 raised above). However, a closer examination of the return data for our collection of ticker symbols suggests this is not true.
+
+The return $\mu_{j\rightarrow{j+1}}$ values computed from historical data are not normally distributed for the vast majority of ticker symbols in our collection (Fig. 2). Visual inspection of the histograms computed using a [Laplace distribution](https://en.wikipedia.org/wiki/Laplace_distribution) (Fig 2, dark blue) for the returns appear to be closer to the historical data (Fig 2, red) compared to a [Normal distribution](https://en.wikipedia.org/wiki/Normal_distribution) (Fig 2, light blue). [QQplots](https://en.wikipedia.org/wiki/Q–Q_plot) and the [Kolmogorov–Smirnov (KS) test](https://en.wikipedia.org/wiki/Kolmogorov–Smirnov_test) further support this finding. 
 """
 
 # ╔═╡ a786ca10-06d2-4b76-97a9-2bcf879ea6cb
 # fit a distribution to a ticker -
-single_asset_ticker_symbol = "AAPL";
+single_asset_ticker_symbol = "MRNA";
 
 # ╔═╡ a3d29aa3-96ca-4681-960c-3b4b04b1e40d
 md"""
@@ -135,7 +137,7 @@ __Fig 2__: Comparison of the actual (red line) and estimated histogram for the a
 
 # ╔═╡ 1d72b291-24b7-4ec6-8307-1da0bc4a9183
 md"""
-We explored the question of a Normal versus Laplace return distribution, by constructing [QQplots](https://en.wikipedia.org/wiki/Q–Q_plot) to visualize the historical return data versus a Laplace distribution (Fig. 3). Further, we performed the [Kolmogorov–Smirnov (KS) test](https://en.wikipedia.org/wiki/Kolmogorov–Smirnov_test), using the KS test implementation in the [HypothesisTests.jl](https://juliastats.org/HypothesisTests.jl/latest/nonparametric/#Kolmogorov-Smirnov-test-1) package. The KS test determines whether data follows a particular distribution, in our case we test whether the historical return data were either Normally or Laplace distributed (Table 1). 
+Beyond simply visualizing the histogram, we explored the question of a [Normal](https://en.wikipedia.org/wiki/Normal_distribution) versus [Laplace](https://en.wikipedia.org/wiki/Laplace_distribution) return distribution, by constructing [QQplots](https://en.wikipedia.org/wiki/Q–Q_plot) to visualize the historical return data versus a Laplace distribution (Fig. 3). Further, we performed the [Kolmogorov–Smirnov (KS) test](https://en.wikipedia.org/wiki/Kolmogorov–Smirnov_test), using the KS test implementation in the [HypothesisTests.jl](https://juliastats.org/HypothesisTests.jl/latest/nonparametric/#Kolmogorov-Smirnov-test-1) package. The KS test determines whether data follows a particular distribution, in our case we test whether the historical return data were either Normally or Laplace distributed (Table 1). 
 """
 
 # ╔═╡ 1867ecec-3c3d-4b2b-9036-1488e2184c40
@@ -167,13 +169,13 @@ md"""
 ##### Serial autocorrelation test 
 """
 
-# ╔═╡ 7927aec8-83c0-4d7c-9639-69d4b6f1a807
-
-
 # ╔═╡ c32725a4-e276-4372-8d06-d40ba52c9f09
 md"""
 ### Conclusions
 
+In this study, we explored random walks and the efficient market hypothesis. In particular, we simulated 𝒯 future price predictions based on a return model learned from historical data. 
+
+* We found for a variety of ticker symbols (the DJIA plus 10 additional symbols) that the majority of the returns were not Normally distributed. 
 
 """
 
@@ -392,16 +394,37 @@ begin
     xlims!((-100.0 * μ_avg, 100.0 * μ_avg))
 end
 
-# ╔═╡ 6bf06c12-cf25-43c4-81f3-b1d79d13fc94
-begin
+# ╔═╡ 012ef00f-6176-4d42-801f-5765c47df7ba
+begin 
 
-    # get the historical return data -
+	# get the historical return data -
     μ_vector = return_data_dictionary[single_asset_ticker_symbol][!, :μ]
 
-    # fit the model -
-    NORMAL = fit(Normal, μ_vector)
-    LAPLACE = fit(Laplace, μ_vector)
+	# fit a Laplace -
+	LAPLACE = fit(Laplace, μ_vector)
 
+	# fit a normal -
+    NORMAL = fit(Normal, μ_vector)
+
+	# show -
+	nothing
+end
+
+# ╔═╡ f0ee3633-1d28-4344-9b85-f5433679582a
+let
+	# perform the KS test -
+	test_result = HypothesisTests.ExactOneSampleKSTest(unique(μ_vector), LAPLACE)
+end
+
+# ╔═╡ 345d8feb-cfd0-4acb-a626-dc16181ddb68
+let
+	# perform the KS test for Laplace -
+	test_result = HypothesisTests.ExactOneSampleKSTest(unique(μ_vector), NORMAL)
+end
+
+# ╔═╡ 6bf06c12-cf25-43c4-81f3-b1d79d13fc94
+let
+    
     # generate 10_000 samples
     S = rand(LAPLACE, 20000)
     SN = rand(NORMAL, 20000)
@@ -421,70 +444,20 @@ begin
     xlabel!("Daily return μ (1/day)", fontsize = 18)
     ylabel!("Frequency (N=$(number_of_bins); dimensionless)", fontsize = 14)
     xlims!((-75.0 * μ_avg, 75.0 * μ_avg))
+	
 end
 
 # ╔═╡ 0e09d312-2ddf-4d1f-8ad5-a50fb48ca4dd
-begin
+let
+
+	# get the historical return data -
+    μ_vector = return_data_dictionary[single_asset_ticker_symbol][!, :μ]
+	
 	qqplot(Laplace, μ_vector, label="QQPlot $(single_asset_ticker_symbol)", legend=:topleft, 
 		foreground_color_legend = nothing, c=LBLUE, markerstrokecolor=BLUE, lw=2, 
 		background_color = BACKGROUND, background_color_outside = WHITE)
 	xlabel!("Theoretical Laplace Quantiles", fontsize=18)
 	ylabel!("Sample Quantiles", fontsize=18)
-end
-
-# ╔═╡ f0ee3633-1d28-4344-9b85-f5433679582a
-test_result = HypothesisTests.ExactOneSampleKSTest(unique(μ_vector), LAPLACE) 
-
-# ╔═╡ b688be7e-670f-482d-aa83-e141e1c1f252
-L1 = fit(Laplace, μ_vector)
-
-# ╔═╡ 39f0ea77-82aa-4514-916d-f86bf6345fd1
-begin
-
-	NS = 100
-	NSP = 10
-	NT = 14
-
-	sample_return_data = Array{Array{Float64,1},1}(undef, NT)
-	
-	# Let's use stratefied sampling to generate the return samples -
-    for time_step_index ∈ 1:NT
-
-		tmp_vector = Array{Float64,1}()
-                
-        # sample the strata ...
-        for strata_index ∈ 1:NS
-            
-            # compute a number_of_sample_paths draws from tis strata?
-            for _ ∈ 1:NSP
-                
-                # compute V -
-                V = (strata_index - 1)/NS + rand()/NS
-
-                # compute the quantile for this V -
-                q = quantile(L1, V)
-
-                # grab this value -
-                push!(tmp_vector, q)
-            end
-        end
-		
-        sample_return_data[time_step_index] = tmp_vector
-
-		# empty -
-		# empty!(tmp_vector)
-    end
-
-    # how many samples do we need?
-    #sample_return_array = rand(model, number_of_steps, number_of_sample_paths)
-    sample_return_array = transpose(hcat(sample_return_data...))
-
-end
-
-# ╔═╡ 4092deca-495b-490a-bb56-51bd5fa11c1b
-begin
-	stephist(sample_return_array[1,:], number_of_bins = NS)
-	stephist!(sample_return_array[2,:], number_of_bins = NS)
 end
 
 # ╔═╡ 8b2725a2-8007-46b8-a160-75042562794d
@@ -521,7 +494,7 @@ begin
     
 	# how many steps, sample paths etc -
     𝒯 = 14 # number of days 
-    number_of_sample_paths = 5000;
+    number_of_sample_paths = 12500;
 	number_of_strata = 1;
 	monte_carlo_simulation_dictionary = Dict{String,Array{Float64,2}}()
 
@@ -545,17 +518,26 @@ end
 # ╔═╡ ff11bdd2-8ab6-40c0-844b-a3474d7e9a04
 Z = monte_carlo_simulation_dictionary[single_asset_ticker_symbol]
 
-# ╔═╡ cac02388-31c4-40b9-8288-a6685e1854fb
-stephist(Z[end,:], number_of_bins=10, normed=true)
-
 # ╔═╡ a1e1d5f8-e06e-4682-ab54-a9454a8e3b30
 md"""
-__Fig 4__: In sample random walk simulation of ticker = $(single_asset_ticker_symbol) for a 𝒯 = $(𝒯) day prediction horizon. Blue lines denotes simulated sample paths while the red line denotes the actual price trajectory for ticker $(single_asset_ticker_symbol). The simulation consisted of N = $(number_of_sample_paths) sample paths.
+__Fig 4__: In sample random walk simulation of ticker = $(single_asset_ticker_symbol) for a 𝒯 = $(𝒯) day prediction horizon. Blue lines denotes simulated sample paths while the red line denotes the actual price trajectory for ticker $(single_asset_ticker_symbol). The simulation consisted of N = $(2*number_of_sample_paths) sample paths.
 """
+
+# ╔═╡ cac02388-31c4-40b9-8288-a6685e1854fb
+begin
+	
+	# plot the histogram -
+	stephist(Z[end,:], number_of_bins=10, normed=true, lw=2, c=BLUE, 
+		label="Close price $(single_asset_ticker_symbol) (T = $(𝒯))", 
+		background_color = BACKGROUND, background_color_outside = WHITE, 
+		foreground_color_legend = nothing)
+	xlabel!("Simulated close price $(single_asset_ticker_symbol) (T = $(𝒯)) (USD/share)", fontsize=18)
+	ylabel!("Frequency (N=10; dimensionless)", fontsize = 14)	
+end
 
 # ╔═╡ b547311c-ddf0-4053-9de4-f0e85b861e63
 md"""
-__Table 2__: Comparison of the actual close price versus the Monte Carlo simulated close price for a 𝒯 = $(𝒯) day prediction horizon for each ticker in the PSIA (𝒫 = 40). Each ticker was classified into class c ∈ {-1,0,1} where: +1 HIGH, 0 INSIDE, or -1 LOW. The classification was based upon whether the actual close price Pₐ ∈ Pₑ ± σ, where Pₐ denotes the actual close price (units: USD/share), Pₑ denotes the mean simulated close price (units: USD/share), and σ denotes the standard deviation of the simulated close price (units: USD/share) computed over the family Monte Carlo trajectories (N = $(number_of_sample_paths)).
+__Table 2__: Comparison of the actual close price versus the Monte Carlo simulated close price for a 𝒯 = $(𝒯) day prediction horizon for each ticker in the PSIA (𝒫 = 40). Each ticker was classified into class c ∈ {-1,0,1} where: +1 HIGH, 0 INSIDE, or -1 LOW. The classification was based upon whether the actual close price Pₐ ∈ Pₑ ± σ, where Pₐ denotes the actual close price (units: USD/share), Pₑ denotes the mean simulated close price (units: USD/share), and σ denotes the standard deviation of the simulated close price (units: USD/share) computed over the family Monte Carlo trajectories (N = $(2*number_of_sample_paths)).
 """
 
 # ╔═╡ 9e226d34-9ea9-45af-b54f-b12854fb571c
@@ -570,7 +552,7 @@ begin
 		μ_vector = return_data_dictionary[ticker_symbol][!,:μ]
 
 		# what is the lag?
-		L = (0:𝒯-1) |> collect
+		L = (𝒯-1):-1:0 |> collect
 
 		# compute the auto correlation function -
 		acf_v = autocor(μ_vector,L)
@@ -582,7 +564,7 @@ begin
 	end
 end
 
-# ╔═╡ 9ef73762-8af6-4976-b864-4cef8e9ab2a9
+# ╔═╡ b25611e1-c8d2-412d-b2b2-6678cb38b99e
 serial_autocorrelation_array
 
 # ╔═╡ aeafe1ed-f217-48fd-9624-add5f6f791e6
@@ -682,7 +664,7 @@ with_terminal() do
 
 
 	price_table_header = (
-		["ticker", "P₀ (𝒯 = 1)", "Pₐ (𝒯 = 14)", "Pₑ (𝒯 = 14)", "ΔP", "ℒ = (Pₑ - σ)", "𝒰 = (Pₑ + σ)", "δL = max(0, ℒ - Pₐ)", 
+		["ticker", "P₀ (𝒯 = 0)", "Pₐ (𝒯 = 14)", "Pₑ (𝒯 = 14)", "ΔP", "ℒ = (Pₑ - σ)", "𝒰 = (Pₑ + σ)", "δL = max(0, ℒ - Pₐ)", 
 			"δU = max(0, Pₐ - 𝒰)", "class c"],
 		["", "USD/share", "USD/share", "USD/share", "USD/share", "USD/share", "", "USD/share", "USD/share","c ∈ {-1,0,1}"]
 	)
@@ -2173,31 +2155,29 @@ version = "0.9.1+5"
 # ╟─edfbf364-e126-4e95-93d2-a6adfb340045
 # ╠═a786ca10-06d2-4b76-97a9-2bcf879ea6cb
 # ╟─a3d29aa3-96ca-4681-960c-3b4b04b1e40d
+# ╠═012ef00f-6176-4d42-801f-5765c47df7ba
 # ╟─6bf06c12-cf25-43c4-81f3-b1d79d13fc94
 # ╟─1d72b291-24b7-4ec6-8307-1da0bc4a9183
 # ╟─1867ecec-3c3d-4b2b-9036-1488e2184c40
 # ╟─0e09d312-2ddf-4d1f-8ad5-a50fb48ca4dd
 # ╟─a07d661a-a0b4-4000-b7a4-5f17cda5edc3
 # ╠═f0ee3633-1d28-4344-9b85-f5433679582a
+# ╠═345d8feb-cfd0-4acb-a626-dc16181ddb68
 # ╟─379373b1-e563-4341-9978-5b35c768b5c7
-# ╠═8b2725a2-8007-46b8-a160-75042562794d
-# ╠═b688be7e-670f-482d-aa83-e141e1c1f252
-# ╠═39f0ea77-82aa-4514-916d-f86bf6345fd1
-# ╠═4092deca-495b-490a-bb56-51bd5fa11c1b
+# ╟─8b2725a2-8007-46b8-a160-75042562794d
 # ╟─10fa507e-1429-4eb0-b74c-1e6638725690
 # ╠═5a3500c2-4f82-43e9-a31b-d530f56fdbe9
 # ╠═ff11bdd2-8ab6-40c0-844b-a3474d7e9a04
-# ╠═cac02388-31c4-40b9-8288-a6685e1854fb
 # ╟─a1e1d5f8-e06e-4682-ab54-a9454a8e3b30
 # ╟─e36979d5-c1b6-4c17-a65a-d8de8e6bd8d0
-# ╠═aeafe1ed-f217-48fd-9624-add5f6f791e6
+# ╟─aeafe1ed-f217-48fd-9624-add5f6f791e6
+# ╟─cac02388-31c4-40b9-8288-a6685e1854fb
 # ╟─b547311c-ddf0-4053-9de4-f0e85b861e63
 # ╟─2ed2f3c3-619b-4aed-b88b-b92a43578d84
 # ╟─4d3357c4-0a43-4ea9-a479-99a30c6468be
 # ╠═9e226d34-9ea9-45af-b54f-b12854fb571c
-# ╠═9ef73762-8af6-4976-b864-4cef8e9ab2a9
+# ╠═b25611e1-c8d2-412d-b2b2-6678cb38b99e
 # ╟─36372d31-215d-4299-b4f1-49e42d8b0dbd
-# ╠═7927aec8-83c0-4d7c-9639-69d4b6f1a807
 # ╟─c32725a4-e276-4372-8d06-d40ba52c9f09
 # ╟─b04cba56-dd48-403b-82fc-1cf3713853a7
 # ╠═f1a71f47-fb19-4988-a439-2ff8d38be5b7

@@ -164,6 +164,15 @@ md"""
 A basic explain of Monte Carlo simulations goes here
 """
 
+# ╔═╡ bc4e93f5-7e76-4115-8cfd-039212181fb3
+md"""
+##### The Wald-Wolfowitz runs test: a non-parametric test for randomness 
+
+The [Walf-Wolfowitz runs test](https://en.wikipedia.org/wiki/Wald–Wolfowitz_runs_test) can be used to estimate whether successive price changes are independent. The [Walf-Wolfowitz runs test](https://en.wikipedia.org/wiki/Wald–Wolfowitz_runs_test) is a non-parametric tool that does not require returns to be normally distributed. 
+
+Each return is scored according to whether it is larger, smaller, or the same as the mean; a score of +1 is assigned when the return is greater than the mean, a score of -1 is assigned when the return is less than the mean, and a score of 0 is assigned when the return equals the mean.
+"""
+
 # ╔═╡ 4d3357c4-0a43-4ea9-a479-99a30c6468be
 md"""
 ##### Serial autocorrelation test 
@@ -488,6 +497,41 @@ with_terminal() do
 	pretty_table(state_table, header=table_header)
 	
 end
+
+# ╔═╡ 1c816d04-3b76-4c0c-9ed9-9b20b5ad50d9
+begin
+
+	# initialize -
+	run_array = Array{Array{Int64,2},1}()
+	
+	for (ticker_index, ticker) ∈ enumerate(ticker_symbol_array)
+
+		# get the return for this ticker -
+		μ_local = return_data_dictionary[ticker][!,:μ]
+		N = length(μ_local)
+
+		# what is the mean return for this ticker?
+		mean_value = mean(μ_local)
+		tmp_array = Array{Int64,2}(undef,N,2)
+		fill!(tmp_array,0)
+		for time_index ∈ 1:N
+		
+			# classify -
+			if (μ_local[time_index] > mean_value)
+				tmp_array[time_index,1] += 1
+				tmp_array[time_index,2] += 0
+			elseif (μ_local[time_index] < mean_value)
+				tmp_array[time_index,1] += 0
+				tmp_array[time_index,2] += 1
+			end
+		end
+
+		push!(run_array,tmp_array)
+	end
+end
+
+# ╔═╡ 072c20fe-3fe1-4170-ac51-b0bbf32f0d86
+run_array
 
 # ╔═╡ 5a3500c2-4f82-43e9-a31b-d530f56fdbe9
 begin
@@ -2174,6 +2218,9 @@ version = "0.9.1+5"
 # ╟─cac02388-31c4-40b9-8288-a6685e1854fb
 # ╟─b547311c-ddf0-4053-9de4-f0e85b861e63
 # ╟─2ed2f3c3-619b-4aed-b88b-b92a43578d84
+# ╟─bc4e93f5-7e76-4115-8cfd-039212181fb3
+# ╠═1c816d04-3b76-4c0c-9ed9-9b20b5ad50d9
+# ╠═072c20fe-3fe1-4170-ac51-b0bbf32f0d86
 # ╟─4d3357c4-0a43-4ea9-a479-99a30c6468be
 # ╠═9e226d34-9ea9-45af-b54f-b12854fb571c
 # ╠═b25611e1-c8d2-412d-b2b2-6678cb38b99e

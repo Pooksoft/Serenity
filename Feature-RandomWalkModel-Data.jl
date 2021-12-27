@@ -502,7 +502,7 @@ end
 begin
 
 	# initialize -
-	run_array = Array{Array{Int64,2},1}()
+	run_array = Array{Union{Int,Float64},2}(undef,𝒫,6)
 	
 	for (ticker_index, ticker) ∈ enumerate(ticker_symbol_array)
 
@@ -526,12 +526,24 @@ begin
 			end
 		end
 
-		push!(run_array,tmp_array)
+		run_array[ticker_index,1] = sum(tmp_array[:,1])
+		run_array[ticker_index,2] = sum(tmp_array[:,2])
+		run_array[ticker_index,3] = (run_array[ticker_index,1]+run_array[ticker_index,2])
+		run_array[ticker_index,4] = (2*run_array[ticker_index,1]*run_array[ticker_index,2])/(run_array[ticker_index,3]) + 1
+		run_array[ticker_index,5] = ((run_array[ticker_index,4] - 1)*(run_array[ticker_index,4] -2))/(run_array[ticker_index,3] - 1)
+		run_array[ticker_index,6] = (run_array[ticker_index,3] - run_array[ticker_index,4])/(run_array[ticker_index,5])
+		
 	end
 end
 
 # ╔═╡ 072c20fe-3fe1-4170-ac51-b0bbf32f0d86
 run_array
+
+# ╔═╡ 20bba789-504b-4d27-a2fc-4f08badc9a53
+begin
+	μ_local = return_data_dictionary[single_asset_ticker_symbol][!,:μ]
+	WaldWolfowitzTest(μ_local)
+end
 
 # ╔═╡ 5a3500c2-4f82-43e9-a31b-d530f56fdbe9
 begin
@@ -2221,6 +2233,7 @@ version = "0.9.1+5"
 # ╟─bc4e93f5-7e76-4115-8cfd-039212181fb3
 # ╠═1c816d04-3b76-4c0c-9ed9-9b20b5ad50d9
 # ╠═072c20fe-3fe1-4170-ac51-b0bbf32f0d86
+# ╠═20bba789-504b-4d27-a2fc-4f08badc9a53
 # ╟─4d3357c4-0a43-4ea9-a479-99a30c6468be
 # ╠═9e226d34-9ea9-45af-b54f-b12854fb571c
 # ╠═b25611e1-c8d2-412d-b2b2-6678cb38b99e

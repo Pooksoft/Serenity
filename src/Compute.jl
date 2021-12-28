@@ -198,30 +198,6 @@ function compute_discrete_geometric_brownian_motion_trajectory(model::GeometricB
     return state_array
 end
 
-function compute_random_walk_model_trajectory(model::Distribution, initial_price::Float64,
-    number_of_steps::Int64; number_of_sample_paths = 1)
-
-    # initialize -
-    number_of_steps = number_of_steps + 1
-    price_array = Array{Float64,2}(undef, number_of_steps, number_of_sample_paths)
-
-    # insert the first value -
-    price_array[1, 1:number_of_sample_paths] .= initial_price
-
-    # how many samples do we need?
-    sample_return_array = rand(model, number_of_steps, number_of_sample_paths)
-
-    # compute the price -
-    for sample_path_index = 1:number_of_sample_paths
-        for step_index = 2:number_of_steps
-            price_array[step_index, sample_path_index] = price_array[step_index-1, sample_path_index] + sample_return_array[step_index, sample_path_index]
-        end
-    end
-
-    # return -
-    return price_array
-end
-
 function compute_rwm_cumulative_probabilty(compare::Function, price_array::Array{Float64,1})
 
     # initialize -
@@ -345,10 +321,4 @@ function compute_average_fractional_return_and_covariance(tickers::Array{String,
     # return -
     return (μ_bar,Σ)
 end
-
-
-# short cut method RWMC method -
-(model::Distribution)(initial_price::Float64, number_of_steps::Int64; number_of_sample_paths = 1) =
-    compute_random_walk_model_trajectory(model, initial_price, number_of_steps;
-        number_of_sample_paths = number_of_sample_paths)
 

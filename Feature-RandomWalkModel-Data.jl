@@ -88,15 +88,38 @@ simulate the price of `XYZ` during the next time period $j+1$ given knowledge of
 # ╔═╡ 4c2bbb6b-f287-43c4-9e24-f44fb4c87e36
 
 
+# ╔═╡ 00120ff5-e9ed-4e71-8208-cf8efd2eac6a
+
+
+# ╔═╡ e3ba3cf8-2f94-4276-98ed-6fedcfaadd43
+
+
+# ╔═╡ a64f7082-b834-4400-880a-032cb9aafe4c
+
+
 # ╔═╡ a1b50b95-bf7d-4f2a-817d-9edb3418aeb3
 md"""
 ##### Estimating models for the return from historical data
 Suppose values for the return were governed by some [probability distribution](https://en.wikipedia.org/wiki/Probability_distribution) $\mathcal{D}\left(\bar{m},\sigma\right)$ where $\bar{m}$ 
 denotes the [mean value](https://en.wikipedia.org/wiki/Mean) and $\sigma$ denotes the [standard deviation](https://en.wikipedia.org/wiki/Standard_deviation) of the growth rate $\mu_{j\rightarrow{j+1}}$. Of course, we do not know the actual values for 
-$\left(\bar{m},\sigma\right)$, nor do we know the form of $\mathcal{D}\left(\bar{m},\sigma\right)$, but we can estimate them from historial price data. An even better way to learn $\mathcal{D}\left(\bar{m},\sigma\right)$ would be to estimate the form of the distribution from the data itself using a technique such as [Kernel Density Estimation](https://en.wikipedia.org/wiki/Kernel_density_estimation) or KDE. However, KDE is a little advanced for now, maybe later. 
+$\left(\bar{m},\sigma\right)$, nor do we know the form of $\mathcal{D}\left(\bar{m},\sigma\right)$, but we can estimate them from historial price data. 
+
+An even better way to learn $\mathcal{D}\left(\bar{m},\sigma\right)$ would be to estimate the form of the distribution from the data itself using a technique such as [Kernel Density Estimation](https://en.wikipedia.org/wiki/Kernel_density_estimation) or KDE. 
 """
 
 # ╔═╡ 1852d4c5-e73d-4038-a565-b8fb6ff63502
+
+
+# ╔═╡ 1c9f096f-7dce-4d0c-8a71-6fbe682e514d
+
+
+# ╔═╡ eb4a5874-c13c-4915-96b9-0c47eaa7f50c
+
+
+# ╔═╡ 66bfd748-3b40-42df-86fa-e55019dba856
+
+
+# ╔═╡ cf11b553-13e5-488d-bf1c-16de5911d658
 
 
 # ╔═╡ 2353a285-71de-43b2-a60f-5a3274ff9e6b
@@ -108,6 +131,12 @@ In the following code block, we set up project paths and import external package
 # ╔═╡ 43d75d79-b710-4dc5-9478-dd2b08616be9
 
 
+# ╔═╡ ebc5ed32-1fe3-4854-a326-7a068e14164b
+
+
+# ╔═╡ 1b25e7d1-909f-4fdc-9700-5d131251e1b5
+
+
 # ╔═╡ 9943d000-83d0-413d-a231-0295fb19df71
 md"""
 ### Results and Discussion
@@ -116,7 +145,7 @@ md"""
 # ╔═╡ f66a480b-3f0c-4ebf-a8b8-e0f91dff851d
 md"""
 ##### Download historical price data from the [Polygon.io](https://www.polygon.io) financial data warehouse
-In this study, we model two years of daily adjusted close price data from 2019-12-26 to 2021-12-23 (N = 504) for a variety of ticker symbols. We used methods in the [Serenity library](https://github.com/Pooksoft/Serenity) and the routine `aggregates_api_endpoint` defined in this notebook to download historical pricing data from the [Polygon.io](https://www.polygon.io) financial data warehouse using a free tier application programming interface key.
+In this study, we model two years of daily adjusted close price data from `2019-12-26` to `2021-12-23` (N = 504) for a variety of ticker symbols (𝒫 = 40). We used methods in the [Serenity library](https://github.com/Pooksoft/Serenity) and the routine `aggregates_api_endpoint` defined in this notebook to download historical pricing data from the [Polygon.io](https://www.polygon.io) financial data warehouse using a free tier application programming interface key.
 
 The `aggregates_api_endpoint` takes a list of ticker symbols that we want to model as an input argument.
 This method checks to see if we have price data already saved locally for each ticker.
@@ -127,17 +156,31 @@ This method checks to see if we have price data already saved locally for each t
 The parameters for the [Polygon.io](https://www.polygon.io) application programming interface call are encoded in endpoint-specific [Structs](https://docs.julialang.org/en/v1/manual/types/#Composite-Types) defined in the [Serenity library](https://github.com/Pooksoft/Serenity). 
 """
 
+# ╔═╡ f94ecbae-e823-46f6-a69f-eb7edce7cfe5
+
+
+# ╔═╡ dc5f6727-cd17-4c75-80ce-94915a0e359a
+
+
+# ╔═╡ 9b9d7fdf-91b1-46e4-bd66-43e50add56be
+
+
+# ╔═╡ 0e7d1741-88a1-4e8e-b964-e8ead4d1807e
+
+
 # ╔═╡ 300b62c8-830a-472f-a07c-17153468c1fb
 md"""
-###### What ticker symbols are we going to model?
+##### What ticker symbols are we going to model?
 """
 
 # ╔═╡ 54efa70c-bac6-4d7c-93df-0dfd1b89769d
 # Pooksoft Industrial Average (PSIA) -> the DJIA + some stuff
-ticker_symbol_array = sort(["MSFT", "ALLY", "MET", "AAPL", "GM", "PFE", "TGT", "WFC", "AIG", "F", "GE", "AMD",
-    "MMM", "AXP", "AMGN", "BA", "CAT", "CVX", "CSCO", "KO", "DIS", "DOW", "GS", "HD", "IBM", "HON", "INTC", "JNJ", "JPM",
-    "MCD", "MRK", "NKE", "PG", "CRM", "TRV", "UNH", "VZ", "V", "WBA", "WMT", "SPY",
-    "SPYD", "SPYG", "SPYV", "SPYX", "VOO", "VTI", "VEA", "VWO", "VNQ", "VGK", "MRNA"
+ticker_symbol_array = sort([
+	"MSFT", "ALLY", "MET", "AAPL", "GM", "PFE", "TGT", "WFC", "AIG", "F", "GE", "AMD",
+	"MMM", "AXP", "AMGN", "BA", "CAT", "CVX", "CSCO", "KO", "DIS", "DOW", "GS", "HD", "IBM",
+	"HON","INTC", "JNJ", "JPM", "MCD", "MRK", "NKE", "PG", "CRM", "TRV", "UNH", "VZ", 
+	"V", "WBA", "WMT", "SPY", "SPYD", "SPYG", "SPYV", "SPYX", "VOO", "VTI", "VEA", "VWO",
+	"VNQ", "VGK", "MRNA"
 ]);
 
 # ╔═╡ 866cc84d-86c1-40e2-bd29-deae01da9a2e
@@ -146,28 +189,70 @@ ticker_symbol_array = sort(["MSFT", "ALLY", "MET", "AAPL", "GM", "PFE", "TGT", "
 # ╔═╡ 7bcbdc4e-a38a-4201-a1ec-d2e4df4d2f6a
 𝒯 = 14; # number of days that we simulate in the future
 
+# ╔═╡ d1edad45-5df3-43cd-8abc-97d84fab699b
+
+
+# ╔═╡ bb7582b4-3ecc-44a7-810a-aae0dc2fe816
+
+
+# ╔═╡ 34db9c1e-6af7-4710-8de4-fd0caacbde36
+
+
+# ╔═╡ 46fef026-6bac-401b-ab6f-75f2aff79e6a
+
+
+# ╔═╡ 455b2bea-4d79-4dd8-964c-80835bb88727
+
+
 # ╔═╡ 4d4230e5-28dc-4f87-b732-686a5c91fc4f
 md"""
-###### Pull down data from Polygon.io for our list of ticker symbols
+##### Pull down data from Polygon.io for our list of ticker symbols
 """
+
+# ╔═╡ e2eb17d0-2ca3-437c-97f7-04e76ee879cb
+
+
+# ╔═╡ a3a08666-f494-489d-a888-8fe7baa70729
+
+
+# ╔═╡ b05cac4c-d5d9-47f7-ab38-d9be8322ab45
+
 
 # ╔═╡ 61ab2949-d72f-4d80-a717-4b6a9227de0e
 md"""
-##### Estimate the daily return distributions assuming a continuous compounding model
+##### Estimate the daily return distributions
 
-To estimate a model for the return $\mathcal{D}\left(\bar{m},\sigma\right)$, we first compute the historical returns for each ticker. The [Serenity library](https://github.com/Pooksoft/Serenity.git) provides the `compute_log_return_array` method to compute the [log return](https://en.wikipedia.org/wiki/Rate_of_return) of pricing data.
+To estimate the return moel $\mathcal{D}\left(\bar{m},\sigma\right)$, we compute the historical returns for each ticker using the `compute_log_return_array` method in the [Serenity library](https://github.com/Pooksoft/Serenity.git).
 
-Given the daily return data, we can estimate the parameters of a distribution that describes this data using a variety of approaches e.g., [nonlinear least squares](https://en.wikipedia.org/wiki/Non-linear_least_squares) or [maximum likelihood estimation](https://en.wikipedia.org/wiki/Maximum_likelihood_estimation). However, there are a few technical questions with this approach:
+Given the returns, we estimate the parameters of $\mathcal{D}\left(\bar{m},\sigma\right)$ using a variety of approaches e.g., [nonlinear least squares](https://en.wikipedia.org/wiki/Non-linear_least_squares) or [maximum likelihood estimation](https://en.wikipedia.org/wiki/Maximum_likelihood_estimation). However, there are a few technical questions with this approach:
 
-* __Question 1__: What model for $\mathcal{D}\left(\bar{m},\sigma\right)$ do we choose? Conventional wisdom suggests return data follows a [Normal distribution](https://en.wikipedia.org/wiki/Normal_distribution). However, is this really correct, or is the data governed by another type of distribution?
-* __Question 2__: Next, an underlying assumption of the random walk (and thus our approach at predicting future stock prices) is that the daily returns are independent and identically distributed, ie., the close price for the days $j$ and $j+1$ are independent of one another and they follow the same underlying distribution. 
+* __Question 1__: What model for $\mathcal{D}\left(\bar{m},\sigma\right)$ do we choose? Conventional wisdom suggests a [Normal distribution](https://en.wikipedia.org/wiki/Normal_distribution). However, is this really correct, or is the data governed by another type of distribution?
+* __Question 2__: An underlying assumption of the random walk is that the daily returns are independent and identically distributed, ie., the close price for the days $j$ and $j+1$ are independent of one another, they follow the same underlying distribution, and the parameters $(\bar{m},\sigma)$ don't change in time.
 """
+
+# ╔═╡ e461b560-435b-4104-b42e-af04b1d25984
+
+
+# ╔═╡ b7b618c2-d48b-45c7-aff8-600eda010169
+
 
 # ╔═╡ a39b90ec-a4c5-472f-b00e-c81ee9c5576f
 md"""
 __Fig. 1__: Histogram of the adjusted daily returns computed using the `stephist` routine of the [StatsPlots.jl package](https://github.com/JuliaPlots/StatsPlots.jl) for 𝒫 = 40 ticker symbols in PSIA. The number of bins was set to 20% of the number of historical records for `AAPL` (shown in red) and was constant for each ticker. The returns were calculated using approximately two years of historical daily adjusted close price data (depending upon the ticker symbol). 
 Close price data was downloaded from the [Polygon.io](https://www.polygon.io) data warehouse. 
 """
+
+# ╔═╡ 3f9879fa-ec04-4d13-8207-2c77d9ddfca2
+
+
+# ╔═╡ 22992de2-dfba-4a18-8909-62bddbf4e0e7
+
+
+# ╔═╡ 367158be-9a7f-4b76-96c9-2806f9aad75e
+
+
+# ╔═╡ fb83174c-fcde-4496-8232-545f17ac9d2d
+
 
 # ╔═╡ edfbf364-e126-4e95-93d2-a6adfb340045
 md"""
@@ -180,12 +265,18 @@ The return $\mu_{j\rightarrow{j+1}}$ values computed from historical data are no
 
 # ╔═╡ a786ca10-06d2-4b76-97a9-2bcf879ea6cb
 # fit a distribution to a ticker -
-single_asset_ticker_symbol = "MET";
+single_asset_ticker_symbol = "GS";
+
+# ╔═╡ f067b633-fde0-4743-bd76-f8c390a90950
+
 
 # ╔═╡ a3d29aa3-96ca-4681-960c-3b4b04b1e40d
 md"""
 __Fig 2__: Comparison of the actual (red line) and estimated histogram for the adjusted daily returns for ticker = $(single_asset_ticker_symbol) using a [Laplace distribution](https://en.wikipedia.org/wiki/Laplace_distribution) for the return model (blue line) and a [Normal distribution](https://en.wikipedia.org/wiki/Normal_distribution) for the return model (light blue line). The return model distributions were estimated using the `fit` routine of the [Distributions.jl](https://github.com/JuliaStats/Distributions.jl) package. The `fit` routine uses multiple approaches to estimate the parameters in the distribution including [Maximum Likelihood Estimation (MLE)](https://en.wikipedia.org/wiki/Maximum_likelihood_estimation). 
 """
+
+# ╔═╡ 4dff7597-bc0e-4288-9413-c26a132c1e44
+
 
 # ╔═╡ 1d72b291-24b7-4ec6-8307-1da0bc4a9183
 md"""
@@ -197,6 +288,12 @@ md"""
 __Fig 3__: Quantile-Quantile plot (QQplot) for historical $(single_asset_ticker_symbol) return data versus theoretical data generated using a Laplace distribution. If the historical data were governed by a Laplace distribution, the points would lie along the equality line. 
 """
 
+# ╔═╡ a3f1710e-eb98-46c6-aadb-5cf0b98e1bc6
+
+
+# ╔═╡ 9380908a-8cc5-4d3a-9d6c-03b491198bc1
+
+
 # ╔═╡ a07d661a-a0b4-4000-b7a4-5f17cda5edc3
 md"""
 ###### Example:  Kolmogorov–Smirnov (KS) test for a Laplace and Normal distrubution for ticker: $(single_asset_ticker_symbol)
@@ -204,10 +301,25 @@ md"""
 The null hypothesis $h_0$ for the KS test is the data follows a specified distribution, in our case a Laplace distribution. Conversely, the alternative hypothesis $h_{1}$ is the data does not follow a particular distribution, again in this case, a Laplace distribution. 
 """
 
+# ╔═╡ fdc34643-2c27-4bc9-a077-8bac68dc56b7
+
+
+# ╔═╡ 8897de5b-a6c7-4b05-98c6-d738bbb527af
+
+
 # ╔═╡ 379373b1-e563-4341-9978-5b35c768b5c7
 md"""
 __Table 1__: [Kolmogorov–Smirnov (KS)](https://en.wikipedia.org/wiki/Kolmogorov–Smirnov_test) test results for Normal and Laplace distribution for PSIA tickers (𝒫 = 40). The historical return values computed over the last two years of historical data for 39 of the 40 members of the PSIA were governed by a Laplace distribution; MRNA failed the KS test for a Laplace distribution, and was estimated to be Normally distributed.  
 """
+
+# ╔═╡ 95495255-385a-424b-9b84-dcd8a1187282
+
+
+# ╔═╡ d8af95e4-fe4c-4cf0-8195-dab80629177c
+
+
+# ╔═╡ 3f62e075-4724-456e-ab59-9b85d4263ee6
+
 
 # ╔═╡ bc4e93f5-7e76-4115-8cfd-039212181fb3
 md"""
@@ -217,6 +329,26 @@ A second key assumption of the random walk approach is that returns are independ
 
 Each return is scored according to whether it is larger, smaller, or the same as the median; a score of +1 is assigned when the return is greater than the median, a score of -1 is assigned when the return is less than the median, and a score of 0 is assigned when the return equals the mean. 
 """
+
+# ╔═╡ 587c70c4-a3b8-4300-b7a4-aa9f6b1bc276
+
+
+# ╔═╡ 421e213e-9780-4a4d-a411-009541c44a9e
+
+
+# ╔═╡ 2d40603b-56e3-49ca-a8ea-e13c933f5e19
+md"""
+__Table XX__: Wald-Wolfowitz test results for historical price data from `2019-12-26` to `2021-12-23` for 𝒫 = 40 tickers in the PSIA. The Wald-Wolfowitz test implementation from the [HypothesisTests.jl]() package was used to compute the test results.
+"""
+
+# ╔═╡ c39168a1-dee2-4421-8f44-266df47dd08e
+
+
+# ╔═╡ 4e6e394d-0d95-46cc-8344-0222b0fb761e
+
+
+# ╔═╡ 0454a796-b35d-4caa-b847-f578191f2896
+
 
 # ╔═╡ 10fa507e-1429-4eb0-b74c-1e6638725690
 md"""
@@ -230,6 +362,60 @@ In a technical sense, starting from close price at time index $p_j$, we draw a r
 
 """
 
+# ╔═╡ 92673e3f-e436-4c7e-accf-216574233d58
+
+
+# ╔═╡ e2df85a5-975c-472b-8538-d07b682d1647
+
+
+# ╔═╡ 2e416e6d-ea7c-464c-9632-83b0f7f06b2a
+
+
+# ╔═╡ 3d1a1f06-5707-46ff-b44a-539c62fe008b
+
+
+# ╔═╡ 90a0a645-cd70-4edb-8240-a152d6e7bb3a
+
+
+# ╔═╡ cdd66194-cb79-433e-a16c-64be76de83a4
+
+
+# ╔═╡ 4f8a3476-93a8-414e-b169-7046f1a57547
+
+
+# ╔═╡ 21791e69-db82-4081-97ec-e7f2c0a46b5d
+
+
+# ╔═╡ 1f9459dd-57ba-4353-81b2-9e04aa8257af
+
+
+# ╔═╡ 90722894-dc53-4964-8141-e35adfeb8a76
+
+
+# ╔═╡ 4d97d757-ed9f-4e77-9b54-6b9c8f2f49ee
+
+
+# ╔═╡ 9a3d5138-0490-42db-9f99-310d94124951
+
+
+# ╔═╡ bdf1e4d0-d2e6-4ab5-92c5-5f25518a9acc
+
+
+# ╔═╡ 0a55c3a1-a834-4ec4-beac-0788091f7a70
+
+
+# ╔═╡ 4725bf3c-f058-4238-8c8f-297dc2851c6e
+
+
+# ╔═╡ 3b9d8429-375d-46c3-a115-eb9022262e09
+
+
+# ╔═╡ 23ae5b4c-f690-46a6-b2c9-3d753cf247d6
+
+
+# ╔═╡ edf426b6-a571-4938-890a-01a089d02b29
+
+
 # ╔═╡ c32725a4-e276-4372-8d06-d40ba52c9f09
 md"""
 ### Conclusions
@@ -241,6 +427,15 @@ In this study, we explored random walks and the efficient market hypothesis. In 
 * A random walk model predicted future stock price distributions for short time horizons (𝒯 = 7 days), but was less successful for longer time horizons e.g., 𝒯 = 35 days.
 
 """
+
+# ╔═╡ f4bd98b5-f4a8-424a-b974-41aceede92fb
+
+
+# ╔═╡ 6086ed53-4fbe-4037-b435-8d8aa20a1417
+
+
+# ╔═╡ defa9be8-4d19-488b-820c-2a3526401cbf
+
 
 # ╔═╡ f1a71f47-fb19-4988-a439-2ff8d38be5b7
 function ingredients(path::String)
@@ -405,15 +600,15 @@ end
 
 # ╔═╡ 34b06415-21c1-4904-97f0-ab614447355c
 begin
-
     # initialize -
     return_data_dictionary = Dict{String,DataFrame}()
 
     # compute -
     for ticker_symbol ∈ ticker_symbol_array
 
-        # compute_return_array function is provided by Serenity -> computes the log return given a DataFrame, returns a DataFrame
-        return_data_dictionary[ticker_symbol] = Serenity.compute_log_return_array(price_data_dictionary[ticker_symbol],
+        # Serenity -> computes the log return given a DataFrame, returns a DataFrame
+        return_data_dictionary[ticker_symbol] =
+			Serenity.compute_log_return_array(price_data_dictionary[ticker_symbol],
             :timestamp => :close; Δt = (1.0 / 1.0))
     end
 end
@@ -488,12 +683,14 @@ end
 # ╔═╡ 6bf06c12-cf25-43c4-81f3-b1d79d13fc94
 let
     
-    # generate 10_000 samples
+    # generate 20_000 samples
     S = rand(LAPLACE, 20000)
     SN = rand(NORMAL, 20000)
 
     # plot against actual -
-    stephist(return_data_dictionary[single_asset_ticker_symbol][!, :μ], bins = number_of_bins, normed = :true, 
+    stephist(return_data_dictionary[single_asset_ticker_symbol][!, :μ],
+		bins = convert(Int64,round(1.2*number_of_bins)), 
+		normed = :true, 
 		lw = 2, c = RED,
         label = "$(single_asset_ticker_symbol)", background_color = BACKGROUND,
         background_color_outside = WHITE, foreground_color_legend = nothing)
@@ -665,7 +862,7 @@ __Fig 4__: In sample random walk simulation of ticker = $(single_asset_ticker_sy
 
 # ╔═╡ b547311c-ddf0-4053-9de4-f0e85b861e63
 md"""
-__Table 2__: Comparison of the actual close price versus the Monte Carlo simulated close price for a 𝒯 = $(𝒯) day prediction horizon for each ticker in the PSIA (𝒫 = 40). Each ticker was classified into class c ∈ {-1,0,1} where: +1 HIGH, 0 INSIDE, or -1 LOW. The classification was based upon whether the actual close price Pₐ ∈ Pₑ ± σ, where Pₐ denotes the actual close price (units: USD/share), Pₑ denotes the mean simulated close price (units: USD/share), and σ denotes the standard deviation of the simulated close price (units: USD/share) computed over the family Monte Carlo trajectories (N = $(2*number_of_sample_paths)).
+__Table 2__: Comparison of the actual versus simulated close price for a 𝒯 = $(𝒯) day prediction horizon for each ticker in the PSIA (𝒫 = 40). Each ticker was classified c ∈ {-1,0,1} based upon whether the actual close price Pₐ ∈ Pₑ ± σ, where Pₐ denotes the actual close price (units: USD/share), Pₑ denotes the mean simulated close price (units: USD/share), and σ denotes the standard deviation of the simulated close price (units: USD/share) computed over the family Monte Carlo trajectories (N = $(2*number_of_sample_paths)). Classes: +1 HIGH, 0 INSIDE, or -1 LOW. 
 """
 
 # ╔═╡ aeafe1ed-f217-48fd-9624-add5f6f791e6
@@ -2225,50 +2422,113 @@ version = "0.9.1+5"
 # ╟─c81486cb-f78e-4eec-a1cd-1ea113428bd6
 # ╟─880b1174-0925-4e8c-b9f6-f6e295412824
 # ╟─4c2bbb6b-f287-43c4-9e24-f44fb4c87e36
+# ╟─00120ff5-e9ed-4e71-8208-cf8efd2eac6a
+# ╟─e3ba3cf8-2f94-4276-98ed-6fedcfaadd43
+# ╟─a64f7082-b834-4400-880a-032cb9aafe4c
 # ╟─a1b50b95-bf7d-4f2a-817d-9edb3418aeb3
 # ╟─1852d4c5-e73d-4038-a565-b8fb6ff63502
+# ╟─1c9f096f-7dce-4d0c-8a71-6fbe682e514d
+# ╟─eb4a5874-c13c-4915-96b9-0c47eaa7f50c
+# ╟─66bfd748-3b40-42df-86fa-e55019dba856
+# ╟─cf11b553-13e5-488d-bf1c-16de5911d658
 # ╟─2353a285-71de-43b2-a60f-5a3274ff9e6b
 # ╠═fe2848df-823a-4ed0-918c-2c200957ee80
-# ╠═43d75d79-b710-4dc5-9478-dd2b08616be9
+# ╟─43d75d79-b710-4dc5-9478-dd2b08616be9
+# ╟─ebc5ed32-1fe3-4854-a326-7a068e14164b
+# ╟─1b25e7d1-909f-4fdc-9700-5d131251e1b5
 # ╟─9943d000-83d0-413d-a231-0295fb19df71
 # ╟─f66a480b-3f0c-4ebf-a8b8-e0f91dff851d
+# ╟─f94ecbae-e823-46f6-a69f-eb7edce7cfe5
+# ╟─dc5f6727-cd17-4c75-80ce-94915a0e359a
+# ╟─9b9d7fdf-91b1-46e4-bd66-43e50add56be
+# ╟─0e7d1741-88a1-4e8e-b964-e8ead4d1807e
 # ╟─300b62c8-830a-472f-a07c-17153468c1fb
 # ╠═54efa70c-bac6-4d7c-93df-0dfd1b89769d
 # ╠═866cc84d-86c1-40e2-bd29-deae01da9a2e
 # ╠═7bcbdc4e-a38a-4201-a1ec-d2e4df4d2f6a
+# ╟─d1edad45-5df3-43cd-8abc-97d84fab699b
+# ╟─bb7582b4-3ecc-44a7-810a-aae0dc2fe816
+# ╟─34db9c1e-6af7-4710-8de4-fd0caacbde36
+# ╟─46fef026-6bac-401b-ab6f-75f2aff79e6a
+# ╟─455b2bea-4d79-4dd8-964c-80835bb88727
 # ╟─4d4230e5-28dc-4f87-b732-686a5c91fc4f
 # ╠═5c5d5eeb-6775-452f-880d-7b4fa2acda57
+# ╟─e2eb17d0-2ca3-437c-97f7-04e76ee879cb
+# ╟─a3a08666-f494-489d-a888-8fe7baa70729
+# ╟─b05cac4c-d5d9-47f7-ab38-d9be8322ab45
 # ╟─61ab2949-d72f-4d80-a717-4b6a9227de0e
 # ╠═34b06415-21c1-4904-97f0-ab614447355c
+# ╟─e461b560-435b-4104-b42e-af04b1d25984
+# ╟─b7b618c2-d48b-45c7-aff8-600eda010169
 # ╟─a39b90ec-a4c5-472f-b00e-c81ee9c5576f
 # ╟─cbbd8670-49ab-4601-b8d7-9f3f456752e8
+# ╟─3f9879fa-ec04-4d13-8207-2c77d9ddfca2
+# ╟─22992de2-dfba-4a18-8909-62bddbf4e0e7
+# ╟─367158be-9a7f-4b76-96c9-2806f9aad75e
+# ╟─fb83174c-fcde-4496-8232-545f17ac9d2d
 # ╟─edfbf364-e126-4e95-93d2-a6adfb340045
 # ╠═a786ca10-06d2-4b76-97a9-2bcf879ea6cb
-# ╟─a3d29aa3-96ca-4681-960c-3b4b04b1e40d
 # ╠═012ef00f-6176-4d42-801f-5765c47df7ba
+# ╟─f067b633-fde0-4743-bd76-f8c390a90950
+# ╟─a3d29aa3-96ca-4681-960c-3b4b04b1e40d
 # ╟─6bf06c12-cf25-43c4-81f3-b1d79d13fc94
+# ╟─4dff7597-bc0e-4288-9413-c26a132c1e44
 # ╟─1d72b291-24b7-4ec6-8307-1da0bc4a9183
 # ╟─1867ecec-3c3d-4b2b-9036-1488e2184c40
 # ╟─0e09d312-2ddf-4d1f-8ad5-a50fb48ca4dd
+# ╠═a3f1710e-eb98-46c6-aadb-5cf0b98e1bc6
+# ╠═9380908a-8cc5-4d3a-9d6c-03b491198bc1
 # ╟─a07d661a-a0b4-4000-b7a4-5f17cda5edc3
 # ╠═f0ee3633-1d28-4344-9b85-f5433679582a
 # ╠═345d8feb-cfd0-4acb-a626-dc16181ddb68
+# ╟─fdc34643-2c27-4bc9-a077-8bac68dc56b7
+# ╟─8897de5b-a6c7-4b05-98c6-d738bbb527af
 # ╟─379373b1-e563-4341-9978-5b35c768b5c7
 # ╟─8b2725a2-8007-46b8-a160-75042562794d
+# ╟─95495255-385a-424b-9b84-dcd8a1187282
+# ╟─d8af95e4-fe4c-4cf0-8195-dab80629177c
+# ╟─3f62e075-4724-456e-ab59-9b85d4263ee6
 # ╟─bc4e93f5-7e76-4115-8cfd-039212181fb3
 # ╠═20bba789-504b-4d27-a2fc-4f08badc9a53
+# ╟─587c70c4-a3b8-4300-b7a4-aa9f6b1bc276
+# ╟─421e213e-9780-4a4d-a411-009541c44a9e
+# ╟─2d40603b-56e3-49ca-a8ea-e13c933f5e19
 # ╟─1c816d04-3b76-4c0c-9ed9-9b20b5ad50d9
+# ╟─c39168a1-dee2-4421-8f44-266df47dd08e
+# ╟─4e6e394d-0d95-46cc-8344-0222b0fb761e
+# ╟─0454a796-b35d-4caa-b847-f578191f2896
 # ╟─10fa507e-1429-4eb0-b74c-1e6638725690
+# ╟─92673e3f-e436-4c7e-accf-216574233d58
+# ╟─e2df85a5-975c-472b-8538-d07b682d1647
+# ╟─2e416e6d-ea7c-464c-9632-83b0f7f06b2a
 # ╠═5a3500c2-4f82-43e9-a31b-d530f56fdbe9
+# ╟─3d1a1f06-5707-46ff-b44a-539c62fe008b
+# ╟─90a0a645-cd70-4edb-8240-a152d6e7bb3a
+# ╟─cdd66194-cb79-433e-a16c-64be76de83a4
+# ╟─4f8a3476-93a8-414e-b169-7046f1a57547
 # ╠═ff11bdd2-8ab6-40c0-844b-a3474d7e9a04
+# ╟─21791e69-db82-4081-97ec-e7f2c0a46b5d
+# ╟─1f9459dd-57ba-4353-81b2-9e04aa8257af
+# ╟─90722894-dc53-4964-8141-e35adfeb8a76
+# ╟─4d97d757-ed9f-4e77-9b54-6b9c8f2f49ee
+# ╟─9a3d5138-0490-42db-9f99-310d94124951
 # ╟─a1e1d5f8-e06e-4682-ab54-a9454a8e3b30
 # ╟─e36979d5-c1b6-4c17-a65a-d8de8e6bd8d0
 # ╟─aeafe1ed-f217-48fd-9624-add5f6f791e6
+# ╟─bdf1e4d0-d2e6-4ab5-92c5-5f25518a9acc
 # ╟─cac02388-31c4-40b9-8288-a6685e1854fb
+# ╟─0a55c3a1-a834-4ec4-beac-0788091f7a70
+# ╟─4725bf3c-f058-4238-8c8f-297dc2851c6e
 # ╟─b547311c-ddf0-4053-9de4-f0e85b861e63
 # ╟─2ed2f3c3-619b-4aed-b88b-b92a43578d84
+# ╟─3b9d8429-375d-46c3-a115-eb9022262e09
+# ╟─23ae5b4c-f690-46a6-b2c9-3d753cf247d6
+# ╟─edf426b6-a571-4938-890a-01a089d02b29
 # ╟─c32725a4-e276-4372-8d06-d40ba52c9f09
 # ╟─b04cba56-dd48-403b-82fc-1cf3713853a7
+# ╟─f4bd98b5-f4a8-424a-b974-41aceede92fb
+# ╟─6086ed53-4fbe-4037-b435-8d8aa20a1417
+# ╟─defa9be8-4d19-488b-820c-2a3526401cbf
 # ╠═f1a71f47-fb19-4988-a439-2ff8d38be5b7
 # ╠═91dae79f-e454-4b27-84a7-4cbc6bc33265
 # ╠═c8c3fe32-560d-11ec-0617-2dc33608384a

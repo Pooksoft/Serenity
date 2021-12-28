@@ -23,12 +23,23 @@ md"""
 md"""
 ### Introduction
 
-[A Random Walk Down Wall Street](https://en.wikipedia.org/wiki/A_Random_Walk_Down_Wall_Street) written by [Princeton University professor Burton Malkiel](https://dof.princeton.edu/about/clerk-faculty/emeritus/burton-gordon-malkiel) popularized the [efficient market hypothesis (EMH)](https://en.wikipedia.org/wiki/Efficient-market_hypothesis), which hypothesizes that stock prices fully reflect all available information and expectations. A key citation in the history of efficient market hypothesis: 
+[A Random Walk Down Wall Street](https://en.wikipedia.org/wiki/A_Random_Walk_Down_Wall_Street) written by [Princeton University Professor Burton Malkiel](https://dof.princeton.edu/about/clerk-faculty/emeritus/burton-gordon-malkiel) popularized the [efficient market hypothesis (EMH)](https://en.wikipedia.org/wiki/Efficient-market_hypothesis), which posits that stock prices fully reflect all available information and expectations. The efficient market hypothesis was developed by [University of Chicago Professor Eugene Fama](https://en.wikipedia.org/wiki/Eugene_Fama):
 
 * [Fama, E. F. (1970). Efficient Capital Markets: A Review of Theory and Empirical Work. The Journal of Finance, 25(2), 383–417. 	https://doi.org/10.2307/2325486](https://www.jstor.org/stable/2325486)
 
+who was later awarded the [Noble Prize in Economics](https://www.nobelprize.org/prizes/economic-sciences/2013/press-release/) along with  [Robert J. Shiller](http://www.econ.yale.edu/~shiller/) from Yale and [Lars Peter Hansen](https://en.wikipedia.org/wiki/Lars_Peter_Hansen) also from the University of Chicago, for their empirical analysis of asset prices.
 
+Our interest in the efficient market hypothesis follows from its relationship with [random walks](https://en.wikipedia.org/wiki/Random_walk), and in particular, the potential of predicting the price of a stock 𝒯 days into the future (at least in a probabilistic sense) using a random walk approach, an idea first applied to stock prices by [Louis Bachelier](https://en.wikipedia.org/wiki/Louis_Bachelier) in 1900. Fluctuations in prices are explained by the changes in the instantaneous demand and supply of any given stock, causing a random walk in prices. Let's explore random walk models in more detail.
 """
+
+# ╔═╡ 89b5c4d0-68cb-499f-bf99-216e38b40ca0
+
+
+# ╔═╡ 489464b4-3139-466c-80c7-84449dcec698
+
+
+# ╔═╡ b4f60458-0299-4246-b2ad-dc3f1db6382b
+
 
 # ╔═╡ 34bf07e8-5c47-4aa8-aa2c-161709c158be
 md"""
@@ -40,8 +51,26 @@ This notebook (and all codes discussed within) is offered solely for training an
 
 Trading involves risk. Carefully review your financial situation before investing in securities, futures contracts, options, or commodity interests. Past performance, whether actual or indicated by historical tests of strategies, is no guarantee of future performance or success. Trading is generally not appropriate for someone with limited resources, investment or trading experience, or a low-risk tolerance.  Only risk capital that will not be needed for living expenses.
 
-You are fully responsible for any investment or trading decisions you make, and such decisions should be based solely on your evaluation of your financial circumstances, investment or trading objectives, risk tolerance, and liquidity needs
+You are fully responsible for any investment or trading decisions you make, and such decisions should be based solely on your evaluation of your financial circumstances, investment or trading objectives, risk tolerance, and liquidity needs.
+"""
 
+# ╔═╡ 65a0683e-3124-4844-ad0a-cccdc9192d05
+
+
+# ╔═╡ e603c785-b697-48e3-92be-e9213e72215b
+
+
+# ╔═╡ badff812-6b68-4f6d-b495-3f344873d45c
+
+
+# ╔═╡ 6a4164c2-bb11-437a-bc7d-a12e363d3e84
+
+
+# ╔═╡ c81486cb-f78e-4eec-a1cd-1ea113428bd6
+
+
+# ╔═╡ 880b1174-0925-4e8c-b9f6-f6e295412824
+md"""
 ##### Random Walk Models (RWMs)
 [Random walk models](https://en.wikipedia.org/wiki/Random_walk) are tools for computing the time evolution of the prices of risky assets, for example, the price of a stock with the ticker symbol `XYZ`. Let the price of `XYZ` at time $j$ be given by $P_{j}$ (units: USD/share). Then during the next time period (index $j+1$) the `XYZ` share price will be given by:
 
@@ -54,12 +83,24 @@ $$p_{j+1} = p_{j} + \mu_{j\rightarrow{j+1}}\Delta{t}$$
 where $p_{\star}$ denotes the log of the price at time $\star$ (units: dimensionless). This expression is a basic [random walk model](https://en.wikipedia.org/wiki/Random_walk). The challenge to using this model is how to estimate the return 
 $\mu_{j\rightarrow{j+1}}$ because the values for $\mu_{j\rightarrow{j+1}}$ are [random variables](https://en.wikipedia.org/wiki/Stochastic_process) which are [distributed](https://en.wikipedia.org/wiki/Probability_distribution) in some unknown way. However, if we had a value for $\mu_{j\rightarrow{j+1}}$ (or at least a model to estimate a value for it, denoted as $\hat{\mu}_{j\rightarrow{j+1}}$), we could 
 simulate the price of `XYZ` during the next time period $j+1$ given knowledge of the price now (time period $j$). For example, given a value for the close price of `XYZ` on Monday, we could estimate a value for the close price of `XYZ` on Tuesday if we had a model for the daily return.
+"""
 
+# ╔═╡ 4c2bbb6b-f287-43c4-9e24-f44fb4c87e36
+
+
+# ╔═╡ a1b50b95-bf7d-4f2a-817d-9edb3418aeb3
+md"""
 ##### Estimating models for the return from historical data
 Suppose values for the return were governed by some [probability distribution](https://en.wikipedia.org/wiki/Probability_distribution) $\mathcal{D}\left(\bar{m},\sigma\right)$ where $\bar{m}$ 
 denotes the [mean value](https://en.wikipedia.org/wiki/Mean) and $\sigma$ denotes the [standard deviation](https://en.wikipedia.org/wiki/Standard_deviation) of the growth rate $\mu_{j\rightarrow{j+1}}$. Of course, we do not know the actual values for 
 $\left(\bar{m},\sigma\right)$, nor do we know the form of $\mathcal{D}\left(\bar{m},\sigma\right)$, but we can estimate them from historial price data. An even better way to learn $\mathcal{D}\left(\bar{m},\sigma\right)$ would be to estimate the form of the distribution from the data itself using a technique such as [Kernel Density Estimation](https://en.wikipedia.org/wiki/Kernel_density_estimation) or KDE. However, KDE is a little advanced for now, maybe later. 
+"""
 
+# ╔═╡ 1852d4c5-e73d-4038-a565-b8fb6ff63502
+
+
+# ╔═╡ 2353a285-71de-43b2-a60f-5a3274ff9e6b
+md"""
 ##### My Julia Setup
 In the following code block, we set up project paths and import external packages that we use to download and analyze historical price history for a variety of ticker symbols. In addition, we load a local copy of the [Serenity library](https://github.com/Pooksoft/Serenity).
 """
@@ -100,7 +141,12 @@ ticker_symbol_array = sort(["MSFT", "ALLY", "MET", "AAPL", "GM", "PFE", "TGT", "
 𝒫 = length(ticker_symbol_array); # the number of ticker symbols is given the symbol 𝒫
 
 # ╔═╡ 7bcbdc4e-a38a-4201-a1ec-d2e4df4d2f6a
-𝒯 = 14 # number of days 
+𝒯 = 14; # number of days that we simulate in the future
+
+# ╔═╡ 4d4230e5-28dc-4f87-b732-686a5c91fc4f
+md"""
+###### Pull down data from Polygon.io for our list of ticker symbols
+"""
 
 # ╔═╡ 61ab2949-d72f-4d80-a717-4b6a9227de0e
 md"""
@@ -162,9 +208,9 @@ __Table 1__: [Kolmogorov–Smirnov (KS)](https://en.wikipedia.org/wiki/Kolmogoro
 
 # ╔═╡ bc4e93f5-7e76-4115-8cfd-039212181fb3
 md"""
-##### Are returns really iid? The Wald-Wolfowitz runs test
+##### Are daily returns iid? The Wald-Wolfowitz runs test
 
-A second key assumption of the random walk approach is that returns are independently and identically distributed. To test whether this is true for the ticker symbols in our data set, we performed the [Wald-Wolfowitz runs test](https://en.wikipedia.org/wiki/Wald–Wolfowitz_runs_test). The [Wald-Wolfowitz runs test](https://en.wikipedia.org/wiki/Wald–Wolfowitz_runs_test) is a non-parametric tool, that does not require returns to be normally distributed, which calculates the liklihood that a sequence is independent (the null hypothesis). 
+A second key assumption of the random walk approach is that returns are independently and identically distributed. To test whether this is true for the ticker symbols in our data set, we performed the [Wald-Wolfowitz runs test](https://en.wikipedia.org/wiki/Wald–Wolfowitz_runs_test). The [Wald-Wolfowitz runs test](https://en.wikipedia.org/wiki/Wald–Wolfowitz_runs_test) is a non-parametric tool, that does not require returns to be normally distributed, which calculates the likelihood that a sequence is independent (the null hypothesis). 
 
 Each return is scored according to whether it is larger, smaller, or the same as the median; a score of +1 is assigned when the return is greater than the median, a score of -1 is assigned when the return is less than the median, and a score of 0 is assigned when the return equals the mean. 
 """
@@ -180,9 +226,11 @@ A basic explain of Monte Carlo simulations goes here
 md"""
 ### Conclusions
 
-In this study, we explored random walks and the efficient market hypothesis. In particular, we simulated 𝒯 future price predictions based on a return model learned from historical data. 
+In this study, we explored random walks and the efficient market hypothesis. In particular, we simulated 𝒯 future price predictions based on a return model learned from historical data. There were a few takeaway points:
 
-* Daily returns were not Normally distributed for a variety of ticker symbols (the DJIA plus 10 additional symbols) with the exception of MRNA, which appears to be normally distributed 
+* Daily returns were not Normally distributed for a variety of ticker symbols (the DJIA plus 10 additional symbols) with the exception of MRNA, which appears to be normally distributed. Ticker returns more likely followed a Laplace distribution.
+* The Wald-Wolfowitz runs test suggested that the daily returns for several members of the DJIA were not random, thus, violating the iid assumption of our random walk modeling approach. However, this violation did not appear to hinder the Monte-Carlo estimate of the close price distribution. 
+* A random walk model predicted future stock price distributions for short time horizons (𝒯 = 7 days), but was less successful for longer time horizons e.g., 𝒯 = 35 days.
 
 """
 
@@ -2158,7 +2206,20 @@ version = "0.9.1+5"
 # ╔═╡ Cell order:
 # ╟─2bb52ee4-1c6f-46b6-b105-86827ada0f75
 # ╟─2f499c95-38cf-4856-b199-6c9aac44237a
+# ╟─89b5c4d0-68cb-499f-bf99-216e38b40ca0
+# ╟─489464b4-3139-466c-80c7-84449dcec698
+# ╟─b4f60458-0299-4246-b2ad-dc3f1db6382b
 # ╟─34bf07e8-5c47-4aa8-aa2c-161709c158be
+# ╟─65a0683e-3124-4844-ad0a-cccdc9192d05
+# ╟─e603c785-b697-48e3-92be-e9213e72215b
+# ╟─badff812-6b68-4f6d-b495-3f344873d45c
+# ╟─6a4164c2-bb11-437a-bc7d-a12e363d3e84
+# ╟─c81486cb-f78e-4eec-a1cd-1ea113428bd6
+# ╟─880b1174-0925-4e8c-b9f6-f6e295412824
+# ╟─4c2bbb6b-f287-43c4-9e24-f44fb4c87e36
+# ╟─a1b50b95-bf7d-4f2a-817d-9edb3418aeb3
+# ╟─1852d4c5-e73d-4038-a565-b8fb6ff63502
+# ╟─2353a285-71de-43b2-a60f-5a3274ff9e6b
 # ╠═fe2848df-823a-4ed0-918c-2c200957ee80
 # ╟─9943d000-83d0-413d-a231-0295fb19df71
 # ╟─f66a480b-3f0c-4ebf-a8b8-e0f91dff851d
@@ -2166,6 +2227,7 @@ version = "0.9.1+5"
 # ╠═54efa70c-bac6-4d7c-93df-0dfd1b89769d
 # ╠═866cc84d-86c1-40e2-bd29-deae01da9a2e
 # ╠═7bcbdc4e-a38a-4201-a1ec-d2e4df4d2f6a
+# ╟─4d4230e5-28dc-4f87-b732-686a5c91fc4f
 # ╠═5c5d5eeb-6775-452f-880d-7b4fa2acda57
 # ╟─61ab2949-d72f-4d80-a717-4b6a9227de0e
 # ╠═34b06415-21c1-4904-97f0-ab614447355c
@@ -2196,7 +2258,7 @@ version = "0.9.1+5"
 # ╟─cac02388-31c4-40b9-8288-a6685e1854fb
 # ╟─b547311c-ddf0-4053-9de4-f0e85b861e63
 # ╟─2ed2f3c3-619b-4aed-b88b-b92a43578d84
-# ╠═c32725a4-e276-4372-8d06-d40ba52c9f09
+# ╟─c32725a4-e276-4372-8d06-d40ba52c9f09
 # ╟─b04cba56-dd48-403b-82fc-1cf3713853a7
 # ╠═f1a71f47-fb19-4988-a439-2ff8d38be5b7
 # ╠═91dae79f-e454-4b27-84a7-4cbc6bc33265

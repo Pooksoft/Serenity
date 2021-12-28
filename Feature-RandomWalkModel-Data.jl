@@ -99,6 +99,9 @@ ticker_symbol_array = sort(["MSFT", "ALLY", "MET", "AAPL", "GM", "PFE", "TGT", "
 # ╔═╡ 866cc84d-86c1-40e2-bd29-deae01da9a2e
 𝒫 = length(ticker_symbol_array); # the number of ticker symbols is given the symbol 𝒫
 
+# ╔═╡ 7bcbdc4e-a38a-4201-a1ec-d2e4df4d2f6a
+𝒯 = 14 # number of days 
+
 # ╔═╡ 61ab2949-d72f-4d80-a717-4b6a9227de0e
 md"""
 ##### Estimate the daily return distributions assuming a continuous compounding model
@@ -108,7 +111,7 @@ To estimate a model for the return $\mathcal{D}\left(\bar{m},\sigma\right)$, we 
 Given the daily return data, we can estimate the parameters of a distribution that describes this data using a variety of approaches e.g., [nonlinear least squares](https://en.wikipedia.org/wiki/Non-linear_least_squares) or [maximum likelihood estimation](https://en.wikipedia.org/wiki/Maximum_likelihood_estimation). However, there are a few technical questions with this approach:
 
 * __Question 1__: What model for $\mathcal{D}\left(\bar{m},\sigma\right)$ do we choose? Conventional wisdom suggests return data follows a [Normal distribution](https://en.wikipedia.org/wiki/Normal_distribution). However, is this really correct, or is the data governed by another type of distribution?
-* __Question 2__: Next, an underlying assumption of the random walk (and thus our approach at predicting future stock prices) is that the daily returns are independent and identically distributed, ie., the close price for the day $j$ and $j+1$ are independent of one another and they follow the same underlying distribution. 
+* __Question 2__: Next, an underlying assumption of the random walk (and thus our approach at predicting future stock prices) is that the daily returns are independent and identically distributed, ie., the close price for the days $j$ and $j+1$ are independent of one another and they follow the same underlying distribution. 
 """
 
 # ╔═╡ a39b90ec-a4c5-472f-b00e-c81ee9c5576f
@@ -128,7 +131,7 @@ The return $\mu_{j\rightarrow{j+1}}$ values computed from historical data are no
 
 # ╔═╡ a786ca10-06d2-4b76-97a9-2bcf879ea6cb
 # fit a distribution to a ticker -
-single_asset_ticker_symbol = "MRNA";
+single_asset_ticker_symbol = "MET";
 
 # ╔═╡ a3d29aa3-96ca-4681-960c-3b4b04b1e40d
 md"""
@@ -147,7 +150,7 @@ __Fig 3__: Quantile-Quantile plot (QQplot) for historical $(single_asset_ticker_
 
 # ╔═╡ a07d661a-a0b4-4000-b7a4-5f17cda5edc3
 md"""
-###### Example: KS test for $(single_asset_ticker_symbol) to determine if the return data follows a Laplace distrubution
+###### Example:  Kolmogorov–Smirnov (KS) test for a Laplace and Normal distrubution for ticker: $(single_asset_ticker_symbol)
 
 The null hypothesis $h_0$ for the KS test is the data follows a specified distribution, in our case a Laplace distribution. Conversely, the alternative hypothesis $h_{1}$ is the data does not follow a particular distribution, again in this case, a Laplace distribution. 
 """
@@ -157,25 +160,20 @@ md"""
 __Table 1__: [Kolmogorov–Smirnov (KS)](https://en.wikipedia.org/wiki/Kolmogorov–Smirnov_test) test results for Normal and Laplace distribution for PSIA tickers (𝒫 = 40). The historical return values computed over the last two years of historical data for 39 of the 40 members of the PSIA were governed by a Laplace distribution; MRNA failed the KS test for a Laplace distribution, and was estimated to be Normally distributed.  
 """
 
+# ╔═╡ bc4e93f5-7e76-4115-8cfd-039212181fb3
+md"""
+##### Are returns really iid? The Wald-Wolfowitz runs test
+
+A second key assumption of the random walk approach is that returns are independently and identically distributed. To test whether this is true for the ticker symbols in our data set, we performed the [Wald-Wolfowitz runs test](https://en.wikipedia.org/wiki/Wald–Wolfowitz_runs_test). The [Wald-Wolfowitz runs test](https://en.wikipedia.org/wiki/Wald–Wolfowitz_runs_test) is a non-parametric tool, that does not require returns to be normally distributed, which calculates the liklihood that a sequence is independent (the null hypothesis). 
+
+Each return is scored according to whether it is larger, smaller, or the same as the median; a score of +1 is assigned when the return is greater than the median, a score of -1 is assigned when the return is less than the median, and a score of 0 is assigned when the return equals the mean. 
+"""
+
 # ╔═╡ 10fa507e-1429-4eb0-b74c-1e6638725690
 md"""
 ##### Monte Carlo simulations of the daily close price using a random walk model
 
 A basic explain of Monte Carlo simulations goes here
-"""
-
-# ╔═╡ bc4e93f5-7e76-4115-8cfd-039212181fb3
-md"""
-##### The Wald-Wolfowitz runs test: a non-parametric test for randomness 
-
-The [Walf-Wolfowitz runs test](https://en.wikipedia.org/wiki/Wald–Wolfowitz_runs_test) can be used to estimate whether successive price changes are independent. The [Walf-Wolfowitz runs test](https://en.wikipedia.org/wiki/Wald–Wolfowitz_runs_test) is a non-parametric tool that does not require returns to be normally distributed. 
-
-Each return is scored according to whether it is larger, smaller, or the same as the mean; a score of +1 is assigned when the return is greater than the mean, a score of -1 is assigned when the return is less than the mean, and a score of 0 is assigned when the return equals the mean.
-"""
-
-# ╔═╡ 4d3357c4-0a43-4ea9-a479-99a30c6468be
-md"""
-##### Serial autocorrelation test 
 """
 
 # ╔═╡ c32725a4-e276-4372-8d06-d40ba52c9f09
@@ -184,7 +182,7 @@ md"""
 
 In this study, we explored random walks and the efficient market hypothesis. In particular, we simulated 𝒯 future price predictions based on a return model learned from historical data. 
 
-* We found for a variety of ticker symbols (the DJIA plus 10 additional symbols) that the majority of the returns were not Normally distributed. 
+* Daily returns were not Normally distributed for a variety of ticker symbols (the DJIA plus 10 additional symbols) with the exception of MRNA, which appears to be normally distributed 
 
 """
 
@@ -498,11 +496,17 @@ with_terminal() do
 	
 end
 
-# ╔═╡ 1c816d04-3b76-4c0c-9ed9-9b20b5ad50d9
+# ╔═╡ 20bba789-504b-4d27-a2fc-4f08badc9a53
 begin
+	μ_local = return_data_dictionary[single_asset_ticker_symbol][!,:μ]
+	WaldWolfowitzTest(μ_local)
+end
+
+# ╔═╡ 1c816d04-3b76-4c0c-9ed9-9b20b5ad50d9
+with_terminal() do
 
 	# initialize -
-	run_array = Array{Union{Int,Float64},2}(undef,𝒫,6)
+	run_array = Array{Union{Int,String, Float64},2}(undef,𝒫,10)
 	
 	for (ticker_index, ticker) ∈ enumerate(ticker_symbol_array)
 
@@ -511,45 +515,57 @@ begin
 		N = length(μ_local)
 
 		# what is the mean return for this ticker?
-		mean_value = mean(μ_local)
-		tmp_array = Array{Int64,2}(undef,N,2)
+		median_value = median(μ_local)
+		tmp_array = Array{Int64,2}(undef,N,3)
 		fill!(tmp_array,0)
 		for time_index ∈ 1:N
 		
 			# classify -
-			if (μ_local[time_index] > mean_value)
+			if (μ_local[time_index] >= median_value)
 				tmp_array[time_index,1] += 1
 				tmp_array[time_index,2] += 0
-			elseif (μ_local[time_index] < mean_value)
+				tmp_array[time_index,3] += 1
+			elseif (μ_local[time_index] < median_value)
 				tmp_array[time_index,1] += 0
 				tmp_array[time_index,2] += 1
+				tmp_array[time_index,3] = -1
 			end
 		end
 
-		run_array[ticker_index,1] = sum(tmp_array[:,1])
-		run_array[ticker_index,2] = sum(tmp_array[:,2])
-		run_array[ticker_index,3] = (run_array[ticker_index,1]+run_array[ticker_index,2])
-		run_array[ticker_index,4] = (2*run_array[ticker_index,1]*run_array[ticker_index,2])/(run_array[ticker_index,3]) + 1
-		run_array[ticker_index,5] = ((run_array[ticker_index,4] - 1)*(run_array[ticker_index,4] -2))/(run_array[ticker_index,3] - 1)
-		run_array[ticker_index,6] = (run_array[ticker_index,3] - run_array[ticker_index,4])/(run_array[ticker_index,5])
-		
+		run_array[ticker_index,1] = ticker
+		run_array[ticker_index,2] = N
+
+		# count the number of runs -
+		U = 1
+		for time_index ∈ 2:N
+			old_value = tmp_array[time_index - 1,3]
+			new_value = tmp_array[time_index,3]
+			if (old_value!=new_value)
+				U += 1
+			end
+		end
+
+		run_array[ticker_index,3] = sum(tmp_array[:,1])
+		run_array[ticker_index,4] = sum(tmp_array[:,2])
+		run_array[ticker_index,5] = U
+
+		# run the test -
+		local_test_result = WaldWolfowitzTest(μ_local)
+		run_array[ticker_index,6] = local_test_result.μ
+		run_array[ticker_index,7] = local_test_result.σ
+		run_array[ticker_index,8] = local_test_result.z
+		run_array[ticker_index,9] = pvalue(local_test_result)
+		run_array[ticker_index,10] = (pvalue(local_test_result) >= 0.05) ? 1 : 0
 	end
-end
 
-# ╔═╡ 072c20fe-3fe1-4170-ac51-b0bbf32f0d86
-run_array
-
-# ╔═╡ 20bba789-504b-4d27-a2fc-4f08badc9a53
-begin
-	μ_local = return_data_dictionary[single_asset_ticker_symbol][!,:μ]
-	WaldWolfowitzTest(μ_local)
+	header_data = (["ticker", "N", "N₊", "N₋", "U","μ","σ","Z","p-value", "p-value ≥ 0.05"])
+	pretty_table(run_array, header=header_data)
 end
 
 # ╔═╡ 5a3500c2-4f82-43e9-a31b-d530f56fdbe9
 begin
     
 	# how many steps, sample paths etc -
-    𝒯 = 14 # number of days 
     number_of_sample_paths = 12500;
 	number_of_strata = 1;
 	monte_carlo_simulation_dictionary = Dict{String,Array{Float64,2}}()
@@ -574,54 +590,27 @@ end
 # ╔═╡ ff11bdd2-8ab6-40c0-844b-a3474d7e9a04
 Z = monte_carlo_simulation_dictionary[single_asset_ticker_symbol]
 
+# ╔═╡ cac02388-31c4-40b9-8288-a6685e1854fb
+begin
+	
+	# plot the histogram -
+	stephist(Z[end,:], normed=true, lw=2, c=BLUE, 
+		label="Close price $(single_asset_ticker_symbol) (T = $(𝒯))", 
+		background_color = BACKGROUND, background_color_outside = WHITE, 
+		foreground_color_legend = nothing)
+	xlabel!("Simulated close price $(single_asset_ticker_symbol) (T = $(𝒯)) (USD/share)", fontsize=18)
+	ylabel!("Frequency (dimensionless)", fontsize = 14)	
+end
+
 # ╔═╡ a1e1d5f8-e06e-4682-ab54-a9454a8e3b30
 md"""
 __Fig 4__: In sample random walk simulation of ticker = $(single_asset_ticker_symbol) for a 𝒯 = $(𝒯) day prediction horizon. Blue lines denotes simulated sample paths while the red line denotes the actual price trajectory for ticker $(single_asset_ticker_symbol). The simulation consisted of N = $(2*number_of_sample_paths) sample paths.
 """
 
-# ╔═╡ cac02388-31c4-40b9-8288-a6685e1854fb
-begin
-	
-	# plot the histogram -
-	stephist(Z[end,:], number_of_bins=10, normed=true, lw=2, c=BLUE, 
-		label="Close price $(single_asset_ticker_symbol) (T = $(𝒯))", 
-		background_color = BACKGROUND, background_color_outside = WHITE, 
-		foreground_color_legend = nothing)
-	xlabel!("Simulated close price $(single_asset_ticker_symbol) (T = $(𝒯)) (USD/share)", fontsize=18)
-	ylabel!("Frequency (N=10; dimensionless)", fontsize = 14)	
-end
-
 # ╔═╡ b547311c-ddf0-4053-9de4-f0e85b861e63
 md"""
 __Table 2__: Comparison of the actual close price versus the Monte Carlo simulated close price for a 𝒯 = $(𝒯) day prediction horizon for each ticker in the PSIA (𝒫 = 40). Each ticker was classified into class c ∈ {-1,0,1} where: +1 HIGH, 0 INSIDE, or -1 LOW. The classification was based upon whether the actual close price Pₐ ∈ Pₑ ± σ, where Pₐ denotes the actual close price (units: USD/share), Pₑ denotes the mean simulated close price (units: USD/share), and σ denotes the standard deviation of the simulated close price (units: USD/share) computed over the family Monte Carlo trajectories (N = $(2*number_of_sample_paths)).
 """
-
-# ╔═╡ 9e226d34-9ea9-45af-b54f-b12854fb571c
-begin
-
-	# initialize -
-	serial_autocorrelation_array =  Array{Float64,2}(undef,𝒫,𝒯)
-
-	for (ticker_index, ticker_symbol) ∈ enumerate(ticker_symbol_array)
-
-		# get the return -
-		μ_vector = return_data_dictionary[ticker_symbol][!,:μ]
-
-		# what is the lag?
-		L = (𝒯-1):-1:0 |> collect
-
-		# compute the auto correlation function -
-		acf_v = autocor(μ_vector,L)
-
-		# package -
-		for (index,value) ∈ enumerate(acf_v)
-			serial_autocorrelation_array[ticker_index,index] = acf_v[index]
-		end
-	end
-end
-
-# ╔═╡ b25611e1-c8d2-412d-b2b2-6678cb38b99e
-serial_autocorrelation_array
 
 # ╔═╡ aeafe1ed-f217-48fd-9624-add5f6f791e6
 begin
@@ -646,33 +635,6 @@ begin
     xlabel!("Time step index (day)", fontsize = 18)
     ylabel!("Simulated $(single_asset_ticker_symbol) close price (USD/share)", fontsize = 14)
     # title!("Random walk simulation $(single_asset_ticker_symbol) (N = $(number_of_sample_paths))", fontsize=12)
-end
-
-# ╔═╡ 36372d31-215d-4299-b4f1-49e42d8b0dbd
-begin
-
-	estimated_mean_price = round(mean(simulated_price_trajectory[end, :]), sigdigits = 4)
-    std_estimated_price = round(std(simulated_price_trajectory[end, :]), sigdigits = 4)
-	
-    # compute the cumulative probability in the range [0,μ + 3*σ]
-    LB = estimated_mean_price - 3 * std_estimated_price
-    UB = estimated_mean_price + 3 * std_estimated_price
-    price_range = range(LB, stop = UB, length = 1000) |> collect
-    cprob = Array{Float64,1}()
-
-    for price in price_range
-        p = Serenity.compute_rwm_cumulative_probabilty(x -> (x <= price), simulated_price_trajectory[end, :])
-        push!(cprob, p)
-    end
-
-    # plot -
-    #plot(price_range, cprob, legend=:right, label="P(X≤x)", lw=2)
-    plot(price_range, 1 .- cprob, legend = :topright, label = "P(X≥x)", lw = 2, c = :red,
-        background_color = BACKGROUND, background_color_outside = WHITE, 
-		foreground_color_legend = nothing)
-    xlabel!("$(single_asset_ticker_symbol) close daily price (USD/share)", fontsize = 18)
-    ylabel!("1 - cumulative probability P(X≤x)")
-    #title!("$(single_asset_ticker_symbol) (T = $(number_of_days) days)", fontsize=18)
 end
 
 # ╔═╡ 2ed2f3c3-619b-4aed-b88b-b92a43578d84
@@ -700,7 +662,7 @@ with_terminal() do
 		price_state_table[ticker_symbol_index,2] = actual_price_data[1]
 		price_state_table[ticker_symbol_index,3] = price_actual
 		price_state_table[ticker_symbol_index,4] = estimated_mean_price
-		price_state_table[ticker_symbol_index,5] = (price_actual - estimated_mean_price)
+		price_state_table[ticker_symbol_index,5] = ((price_actual - estimated_mean_price)/price_actual)*100
 		price_state_table[ticker_symbol_index,6] = tmp_LB
 		price_state_table[ticker_symbol_index,7] = tmp_UB
 		
@@ -720,9 +682,9 @@ with_terminal() do
 
 
 	price_table_header = (
-		["ticker", "P₀ (𝒯 = 0)", "Pₐ (𝒯 = 14)", "Pₑ (𝒯 = 14)", "ΔP", "ℒ = (Pₑ - σ)", "𝒰 = (Pₑ + σ)", "δL = max(0, ℒ - Pₐ)", 
+		["ticker", "P₀ (𝒯 = 0)", "Pₐ (𝒯 = 14)", "Pₑ (𝒯 = 14)", "ΔP/Pₐ", "ℒ = (Pₑ - σ)", "𝒰 = (Pₑ + σ)", "δL = max(0, ℒ - Pₐ)", 
 			"δU = max(0, Pₐ - 𝒰)", "class c"],
-		["", "USD/share", "USD/share", "USD/share", "USD/share", "USD/share", "", "USD/share", "USD/share","c ∈ {-1,0,1}"]
+		["", "USD/share", "USD/share", "USD/share", "%", "USD/share", "", "USD/share", "USD/share","c ∈ {-1,0,1}"]
 	)
 
 	pretty_table(price_state_table, header=price_table_header)
@@ -2203,11 +2165,12 @@ version = "0.9.1+5"
 # ╟─300b62c8-830a-472f-a07c-17153468c1fb
 # ╠═54efa70c-bac6-4d7c-93df-0dfd1b89769d
 # ╠═866cc84d-86c1-40e2-bd29-deae01da9a2e
+# ╠═7bcbdc4e-a38a-4201-a1ec-d2e4df4d2f6a
 # ╠═5c5d5eeb-6775-452f-880d-7b4fa2acda57
 # ╟─61ab2949-d72f-4d80-a717-4b6a9227de0e
 # ╠═34b06415-21c1-4904-97f0-ab614447355c
 # ╟─a39b90ec-a4c5-472f-b00e-c81ee9c5576f
-# ╠═cbbd8670-49ab-4601-b8d7-9f3f456752e8
+# ╟─cbbd8670-49ab-4601-b8d7-9f3f456752e8
 # ╟─edfbf364-e126-4e95-93d2-a6adfb340045
 # ╠═a786ca10-06d2-4b76-97a9-2bcf879ea6cb
 # ╟─a3d29aa3-96ca-4681-960c-3b4b04b1e40d
@@ -2221,6 +2184,9 @@ version = "0.9.1+5"
 # ╠═345d8feb-cfd0-4acb-a626-dc16181ddb68
 # ╟─379373b1-e563-4341-9978-5b35c768b5c7
 # ╟─8b2725a2-8007-46b8-a160-75042562794d
+# ╟─bc4e93f5-7e76-4115-8cfd-039212181fb3
+# ╠═20bba789-504b-4d27-a2fc-4f08badc9a53
+# ╟─1c816d04-3b76-4c0c-9ed9-9b20b5ad50d9
 # ╟─10fa507e-1429-4eb0-b74c-1e6638725690
 # ╠═5a3500c2-4f82-43e9-a31b-d530f56fdbe9
 # ╠═ff11bdd2-8ab6-40c0-844b-a3474d7e9a04
@@ -2230,19 +2196,11 @@ version = "0.9.1+5"
 # ╟─cac02388-31c4-40b9-8288-a6685e1854fb
 # ╟─b547311c-ddf0-4053-9de4-f0e85b861e63
 # ╟─2ed2f3c3-619b-4aed-b88b-b92a43578d84
-# ╟─bc4e93f5-7e76-4115-8cfd-039212181fb3
-# ╠═1c816d04-3b76-4c0c-9ed9-9b20b5ad50d9
-# ╠═072c20fe-3fe1-4170-ac51-b0bbf32f0d86
-# ╠═20bba789-504b-4d27-a2fc-4f08badc9a53
-# ╟─4d3357c4-0a43-4ea9-a479-99a30c6468be
-# ╠═9e226d34-9ea9-45af-b54f-b12854fb571c
-# ╠═b25611e1-c8d2-412d-b2b2-6678cb38b99e
-# ╟─36372d31-215d-4299-b4f1-49e42d8b0dbd
-# ╟─c32725a4-e276-4372-8d06-d40ba52c9f09
+# ╠═c32725a4-e276-4372-8d06-d40ba52c9f09
 # ╟─b04cba56-dd48-403b-82fc-1cf3713853a7
 # ╠═f1a71f47-fb19-4988-a439-2ff8d38be5b7
 # ╠═91dae79f-e454-4b27-84a7-4cbc6bc33265
-# ╟─c8c3fe32-560d-11ec-0617-2dc33608384a
+# ╠═c8c3fe32-560d-11ec-0617-2dc33608384a
 # ╠═5394b13a-e629-47c8-902d-685c061b37ae
 # ╟─00000000-0000-0000-0000-000000000001
 # ╟─00000000-0000-0000-0000-000000000002

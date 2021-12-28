@@ -105,6 +105,9 @@ md"""
 In the following code block, we set up project paths and import external packages that we use to download and analyze historical price history for a variety of ticker symbols. In addition, we load a local copy of the [Serenity library](https://github.com/Pooksoft/Serenity).
 """
 
+# ╔═╡ 43d75d79-b710-4dc5-9478-dd2b08616be9
+
+
 # ╔═╡ 9943d000-83d0-413d-a231-0295fb19df71
 md"""
 ### Results and Discussion
@@ -219,7 +222,12 @@ Each return is scored according to whether it is larger, smaller, or the same as
 md"""
 ##### Monte Carlo simulations of the daily close price using a random walk model
 
-A basic explain of Monte Carlo simulations goes here
+We used [Monte-Carlo simulation](https://www.investopedia.com/articles/investing/112514/monte-carlo-simulation-basics.asp) to estimate the close price distribution of each ticker, 𝒯 days into the future, using the daily return model $\mathcal{D}\left(\bar{m},\sigma\right)$ we learned from historical price data. Monte-Carlo simulation is conceptually easy to understand but tricky to implement in an efficient way. 
+
+Imagine that we split our reality into a large number of structurally similar but parallel dimensions, such that in each of these dimensions there was a stock market in which company `XYZ` traded, and for each dimension, yesterday's close price for `XYZ` was $p_{j}$. Next, further, suppose that we cloned ourselves and placed a clone into each of these dimensions so that we could record the stock price of ticker `XYZ` at the end of the day for the specified number of days. Because dimensions were not identical, we expect the close price to vary between dimensions. After 𝒯 days the clones report their price recordings we put them all together. The data provided by each clone is called a _sample path_, and we can use these sample paths to compute a distribution of possible outcomes for the price of `XYZ`.  
+
+In a technical sense, starting from close price at time index $p_j$, we draw a random sample from the $\mathcal{D}\left(\bar{m},\sigma\right)$ distribution, and compute a value for $p_{j+1}$. We then advance the time index $p_{j+1}\rightarrow{p_{j}}$ and repeat the process over again until we reach the end of the prediction time horizon. Of course, because we are dealing with random variables, we repeat the calculation of each sample path many times which gives a distribution of possible price outcomes. 
+
 """
 
 # ╔═╡ c32725a4-e276-4372-8d06-d40ba52c9f09
@@ -2221,6 +2229,7 @@ version = "0.9.1+5"
 # ╟─1852d4c5-e73d-4038-a565-b8fb6ff63502
 # ╟─2353a285-71de-43b2-a60f-5a3274ff9e6b
 # ╠═fe2848df-823a-4ed0-918c-2c200957ee80
+# ╠═43d75d79-b710-4dc5-9478-dd2b08616be9
 # ╟─9943d000-83d0-413d-a231-0295fb19df71
 # ╟─f66a480b-3f0c-4ebf-a8b8-e0f91dff851d
 # ╟─300b62c8-830a-472f-a07c-17153468c1fb
